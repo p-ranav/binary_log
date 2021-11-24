@@ -7,3 +7,5 @@ cmake-build-*/
 prefix/
 CMakeLists.txt.user
 CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
