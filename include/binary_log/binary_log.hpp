@@ -162,27 +162,11 @@ public:
           // Update format string table if necessary
           if (m_format_string_table.find(format_string)
               == m_format_string_table.end()) {
-            m_format_string_table[format_string] = m_format_string_index;
+            m_format_string_table[format_string] = m_format_string_index++;
 
-            // Serialize format string to index file
-            std::stringstream os;
-            // TODO(pranav): Determine if need to convert format_string into
-            // std::string before serializing it
-            msgpack::pack(
-                os, std::make_pair(format_string, m_format_string_index++));
-            const std::string serialized_format_string = os.str();
-
-            // Deserialize immediately for testing
-            // msgpack::object_handle oh =
-            // msgpack::unpack(serialized_format_string.data(),
-            //                                             serialized_format_string.size());
-            // auto unpacked = oh.get();
-            // auto unpacked_pair = unpacked.as<std::pair<std::string_view,
-            // std::size_t>>(); auto unpacked_string = unpacked_pair.first; auto
-            // unpacked_index = unpacked_pair.second; fmt::print("{} -> {}\n",
-            // unpacked_string, unpacked_index);
-
-            fmt::print(m_index_file, "{}\n", serialized_format_string);
+            msgpack::fbuffer os(m_index_file);
+            msgpack::pack(os, format_string);
+            msgpack::pack(os, "\n");
           }
 
           // Serialize log message
