@@ -24,20 +24,19 @@ enum class arg_type
 };
 MSGPACK_ADD_ENUM(arg_type);
 
-struct binary_log_header
-{
-  uint8_t log_level;
-  std::size_t format_string_index;
-  MSGPACK_DEFINE(log_level, format_string_index);
-};
-
 class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
 
+  struct MyTraits : public moodycamel::ConcurrentQueueDefaultTraits
+  {
+    static const size_t BLOCK_SIZE = 256;  // Use bigger blocks
+  };
+
   std::thread m_formatter_thread;
-  moodycamel::ConcurrentQueue<std::function<void()>> m_formatter_queue;
+  moodycamel::ConcurrentQueue<std::function<void()>, MyTraits>
+      m_formatter_queue;
   std::atomic_size_t m_enqueued_for_formatting {0};
   std::mutex m_formatter_mutex;
   std::condition_variable m_formatter_data_ready;
@@ -110,14 +109,14 @@ class binary_log
   }
 
   template<class T, class... Ts>
-  constexpr static inline void pack_all(msgpack::fbuffer& os,
-                                        T const& first,
-                                        Ts const&... rest)
+  constexpr static inline void pack_args(msgpack::fbuffer& os,
+                                         T const& first,
+                                         Ts const&... rest)
   {
     pack_arg(os, first);
 
     if constexpr (sizeof...(rest) > 0) {
-      pack_all(os, rest...);
+      pack_args(os, rest...);
     }
   }
 
@@ -179,16 +178,16 @@ public:
             m_format_string_table[format_string] = m_format_string_index++;
 
             msgpack::fbuffer os(m_index_file);
+            msgpack::pack(os, format_string.size());
             msgpack::pack(os, format_string);
           }
 
           // Serialize log message
-          binary_log_header header;
-          header.log_level = static_cast<uint8_t>(level);
-          header.format_string_index = m_format_string_table[format_string];
           msgpack::fbuffer os(m_log_file);
-          msgpack::pack(os, header);
-          pack_all(os, args...);
+          msgpack::pack(os, static_cast<uint8_t>(level));
+          msgpack::pack(os, m_format_string_table[format_string]);
+          msgpack::pack(os, sizeof...(args));
+          pack_args(os, args...);
         });
 
     m_enqueued_for_formatting += 1;
