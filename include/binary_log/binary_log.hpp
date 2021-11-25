@@ -177,7 +177,6 @@ public:
 
           msgpack::fbuffer os(m_log_file);
           msgpack::pack(os, msg);
-          msgpack::pack(os, "\n");
         });
 
     m_enqueued_for_formatting += 1;
