@@ -38,7 +38,7 @@ struct binary_log
   std::atomic_size_t m_running {true};
 
   // Format string table
-  std::unordered_map<std::string_view, std::size_t> m_format_string_table;
+  std::map<std::string_view, std::size_t> m_format_string_table;
   std::atomic_size_t m_format_string_index {0};
 
   void formatter_thread_function_bulk()
@@ -156,7 +156,6 @@ struct binary_log
 \
             msgpack::fbuffer os(logger.m_index_file); \
             msgpack::pack(os, static_cast<uint8_t>(log_level)); \
-            msgpack::pack(os, logger.m_format_string_index.load()); \
             constexpr size_t format_string_length = \
                 binary_log::length(format_string); \
             msgpack::pack(os, format_string_length); \
