@@ -11,13 +11,21 @@ endif()
 
 add_custom_target(run-examples)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 function(add_example NAME)
   add_executable("${NAME}" "${NAME}.cpp")
   target_link_libraries("${NAME}" PRIVATE binary_log::binary_log)
   target_compile_features("${NAME}" PRIVATE cxx_std_17)
   add_custom_target("run_${NAME}" COMMAND "${NAME}" VERBATIM)
   add_dependencies("run_${NAME}" "${NAME}")
-  add_dependencies(run-examples "run_${NAME}")
+  add_dependencies(run-examples "run_${NAME}")  
 endfunction()
 
 add_example(empty_example)

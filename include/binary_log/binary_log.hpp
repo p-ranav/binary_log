@@ -12,9 +12,18 @@
 #define FMT_HEADER_ONLY
 #include <sstream>
 
+#include <fmt/args.h>
 #include <fmt/format.h>
 #include <fmt/os.h>
 #include <msgpack.hpp>
+
+struct binary_log_message
+{
+  uint8_t log_level;
+  std::size_t format_string_index;
+  std::vector<std::string> format_string_args;
+  MSGPACK_DEFINE(log_level, format_string_index, format_string_args);
+};
 
 class binary_log
 {
@@ -47,9 +56,28 @@ class binary_log
 
       if (m_formatter_queue.try_dequeue(format_function)) {
         format_function();
-        m_enqueued_for_formatting -= 1;
+        m_enqueued_for_formatting--;
       }
     }
+  }
+
+  template<class Tuple>
+  std::vector<std::string> to_vector_internal(Tuple&& tuple)
+  {
+    return std::apply(
+        [](auto&&... elems)
+        {
+          return std::vector<std::string> {
+              fmt::to_string(std::forward<decltype(elems)>(elems))...};
+        },
+        std::forward<Tuple>(tuple));
+  }
+
+  template<typename... Args>
+  std::vector<std::string> to_vector(Args&&... args)
+  {
+    return to_vector_internal(
+        std::tuple<Args...> {std::forward<Args>(args)...});
   }
 
 public:
@@ -57,7 +85,7 @@ public:
   {
     // Create the log file
     // All the log contents go here
-    m_log_file = fopen(path.data(), "w");
+    m_log_file = fopen(path.data(), "wb");
     if (m_log_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
@@ -70,7 +98,7 @@ public:
     // ...
     // FORMAT_STRING_N -> N
     std::string index_file_path = std::string {path} + ".index";
-    m_index_file = fopen(index_file_path.c_str(), "w");
+    m_index_file = fopen(index_file_path.c_str(), "wb");
     if (m_index_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
@@ -82,6 +110,7 @@ public:
   ~binary_log()
   {
     m_running = false;
+    m_formatter_data_ready.notify_all();
     m_formatter_thread.join();
   }
 
@@ -94,26 +123,12 @@ public:
     fatal
   };
 
-  long long get_time_since_epoch_in_milliseconds() const
-  {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(
-               std::chrono::system_clock::now().time_since_epoch())
-        .count();
-  }
-
   template<typename... Args>
   void log(const level& level, std::string_view format_string, Args&&... args)
   {
-    const auto time_since_epoch_in_milliseconds =
-        get_time_since_epoch_in_milliseconds();
-
     // Schedule write to log file
     m_formatter_queue.enqueue(
-        [this,
-         time_since_epoch_in_milliseconds,
-         level,
-         format_string,
-         args...]()
+        [this, level, format_string, args...]()
         {
           // Update format string table if necessary
           if (m_format_string_table.find(format_string)
@@ -140,6 +155,32 @@ public:
 
             fmt::print(m_index_file, "{}\n", serialized_format_string);
           }
+
+          // Serialize log message
+          binary_log_message msg;
+          msg.log_level = static_cast<uint8_t>(level);
+          msg.format_string_index = m_format_string_table[format_string];
+          msg.format_string_args = std::move(to_vector(args...));
+
+          std::stringstream os;
+          msgpack::pack(os, msg);
+          // const std::string serialized_msg = os.str();
+
+          // Deserialize immediately for testing
+          // {
+          // msgpack::object_handle oh = msgpack::unpack(serialized_msg.data(),
+          //                                             serialized_msg.size());
+          // auto unpacked = oh.get();
+          // auto unpacked_msg = unpacked.as<binary_log_message>();
+          // fmt::dynamic_format_arg_store<fmt::format_context> dynamic_args;
+          // for (auto const& a : unpacked_msg.format_string_args) {
+          //   dynamic_args.push_back(a);
+          // }
+          // fmt::print("{} {} {}\n", unpacked_msg.timestamp,
+          // unpacked_msg.log_level, fmt::vformat(format_string, dynamic_args));
+          // }
+
+          fmt::print(m_log_file, "{}\n", os.str());
         });
 
     m_enqueued_for_formatting += 1;
