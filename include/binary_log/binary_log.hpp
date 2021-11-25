@@ -90,13 +90,13 @@ struct binary_log
 
   template<class T, class... Ts>
   constexpr static inline void pack_args(msgpack::fbuffer& os,
-                                         T const& first,
-                                         Ts const&... rest)
+                                         T&& first,
+                                         Ts&&... rest)
   {
-    pack_arg(os, first);
+    pack_arg(os, std::forward<T>(first));
 
     if constexpr (sizeof...(rest) > 0) {
-      pack_args(os, rest...);
+      pack_args(os, std::forward<Ts>(rest)...);
     }
   }
 
