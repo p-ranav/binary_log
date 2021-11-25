@@ -62,7 +62,9 @@ struct binary_log
         for (std::size_t i = 0; i < bulk_dequeue_size; i++) {
           if (format_functions[i]) {
             format_functions[i]();
-            m_enqueued_for_formatting--;
+            if (m_enqueued_for_formatting > 0) {
+              m_enqueued_for_formatting--;
+            }
           }
         }
       }
