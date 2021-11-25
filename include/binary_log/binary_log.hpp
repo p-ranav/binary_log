@@ -115,12 +115,6 @@ struct binary_log
     }
 
     // Create the index file
-    // All the format_strings go here
-    // into a table
-    // FORMAT_STRING_1 -> 1
-    // FORMAT_STRING_2 -> 2
-    // ...
-    // FORMAT_STRING_N -> N
     std::string index_file_path = std::string {path} + ".index";
     m_index_file = fopen(index_file_path.c_str(), "wb");
     if (m_index_file == nullptr) {
@@ -181,5 +175,17 @@ struct binary_log
   logger.m_enqueued_for_formatting += 1; \
   logger.m_formatter_data_ready.notify_one();
 
+#define LOG_DEBUG(logger, format_string, ...) \
+  BINARY_LOG(logger, binary_log::level::debug, format_string, __VA_ARGS__)
+
 #define LOG_INFO(logger, format_string, ...) \
   BINARY_LOG(logger, binary_log::level::info, format_string, __VA_ARGS__)
+
+#define LOG_WARN(logger, format_string, ...) \
+  BINARY_LOG(logger, binary_log::level::warn, format_string, __VA_ARGS__)
+
+#define LOG_ERROR(logger, format_string, ...) \
+  BINARY_LOG(logger, binary_log::level::error, format_string, __VA_ARGS__)
+
+#define LOG_FATAL(logger, format_string, ...) \
+  BINARY_LOG(logger, binary_log::level::fatal, format_string, __VA_ARGS__)
