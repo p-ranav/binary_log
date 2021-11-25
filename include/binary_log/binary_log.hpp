@@ -84,7 +84,6 @@ struct binary_log
   template<typename T>
   constexpr static inline void pack_arg(msgpack::fbuffer& os, T&& arg)
   {
-    msgpack::pack(os, get_arg_type(arg));
     msgpack::pack(os, arg);
   }
 
@@ -97,6 +96,24 @@ struct binary_log
 
     if constexpr (sizeof...(rest) > 0) {
       pack_args(os, std::forward<Ts>(rest)...);
+    }
+  }
+
+  template<typename T>
+  constexpr static inline void pack_arg_type(msgpack::fbuffer& os, T&& arg)
+  {
+    msgpack::pack(os, get_arg_type(arg));
+  }
+
+  template<class T, class... Ts>
+  constexpr static inline void pack_arg_types(msgpack::fbuffer& os,
+                                              T&& first,
+                                              Ts&&... rest)
+  {
+    pack_arg_type(os, std::forward<T>(first));
+
+    if constexpr (sizeof...(rest) > 0) {
+      pack_arg_types(os, std::forward<Ts>(rest)...);
     }
   }
 
@@ -160,13 +177,14 @@ struct binary_log
                 binary_log::length(format_string); \
             msgpack::pack(os, format_string_length); \
             msgpack::pack(os, format_string); \
+            msgpack::pack(os, sizeof...(vargs)); \
+            binary_log::pack_arg_types(os, vargs...); \
 \
             logger.m_format_string_index += 1; \
           } \
 \
           msgpack::fbuffer os(logger.m_log_file); \
           msgpack::pack(os, logger.m_format_string_table[format_string]); \
-          msgpack::pack(os, sizeof...(vargs)); \
           binary_log::pack_args(os, vargs...); \
         }); \
   } \
