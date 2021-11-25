@@ -18,11 +18,17 @@
 #include <msgpack.hpp>
 #include <msgpack/fbuffer.hpp>
 
+enum class arg_type
+{
+  type_size_t
+};
+MSGPACK_ADD_ENUM(arg_type);
+
 struct binary_log_message
 {
   uint8_t log_level;
   std::size_t format_string_index;
-  std::vector<std::string> format_string_args;
+  std::vector<std::pair<arg_type, msgpack::object>> format_string_args;
   MSGPACK_DEFINE(log_level, format_string_index, format_string_args);
 };
 
@@ -90,20 +96,28 @@ class binary_log
     }
   }
 
+  // TODO(pranav): Add overloads of this function for all supported fmt arg
+  // types
+  std::pair<arg_type, msgpack::object> to_arg(std::size_t value)
+  {
+    return {arg_type::type_size_t, msgpack::object(value)};
+  }
+
   template<class Tuple>
-  std::vector<std::string> to_vector_internal(Tuple&& tuple)
+  std::vector<std::pair<arg_type, msgpack::object>> to_vector_internal(
+      Tuple&& tuple)
   {
     return std::apply(
-        [](auto&&... elems)
+        [this](auto&&... elems)
         {
-          return std::vector<std::string> {
-              fmt::to_string(std::forward<decltype(elems)>(elems))...};
+          return std::vector<std::pair<arg_type, msgpack::object>> {
+              to_arg(elems)...};
         },
         std::forward<Tuple>(tuple));
   }
 
   template<typename... Args>
-  std::vector<std::string> to_vector(Args&&... args)
+  std::vector<std::pair<arg_type, msgpack::object>> to_vector(Args&&... args)
   {
     return to_vector_internal(
         std::tuple<Args...> {std::forward<Args>(args)...});
@@ -177,7 +191,7 @@ public:
 
           msgpack::fbuffer os(m_log_file);
           msgpack::pack(os, msg);
-          msgpack::pack(os, "\n");
+          // msgpack::pack(os, "\n");
         });
 
     m_enqueued_for_formatting += 1;
