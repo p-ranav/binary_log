@@ -160,8 +160,11 @@ public:
 
             msgpack::fbuffer os(m_index_file);
             msgpack::pack(os, static_cast<uint8_t>(level));
+            msgpack::pack(os, m_format_string_index.load());
             msgpack::pack(os, format_string.size());
             msgpack::pack(os, format_string);
+
+            m_format_string_index += 1;
           }
 
           // Serialize log message
