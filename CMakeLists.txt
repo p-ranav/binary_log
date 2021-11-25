@@ -7,13 +7,19 @@ project(
     VERSION 0.1.0
     DESCRIPTION "Fast asynchronous binary logger for modern C++"
     HOMEPAGE_URL "https://github.com/p-ranav/binary_log"
-    LANGUAGES NONE
+    LANGUAGES C CXX
 )
 
 docs_early_return()
 
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
+
+# ---- Find dependencies ----
+find_package(Threads REQUIRED)
+find_package(msgpack REQUIRED)
+find_package(fmt REQUIRED)
+find_package(concurrentqueue REQUIRED)
 
 # ---- Declare library ----
 
@@ -29,7 +35,11 @@ target_include_directories(
     binary_log_binary_log ${warning_guard}
     INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+    ${fmt_INCLUDE_DIRS}
+    ${concurrentqueue_INCLUDE_DIRS}
 )
+
+target_link_libraries(binary_log_binary_log INTERFACE Threads::Threads msgpackc-cxx fmt::fmt concurrentqueue::concurrentqueue)
 
 target_compile_features(binary_log_binary_log INTERFACE cxx_std_17)
 
