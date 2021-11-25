@@ -2,11 +2,11 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <map>
 #include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
-#include <unordered_map>
 
 #include <moodycamel/concurrentqueue.h>
 #define FMT_HEADER_ONLY
@@ -100,7 +100,7 @@ struct binary_log
     }
   }
 
-  static inline constexpr std::size_t length(const char* str)
+  constexpr static inline std::size_t length(const char* str)
   {
     return *str ? 1 + length(str + 1) : 0;
   }
