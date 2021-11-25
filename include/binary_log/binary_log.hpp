@@ -47,25 +47,6 @@ class binary_log
   std::unordered_map<std::string_view, std::size_t> m_format_string_table;
   std::atomic_size_t m_format_string_index {0};
 
-  void formatter_thread_function()
-  {
-    std::function<void()> format_function;
-    while (m_running || m_enqueued_for_formatting > 0) {
-      // // Wait for the `enqueued` signal
-      // {
-      //   std::unique_lock<std::mutex> lock {m_formatter_mutex};
-      //   m_formatter_data_ready.wait(
-      //       lock,
-      //       [this] { return m_enqueued_for_formatting > 0 || !m_running; });
-      // }
-
-      if (m_formatter_queue.try_dequeue(format_function)) {
-        format_function();
-        m_enqueued_for_formatting--;
-      }
-    }
-  }
-
   void formatter_thread_function_bulk()
   {
     constexpr std::size_t bulk_dequeue_size = 32;
@@ -178,13 +159,13 @@ public:
             m_format_string_table[format_string] = m_format_string_index++;
 
             msgpack::fbuffer os(m_index_file);
+            msgpack::pack(os, static_cast<uint8_t>(level));
             msgpack::pack(os, format_string.size());
             msgpack::pack(os, format_string);
           }
 
           // Serialize log message
           msgpack::fbuffer os(m_log_file);
-          msgpack::pack(os, static_cast<uint8_t>(level));
           msgpack::pack(os, m_format_string_table[format_string]);
           msgpack::pack(os, sizeof...(args));
           pack_args(os, args...);
