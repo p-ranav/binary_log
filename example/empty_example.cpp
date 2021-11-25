@@ -24,5 +24,5 @@ int main()
   //   thread.join();
   // }
 
-  LOG_INFO(log, "{}", 3.14);
+  LOG_INFO(log, "{}");
 }

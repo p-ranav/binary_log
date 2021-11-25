@@ -207,14 +207,18 @@ struct binary_log
             msgpack::pack(os, format_string_length + 1); \
             msgpack::pack(os, format_string); \
             msgpack::pack(os, sizeof...(vargs)); \
-            binary_log::pack_arg_types(os, vargs...); \
+            if constexpr (sizeof...(vargs) > 0) { \
+              binary_log::pack_arg_types(os, vargs...); \
+            } \
 \
             logger.m_format_string_index += 1; \
           } \
 \
           msgpack::fbuffer os(logger.m_log_file); \
           msgpack::pack(os, logger.m_format_string_table[format_string]); \
-          binary_log::pack_args(os, vargs...); \
+          if constexpr (sizeof...(vargs) > 0) { \
+            binary_log::pack_args(os, vargs...); \
+          } \
         }); \
   } \
   (__VA_ARGS__); \
