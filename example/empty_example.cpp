@@ -7,7 +7,7 @@ int main()
   std::vector<std::thread> threads;
 
   constexpr std::size_t total_messages = 1E6;
-  constexpr std::size_t num_threads = 32;
+  constexpr std::size_t num_threads = 4;
   constexpr std::size_t num_messages_per_thread = total_messages / num_threads;
 
   for (std::size_t i = 0; i < num_threads; ++i) {

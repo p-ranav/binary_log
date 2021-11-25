@@ -24,12 +24,11 @@ enum class arg_type
 };
 MSGPACK_ADD_ENUM(arg_type);
 
-struct binary_log_message
+struct binary_log_header
 {
   uint8_t log_level;
   std::size_t format_string_index;
-  std::vector<std::pair<arg_type, msgpack::object>> format_string_args;
-  MSGPACK_DEFINE(log_level, format_string_index, format_string_args);
+  MSGPACK_DEFINE(log_level, format_string_index);
 };
 
 class binary_log
@@ -53,13 +52,13 @@ class binary_log
   {
     std::function<void()> format_function;
     while (m_running || m_enqueued_for_formatting > 0) {
-      // Wait for the `enqueued` signal
-      {
-        std::unique_lock<std::mutex> lock {m_formatter_mutex};
-        m_formatter_data_ready.wait(
-            lock,
-            [this] { return m_enqueued_for_formatting > 0 || !m_running; });
-      }
+      // // Wait for the `enqueued` signal
+      // {
+      //   std::unique_lock<std::mutex> lock {m_formatter_mutex};
+      //   m_formatter_data_ready.wait(
+      //       lock,
+      //       [this] { return m_enqueued_for_formatting > 0 || !m_running; });
+      // }
 
       if (m_formatter_queue.try_dequeue(format_function)) {
         format_function();
@@ -98,29 +97,28 @@ class binary_log
 
   // TODO(pranav): Add overloads of this function for all supported fmt arg
   // types
-  std::pair<arg_type, msgpack::object> to_arg(std::size_t value)
+  constexpr static inline arg_type get_arg_type(std::size_t)
   {
-    return {arg_type::type_size_t, msgpack::object(value)};
+    return arg_type::type_size_t;
   }
 
-  template<class Tuple>
-  std::vector<std::pair<arg_type, msgpack::object>> to_vector_internal(
-      Tuple&& tuple)
+  template<typename T>
+  constexpr static inline void pack_arg(msgpack::fbuffer& os, T&& arg)
   {
-    return std::apply(
-        [this](auto&&... elems)
-        {
-          return std::vector<std::pair<arg_type, msgpack::object>> {
-              to_arg(elems)...};
-        },
-        std::forward<Tuple>(tuple));
+    msgpack::pack(os, get_arg_type(arg));
+    msgpack::pack(os, arg);
   }
 
-  template<typename... Args>
-  std::vector<std::pair<arg_type, msgpack::object>> to_vector(Args&&... args)
+  template<class T, class... Ts>
+  constexpr static inline void pack_all(msgpack::fbuffer& os,
+                                        T const& first,
+                                        Ts const&... rest)
   {
-    return to_vector_internal(
-        std::tuple<Args...> {std::forward<Args>(args)...});
+    pack_arg(os, first);
+
+    if constexpr (sizeof...(rest) > 0) {
+      pack_all(os, rest...);
+    }
   }
 
 public:
@@ -167,7 +165,9 @@ public:
   };
 
   template<typename... Args>
-  void log(const level& level, std::string_view format_string, Args&&... args)
+  void log(const level& level,
+           const std::string_view& format_string,
+           Args&&... args)
   {
     // Schedule write to log file
     m_formatter_queue.enqueue(
@@ -180,20 +180,18 @@ public:
 
             msgpack::fbuffer os(m_index_file);
             msgpack::pack(os, format_string);
-            msgpack::pack(os, "\n");
           }
 
           // Serialize log message
-          binary_log_message msg;
-          msg.log_level = static_cast<uint8_t>(level);
-          msg.format_string_index = m_format_string_table[format_string];
-          msg.format_string_args = std::move(to_vector(args...));
-
+          binary_log_header header;
+          header.log_level = static_cast<uint8_t>(level);
+          header.format_string_index = m_format_string_table[format_string];
           msgpack::fbuffer os(m_log_file);
-          msgpack::pack(os, msg);
-          // msgpack::pack(os, "\n");
+          msgpack::pack(os, header);
+          pack_all(os, args...);
         });
 
     m_enqueued_for_formatting += 1;
+    m_formatter_data_ready.notify_one();
   }
 };
