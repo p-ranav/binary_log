@@ -16,6 +16,7 @@
 #include <fmt/format.h>
 #include <fmt/os.h>
 #include <msgpack.hpp>
+#include <msgpack/fbuffer.hpp>
 
 struct binary_log_message
 {
@@ -162,25 +163,9 @@ public:
           msg.format_string_index = m_format_string_table[format_string];
           msg.format_string_args = std::move(to_vector(args...));
 
-          std::stringstream os;
+          msgpack::fbuffer os(m_log_file);
           msgpack::pack(os, msg);
-          // const std::string serialized_msg = os.str();
-
-          // Deserialize immediately for testing
-          // {
-          // msgpack::object_handle oh = msgpack::unpack(serialized_msg.data(),
-          //                                             serialized_msg.size());
-          // auto unpacked = oh.get();
-          // auto unpacked_msg = unpacked.as<binary_log_message>();
-          // fmt::dynamic_format_arg_store<fmt::format_context> dynamic_args;
-          // for (auto const& a : unpacked_msg.format_string_args) {
-          //   dynamic_args.push_back(a);
-          // }
-          // fmt::print("{} {} {}\n", unpacked_msg.timestamp,
-          // unpacked_msg.log_level, fmt::vformat(format_string, dynamic_args));
-          // }
-
-          fmt::print(m_log_file, "{}\n", os.str());
+          msgpack::pack(os, "\n");
         });
 
     m_enqueued_for_formatting += 1;
