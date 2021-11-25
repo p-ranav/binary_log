@@ -18,13 +18,7 @@
 #include <msgpack.hpp>
 #include <msgpack/fbuffer.hpp>
 
-enum class arg_type
-{
-  type_size_t
-};
-MSGPACK_ADD_ENUM(arg_type);
-
-class binary_log
+struct binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
@@ -75,11 +69,16 @@ class binary_log
     }
   }
 
+  enum class fmt_arg_type
+  {
+    type_size_t
+  };
+
   // TODO(pranav): Add overloads of this function for all supported fmt arg
   // types
-  constexpr static inline arg_type get_arg_type(std::size_t)
+  constexpr static inline uint8_t get_arg_type(std::size_t)
   {
-    return arg_type::type_size_t;
+    return static_cast<uint8_t>(fmt_arg_type::type_size_t);
   }
 
   template<typename T>
@@ -101,7 +100,11 @@ class binary_log
     }
   }
 
-public:
+  static inline constexpr std::size_t length(const char* str)
+  {
+    return *str ? 1 + length(str + 1) : 0;
+  }
+
   binary_log(std::string_view path)
   {
     // Create the log file
@@ -143,38 +146,40 @@ public:
     error,
     fatal
   };
-
-  template<typename... Args>
-  void log(const level& level,
-           const std::string_view& format_string,
-           Args&&... args)
-  {
-    // Schedule write to log file
-    m_formatter_queue.enqueue(
-        [this, level, format_string, args...]()
-        {
-          // Update format string table if necessary
-          if (m_format_string_table.find(format_string)
-              == m_format_string_table.end()) {
-            m_format_string_table[format_string] = m_format_string_index++;
-
-            msgpack::fbuffer os(m_index_file);
-            msgpack::pack(os, static_cast<uint8_t>(level));
-            msgpack::pack(os, m_format_string_index.load());
-            msgpack::pack(os, format_string.size());
-            msgpack::pack(os, format_string);
-
-            m_format_string_index += 1;
-          }
-
-          // Serialize log message
-          msgpack::fbuffer os(m_log_file);
-          msgpack::pack(os, m_format_string_table[format_string]);
-          msgpack::pack(os, sizeof...(args));
-          pack_args(os, args...);
-        });
-
-    m_enqueued_for_formatting += 1;
-    m_formatter_data_ready.notify_one();
-  }
 };
+
+#define BINARY_LOG(logger, log_level, format_string, ...) \
+  [&logger]<typename... Args>(Args && ... args) \
+  { \
+    logger.m_formatter_queue.enqueue( \
+        [&logger, ... vargs = std::forward<Args>(args)]() mutable \
+        { \
+          if (logger.m_format_string_table.find(format_string) \
+              == logger.m_format_string_table.end()) \
+          { \
+            logger.m_format_string_table[format_string] = \
+                logger.m_format_string_index++; \
+\
+            msgpack::fbuffer os(logger.m_index_file); \
+            msgpack::pack(os, static_cast<uint8_t>(log_level)); \
+            msgpack::pack(os, logger.m_format_string_index.load()); \
+            constexpr size_t format_string_length = \
+                binary_log::length(format_string); \
+            msgpack::pack(os, format_string_length); \
+            msgpack::pack(os, format_string); \
+\
+            logger.m_format_string_index += 1; \
+          } \
+\
+          msgpack::fbuffer os(logger.m_log_file); \
+          msgpack::pack(os, logger.m_format_string_table[format_string]); \
+          msgpack::pack(os, sizeof...(vargs)); \
+          binary_log::pack_args(os, vargs...); \
+        }); \
+  } \
+  (__VA_ARGS__); \
+  logger.m_enqueued_for_formatting += 1; \
+  logger.m_formatter_data_ready.notify_one();
+
+#define LOG_INFO(logger, format_string, ...) \
+  BINARY_LOG(logger, binary_log::level::info, format_string, __VA_ARGS__)

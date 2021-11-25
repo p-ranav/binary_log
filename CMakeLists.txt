@@ -41,7 +41,7 @@ target_include_directories(
 
 target_link_libraries(binary_log_binary_log INTERFACE Threads::Threads msgpackc-cxx fmt::fmt concurrentqueue::concurrentqueue)
 
-target_compile_features(binary_log_binary_log INTERFACE cxx_std_17)
+target_compile_features(binary_log_binary_log INTERFACE cxx_std_20)
 
 # ---- Install rules ----
 

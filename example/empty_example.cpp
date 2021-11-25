@@ -15,7 +15,7 @@ int main()
         [&log]()
         {
           for (std::size_t j = 0; j < num_messages_per_thread; ++j) {
-            log.log(binary_log::level::info, "Hello logger: msg number {}", j);
+            LOG_INFO(log, "Hello logger: msg number {}", j);
           }
         });
   }

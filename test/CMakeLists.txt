@@ -13,7 +13,7 @@ endif()
 
 add_executable(binary_log_test source/binary_log_test.cpp)
 target_link_libraries(binary_log_test PRIVATE binary_log::binary_log)
-target_compile_features(binary_log_test PRIVATE cxx_std_17)
+target_compile_features(binary_log_test PRIVATE cxx_std_20)
 
 add_test(NAME binary_log_test COMMAND binary_log_test)
 
