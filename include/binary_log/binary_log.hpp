@@ -62,6 +62,34 @@ class binary_log
     }
   }
 
+  void formatter_thread_function_bulk()
+  {
+    constexpr std::size_t bulk_dequeue_size = 32;
+    std::function<void()> format_functions[bulk_dequeue_size];
+    while (m_running || m_enqueued_for_formatting > 0) {
+      // Wait for the `enqueued` signal
+      {
+        std::unique_lock<std::mutex> lock {m_formatter_mutex};
+        m_formatter_data_ready.wait(lock,
+                                    [this] {
+                                      return m_enqueued_for_formatting
+                                          >= bulk_dequeue_size
+                                          || !m_running;
+                                    });
+      }
+
+      if (m_formatter_queue.try_dequeue_bulk(format_functions,
+                                             bulk_dequeue_size)) {
+        for (std::size_t i = 0; i < bulk_dequeue_size; i++) {
+          if (format_functions[i]) {
+            format_functions[i]();
+            m_enqueued_for_formatting--;
+          }
+        }
+      }
+    }
+  }
+
   template<class Tuple>
   std::vector<std::string> to_vector_internal(Tuple&& tuple)
   {
@@ -105,7 +133,7 @@ public:
     }
 
     m_formatter_thread =
-        std::thread {&binary_log::formatter_thread_function, this};
+        std::thread {&binary_log::formatter_thread_function_bulk, this};
   }
 
   ~binary_log()
