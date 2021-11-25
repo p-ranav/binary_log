@@ -73,14 +73,41 @@ struct binary_log
 
   enum class fmt_arg_type
   {
-    type_size_t
+    type_size_t,
+    type_char,
+    type_int,
+    type_float,
+    type_double
   };
+
+  template<class T>
+  constexpr static inline uint8_t get_arg_type(T) = delete;
 
   // TODO(pranav): Add overloads of this function for all supported fmt arg
   // types
   constexpr static inline uint8_t get_arg_type(std::size_t)
   {
     return static_cast<uint8_t>(fmt_arg_type::type_size_t);
+  }
+
+  constexpr static inline uint8_t get_arg_type(char)
+  {
+    return static_cast<uint8_t>(fmt_arg_type::type_char);
+  }
+
+  constexpr static inline uint8_t get_arg_type(int)
+  {
+    return static_cast<uint8_t>(fmt_arg_type::type_int);
+  }
+
+  constexpr static inline uint8_t get_arg_type(float)
+  {
+    return static_cast<uint8_t>(fmt_arg_type::type_float);
+  }
+
+  constexpr static inline uint8_t get_arg_type(double)
+  {
+    return static_cast<uint8_t>(fmt_arg_type::type_double);
   }
 
   template<typename T>
@@ -177,7 +204,7 @@ struct binary_log
             msgpack::pack(os, static_cast<uint8_t>(log_level)); \
             constexpr size_t format_string_length = \
                 binary_log::length(format_string); \
-            msgpack::pack(os, format_string_length); \
+            msgpack::pack(os, format_string_length + 1); \
             msgpack::pack(os, format_string); \
             msgpack::pack(os, sizeof...(vargs)); \
             binary_log::pack_arg_types(os, vargs...); \
