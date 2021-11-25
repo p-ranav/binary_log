@@ -18,21 +18,25 @@
 #include <msgpack.hpp>
 #include <msgpack/fbuffer.hpp>
 
-struct binary_log_message
+enum class arg_type
 {
-  uint8_t log_level;
-  std::size_t format_string_index;
-  std::vector<std::string> format_string_args;
-  MSGPACK_DEFINE(log_level, format_string_index, format_string_args);
+  type_size_t
 };
+MSGPACK_ADD_ENUM(arg_type);
 
 class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
 
+  struct MyTraits : public moodycamel::ConcurrentQueueDefaultTraits
+  {
+    static const size_t BLOCK_SIZE = 256;  // Use bigger blocks
+  };
+
   std::thread m_formatter_thread;
-  moodycamel::ConcurrentQueue<std::function<void()>> m_formatter_queue;
+  moodycamel::ConcurrentQueue<std::function<void()>, MyTraits>
+      m_formatter_queue;
   std::atomic_size_t m_enqueued_for_formatting {0};
   std::mutex m_formatter_mutex;
   std::condition_variable m_formatter_data_ready;
@@ -42,25 +46,6 @@ class binary_log
   // Format string table
   std::unordered_map<std::string_view, std::size_t> m_format_string_table;
   std::atomic_size_t m_format_string_index {0};
-
-  void formatter_thread_function()
-  {
-    std::function<void()> format_function;
-    while (m_running || m_enqueued_for_formatting > 0) {
-      // Wait for the `enqueued` signal
-      {
-        std::unique_lock<std::mutex> lock {m_formatter_mutex};
-        m_formatter_data_ready.wait(
-            lock,
-            [this] { return m_enqueued_for_formatting > 0 || !m_running; });
-      }
-
-      if (m_formatter_queue.try_dequeue(format_function)) {
-        format_function();
-        m_enqueued_for_formatting--;
-      }
-    }
-  }
 
   void formatter_thread_function_bulk()
   {
@@ -90,23 +75,30 @@ class binary_log
     }
   }
 
-  template<class Tuple>
-  std::vector<std::string> to_vector_internal(Tuple&& tuple)
+  // TODO(pranav): Add overloads of this function for all supported fmt arg
+  // types
+  constexpr static inline arg_type get_arg_type(std::size_t)
   {
-    return std::apply(
-        [](auto&&... elems)
-        {
-          return std::vector<std::string> {
-              fmt::to_string(std::forward<decltype(elems)>(elems))...};
-        },
-        std::forward<Tuple>(tuple));
+    return arg_type::type_size_t;
   }
 
-  template<typename... Args>
-  std::vector<std::string> to_vector(Args&&... args)
+  template<typename T>
+  constexpr static inline void pack_arg(msgpack::fbuffer& os, T&& arg)
   {
-    return to_vector_internal(
-        std::tuple<Args...> {std::forward<Args>(args)...});
+    msgpack::pack(os, get_arg_type(arg));
+    msgpack::pack(os, arg);
+  }
+
+  template<class T, class... Ts>
+  constexpr static inline void pack_args(msgpack::fbuffer& os,
+                                         T const& first,
+                                         Ts const&... rest)
+  {
+    pack_arg(os, first);
+
+    if constexpr (sizeof...(rest) > 0) {
+      pack_args(os, rest...);
+    }
   }
 
 public:
@@ -153,7 +145,9 @@ public:
   };
 
   template<typename... Args>
-  void log(const level& level, std::string_view format_string, Args&&... args)
+  void log(const level& level,
+           const std::string_view& format_string,
+           Args&&... args)
   {
     // Schedule write to log file
     m_formatter_queue.enqueue(
@@ -165,20 +159,19 @@ public:
             m_format_string_table[format_string] = m_format_string_index++;
 
             msgpack::fbuffer os(m_index_file);
+            msgpack::pack(os, static_cast<uint8_t>(level));
+            msgpack::pack(os, format_string.size());
             msgpack::pack(os, format_string);
-            msgpack::pack(os, "\n");
           }
 
           // Serialize log message
-          binary_log_message msg;
-          msg.log_level = static_cast<uint8_t>(level);
-          msg.format_string_index = m_format_string_table[format_string];
-          msg.format_string_args = std::move(to_vector(args...));
-
           msgpack::fbuffer os(m_log_file);
-          msgpack::pack(os, msg);
+          msgpack::pack(os, m_format_string_table[format_string]);
+          msgpack::pack(os, sizeof...(args));
+          pack_args(os, args...);
         });
 
     m_enqueued_for_formatting += 1;
+    m_formatter_data_ready.notify_one();
   }
 };
