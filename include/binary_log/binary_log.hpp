@@ -80,97 +80,9 @@ struct binary_log
     type_double
   };
 
-  // template function to return
-  // byte array of input
-  template<typename T, std::size_t N>
-  static std::array<uint8_t, N> to_byte_array(const T&& input)
+  constexpr static inline uint8_t string_length(const char* str)
   {
-    std::array<uint8_t, N> ret;
-    std::memcpy(ret.data(), &input, N);
-    return ret;
-  }
-
-  template<class T>
-  constexpr static inline uint8_t get_arg_type(T) = delete;
-
-  // TODO(pranav): Add overloads of this function for all supported fmt arg
-  // types
-  constexpr static inline uint8_t get_arg_type(std::size_t)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_size_t);
-  }
-
-  constexpr static inline uint8_t get_arg_type(char)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_char);
-  }
-
-  constexpr static inline uint8_t get_arg_type(int)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_int);
-  }
-
-  constexpr static inline uint8_t get_arg_type(float)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_float);
-  }
-
-  constexpr static inline uint8_t get_arg_type(double)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_double);
-  }
-
-  template<typename T>
-  constexpr static inline void pack_arg(msgpack::fbuffer& os, T&& arg)
-  {
-    constexpr std::size_t size = sizeof(T);
-    char bytes[size];
-    std::copy(
-        static_cast<const char*>(static_cast<const void*>(&arg)),
-        static_cast<const char*>(static_cast<const void*>(&arg)) + sizeof arg,
-        bytes);
-    os.write(bytes, size);
-  }
-
-  template<class T, class... Ts>
-  constexpr static inline void pack_args(msgpack::fbuffer& os,
-                                         T&& first,
-                                         Ts&&... rest)
-  {
-    pack_arg(os, std::forward<T>(first));
-
-    if constexpr (sizeof...(rest) > 0) {
-      pack_args(os, std::forward<Ts>(rest)...);
-    }
-  }
-
-  template<typename T>
-  constexpr static inline void pack_arg_type(msgpack::fbuffer& os, T&& arg)
-  {
-    constexpr std::size_t size = sizeof(T);
-    char bytes[size];
-    std::copy(
-        static_cast<const char*>(static_cast<const void*>(&arg)),
-        static_cast<const char*>(static_cast<const void*>(&arg)) + sizeof arg,
-        bytes);
-    os.write(bytes, size);
-  }
-
-  template<class T, class... Ts>
-  constexpr static inline void pack_arg_types(msgpack::fbuffer& os,
-                                              T&& first,
-                                              Ts&&... rest)
-  {
-    pack_arg_type(os, std::forward<T>(first));
-
-    if constexpr (sizeof...(rest) > 0) {
-      pack_arg_types(os, std::forward<Ts>(rest)...);
-    }
-  }
-
-  constexpr static inline std::size_t length(const char* str)
-  {
-    return *str ? 1 + length(str + 1) : 0;
+    return *str ? 1 + string_length(str + 1) : 0;
   }
 
   binary_log(std::string_view path)
@@ -222,24 +134,21 @@ struct binary_log
             logger.m_format_string_table[format_string] = \
                 logger.m_format_string_index++; \
 \
-            msgpack::fbuffer os(logger.m_index_file); \
-            msgpack::pack(os, static_cast<uint8_t>(log_level)); \
-            constexpr size_t format_string_length = \
-                binary_log::length(format_string); \
-            msgpack::pack(os, format_string_length + 1); \
-            msgpack::pack(os, format_string); \
-            msgpack::pack(os, sizeof...(vargs)); \
-            if constexpr (sizeof...(vargs) > 0) { \
-              binary_log::pack_arg_types(os, vargs...); \
-            } \
+            constexpr uint8_t log_level_byte = \
+                static_cast<uint8_t>(log_level); \
+            fwrite(&log_level_byte, 1, 1, logger.m_index_file); \
+\
+            constexpr uint8_t format_string_length = \
+                binary_log::string_length(format_string); \
+            fwrite(&format_string_length, 1, 1, logger.m_index_file); \
+\
+            fwrite( \
+                format_string, 1, format_string_length, logger.m_index_file); \
+\
+            constexpr uint8_t num_args = sizeof...(vargs); \
+            fwrite(&num_args, 1, 1, logger.m_index_file); \
 \
             logger.m_format_string_index += 1; \
-          } \
-\
-          msgpack::fbuffer os(logger.m_log_file); \
-          msgpack::pack(os, logger.m_format_string_table[format_string]); \
-          if constexpr (sizeof...(vargs) > 0) { \
-            binary_log::pack_args(os, vargs...); \
           } \
         }); \
     logger.m_enqueued_for_formatting += 1; \
