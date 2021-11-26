@@ -5,7 +5,7 @@ include(cmake/prelude.cmake)
 project(
     binary_log
     VERSION 0.1.0
-    DESCRIPTION "Fast asynchronous binary logger for modern C++"
+    DESCRIPTION "Fast binary logger C++20"
     HOMEPAGE_URL "https://github.com/p-ranav/binary_log"
     LANGUAGES C CXX
 )
