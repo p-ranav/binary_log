@@ -76,7 +76,7 @@ struct binary_log
             == logger.m_format_string_table.end()) \
     { \
       logger.m_format_string_table[format_string] = \
-          logger.m_format_string_index++; \
+          ++logger.m_format_string_index; \
 \
       /* Write the length of the format string */ \
       constexpr uint8_t format_string_length = \
@@ -92,7 +92,7 @@ struct binary_log
     } \
 \
     /* Write the format string index */ \
-    if constexpr (binary_log::binary_log::strings_equal(format_string, "{}")) \
+    if constexpr (!binary_log::binary_log::strings_equal(format_string, "{}")) \
     { \
       uint8_t format_string_index = \
           logger.m_format_string_table[format_string]; \
