@@ -1,154 +1,45 @@
 #pragma once
-#include <atomic>
-#include <chrono>
-#include <condition_variable>
 #include <map>
-#include <mutex>
 #include <string>
 #include <string_view>
-#include <thread>
 
-#include <moodycamel/concurrentqueue.h>
-#define FMT_HEADER_ONLY
-#include <sstream>
+#include <binary_log/packer.hpp>
 
-#include <fmt/args.h>
-#include <fmt/format.h>
-#include <fmt/os.h>
-#include <msgpack.hpp>
-#include <msgpack/fbuffer.hpp>
-
+namespace binary_log
+{
 struct binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
 
-  struct MyTraits : public moodycamel::ConcurrentQueueDefaultTraits
-  {
-    static const size_t BLOCK_SIZE = 256;  // Use bigger blocks
-  };
-
-  std::thread m_formatter_thread;
-  moodycamel::ConcurrentQueue<std::function<void()>, MyTraits>
-      m_formatter_queue;
-  std::atomic_size_t m_enqueued_for_formatting {0};
-  std::mutex m_formatter_mutex;
-  std::condition_variable m_formatter_data_ready;
-
-  std::atomic_size_t m_running {true};
-
   // Format string table
   std::map<std::string_view, std::size_t> m_format_string_table;
-  std::atomic_size_t m_format_string_index {0};
-
-  void formatter_thread_function_bulk()
-  {
-    constexpr std::size_t bulk_dequeue_size = 32;
-    std::function<void()> format_functions[bulk_dequeue_size];
-    while (m_running || m_enqueued_for_formatting > 0) {
-      // Wait for the `enqueued` signal
-      {
-        std::unique_lock<std::mutex> lock {m_formatter_mutex};
-        m_formatter_data_ready.wait(lock,
-                                    [this] {
-                                      return m_enqueued_for_formatting
-                                          >= bulk_dequeue_size
-                                          || !m_running;
-                                    });
-      }
-
-      if (m_formatter_queue.try_dequeue_bulk(format_functions,
-                                             bulk_dequeue_size)) {
-        for (std::size_t i = 0; i < bulk_dequeue_size; i++) {
-          if (format_functions[i]) {
-            format_functions[i]();
-            if (m_enqueued_for_formatting > 0) {
-              m_enqueued_for_formatting--;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  enum class fmt_arg_type
-  {
-    type_size_t,
-    type_char,
-    type_int,
-    type_float,
-    type_double
-  };
-
-  template<class T>
-  constexpr static inline uint8_t get_arg_type(T) = delete;
-
-  // TODO(pranav): Add overloads of this function for all supported fmt arg
-  // types
-  constexpr static inline uint8_t get_arg_type(std::size_t)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_size_t);
-  }
-
-  constexpr static inline uint8_t get_arg_type(char)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_char);
-  }
-
-  constexpr static inline uint8_t get_arg_type(int)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_int);
-  }
-
-  constexpr static inline uint8_t get_arg_type(float)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_float);
-  }
-
-  constexpr static inline uint8_t get_arg_type(double)
-  {
-    return static_cast<uint8_t>(fmt_arg_type::type_double);
-  }
+  std::size_t m_format_string_index {0};  // 0 means "{}"
 
   template<typename T>
-  constexpr static inline void pack_arg(msgpack::fbuffer& os, T&& arg)
+  void pack_arg(const T& input)
   {
-    msgpack::pack(os, arg);
+    packer::pack(m_log_file, input);
   }
 
   template<class T, class... Ts>
-  constexpr static inline void pack_args(msgpack::fbuffer& os,
-                                         T&& first,
-                                         Ts&&... rest)
+  void pack_args(T&& first, Ts&&... rest)
   {
-    pack_arg(os, std::forward<T>(first));
+    pack_arg(std::forward<T>(first));
 
     if constexpr (sizeof...(rest) > 0) {
-      pack_args(os, std::forward<Ts>(rest)...);
+      pack_args(std::forward<Ts>(rest)...);
     }
   }
 
-  template<typename T>
-  constexpr static inline void pack_arg_type(msgpack::fbuffer& os, T&& arg)
+  constexpr static inline uint8_t string_length(const char* str)
   {
-    msgpack::pack(os, get_arg_type(arg));
+    return *str ? 1 + string_length(str + 1) : 0;
   }
 
-  template<class T, class... Ts>
-  constexpr static inline void pack_arg_types(msgpack::fbuffer& os,
-                                              T&& first,
-                                              Ts&&... rest)
+  constexpr static inline bool strings_equal(char const* a, char const* b)
   {
-    pack_arg_type(os, std::forward<T>(first));
-
-    if constexpr (sizeof...(rest) > 0) {
-      pack_arg_types(os, std::forward<Ts>(rest)...);
-    }
-  }
-
-  constexpr static inline std::size_t length(const char* str)
-  {
-    return *str ? 1 + length(str + 1) : 0;
+    return *a == *b && (*a == '\0' || strings_equal(a + 1, b + 1));
   }
 
   binary_log(std::string_view path)
@@ -166,76 +57,54 @@ struct binary_log
     if (m_index_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
-
-    m_formatter_thread =
-        std::thread {&binary_log::formatter_thread_function_bulk, this};
   }
 
-  ~binary_log()
+  ~binary_log() noexcept
   {
-    m_running = false;
-    m_formatter_data_ready.notify_all();
-    m_formatter_thread.join();
+    fclose(m_log_file);
+    fclose(m_index_file);
   }
-
-  enum class level
-  {
-    debug,
-    info,
-    warn,
-    error,
-    fatal
-  };
 };
 
-#define BINARY_LOG(logger, log_level, format_string, ...) \
+}  // namespace binary_log
+
+#define BINARY_LOG(logger, format_string, ...) \
   [&logger]<typename... Args>(Args && ... args) \
   { \
-    logger.m_formatter_queue.enqueue( \
-        [&logger, ... vargs = std::forward<Args>(args)]() mutable \
-        { \
-          if (logger.m_format_string_table.find(format_string) \
-              == logger.m_format_string_table.end()) \
-          { \
-            logger.m_format_string_table[format_string] = \
-                logger.m_format_string_index++; \
+    if (!binary_log::binary_log::strings_equal(format_string, "{}") \
+        && logger.m_format_string_table.find(format_string) \
+            == logger.m_format_string_table.end()) \
+    { \
+      logger.m_format_string_table[format_string] = \
+          logger.m_format_string_index++; \
 \
-            msgpack::fbuffer os(logger.m_index_file); \
-            msgpack::pack(os, static_cast<uint8_t>(log_level)); \
-            constexpr size_t format_string_length = \
-                binary_log::length(format_string); \
-            msgpack::pack(os, format_string_length + 1); \
-            msgpack::pack(os, format_string); \
-            msgpack::pack(os, sizeof...(vargs)); \
-            if constexpr (sizeof...(vargs) > 0) { \
-              binary_log::pack_arg_types(os, vargs...); \
-            } \
+      /* Write the length of the format string */ \
+      constexpr uint8_t format_string_length = \
+          binary_log::binary_log::string_length(format_string); \
+      fwrite(&format_string_length, 1, 1, logger.m_index_file); \
 \
-            logger.m_format_string_index += 1; \
-          } \
+      /* Write the format string */ \
+      fwrite(format_string, 1, format_string_length, logger.m_index_file); \
 \
-          msgpack::fbuffer os(logger.m_log_file); \
-          msgpack::pack(os, logger.m_format_string_table[format_string]); \
-          if constexpr (sizeof...(vargs) > 0) { \
-            binary_log::pack_args(os, vargs...); \
-          } \
-        }); \
+      /* Write the number of args taken by the format string */ \
+      constexpr uint8_t num_args = sizeof...(args); \
+      fwrite(&num_args, 1, 1, logger.m_index_file); \
+    } \
+\
+    /* Write the format string index */ \
+    if constexpr (binary_log::binary_log::strings_equal(format_string, "{}")) \
+    { \
+      uint8_t format_string_index = \
+          logger.m_format_string_table[format_string]; \
+      fwrite(&format_string_index, 1, 1, logger.m_log_file); \
+    } else { \
+      constexpr uint8_t format_string_index = 0; \
+      fwrite(&format_string_index, 1, 1, logger.m_log_file); \
+    } \
+\
+    /* Write the args */ \
+    if constexpr (sizeof...(args) > 0) { \
+      logger.pack_args(std::forward<Args>(args)...); \
+    } \
   } \
-  (__VA_ARGS__); \
-  logger.m_enqueued_for_formatting += 1; \
-  logger.m_formatter_data_ready.notify_one();
-
-#define LOG_DEBUG(logger, format_string, ...) \
-  BINARY_LOG(logger, binary_log::level::debug, format_string, __VA_ARGS__)
-
-#define LOG_INFO(logger, format_string, ...) \
-  BINARY_LOG(logger, binary_log::level::info, format_string, __VA_ARGS__)
-
-#define LOG_WARN(logger, format_string, ...) \
-  BINARY_LOG(logger, binary_log::level::warn, format_string, __VA_ARGS__)
-
-#define LOG_ERROR(logger, format_string, ...) \
-  BINARY_LOG(logger, binary_log::level::error, format_string, __VA_ARGS__)
-
-#define LOG_FATAL(logger, format_string, ...) \
-  BINARY_LOG(logger, binary_log::level::fatal, format_string, __VA_ARGS__)
+  (__VA_ARGS__);
