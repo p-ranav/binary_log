@@ -71,7 +71,7 @@ struct binary_log
     }
   }
 
-  enum class fmt_arg_type
+  enum class fmt_arg_type : uint8_t
   {
     type_size_t,
     type_char,
@@ -79,6 +79,16 @@ struct binary_log
     type_float,
     type_double
   };
+
+  // template function to return
+  // byte array of input
+  template<typename T, std::size_t N>
+  static std::array<uint8_t, N> to_byte_array(const T&& input)
+  {
+    std::array<uint8_t, N> ret;
+    std::memcpy(ret.data(), &input, N);
+    return ret;
+  }
 
   template<class T>
   constexpr static inline uint8_t get_arg_type(T) = delete;
@@ -113,7 +123,13 @@ struct binary_log
   template<typename T>
   constexpr static inline void pack_arg(msgpack::fbuffer& os, T&& arg)
   {
-    msgpack::pack(os, arg);
+    constexpr std::size_t size = sizeof(T);
+    char bytes[size];
+    std::copy(
+        static_cast<const char*>(static_cast<const void*>(&arg)),
+        static_cast<const char*>(static_cast<const void*>(&arg)) + sizeof arg,
+        bytes);
+    os.write(bytes, size);
   }
 
   template<class T, class... Ts>
@@ -131,7 +147,13 @@ struct binary_log
   template<typename T>
   constexpr static inline void pack_arg_type(msgpack::fbuffer& os, T&& arg)
   {
-    msgpack::pack(os, get_arg_type(arg));
+    constexpr std::size_t size = sizeof(T);
+    char bytes[size];
+    std::copy(
+        static_cast<const char*>(static_cast<const void*>(&arg)),
+        static_cast<const char*>(static_cast<const void*>(&arg)) + sizeof arg,
+        bytes);
+    os.write(bytes, size);
   }
 
   template<class T, class... Ts>
@@ -220,10 +242,10 @@ struct binary_log
             binary_log::pack_args(os, vargs...); \
           } \
         }); \
+    logger.m_enqueued_for_formatting += 1; \
+    logger.m_formatter_data_ready.notify_one(); \
   } \
-  (__VA_ARGS__); \
-  logger.m_enqueued_for_formatting += 1; \
-  logger.m_formatter_data_ready.notify_one();
+  (__VA_ARGS__);
 
 #define LOG_DEBUG(logger, format_string, ...) \
   BINARY_LOG(logger, binary_log::level::debug, format_string, __VA_ARGS__)
