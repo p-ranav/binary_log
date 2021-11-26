@@ -15,9 +15,6 @@ docs_early_return()
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 
-# ---- Find dependencies ----
-find_package(Threads REQUIRED)
-
 # ---- Declare library ----
 
 add_library(binary_log_binary_log INTERFACE)
@@ -36,7 +33,7 @@ target_include_directories(
     ${concurrentqueue_INCLUDE_DIRS}
 )
 
-target_link_libraries(binary_log_binary_log INTERFACE Threads::Threads)
+target_link_libraries(binary_log_binary_log INTERFACE)
 
 target_compile_features(binary_log_binary_log INTERFACE cxx_std_20)
 

@@ -53,20 +53,11 @@ struct binary_log
       throw std::invalid_argument("fopen failed");
     }
   }
-
-  enum class level
-  {
-    debug,
-    info,
-    warn,
-    error,
-    fatal
-  };
 };
 
 }  // namespace binary_log
 
-#define BINARY_LOG(logger, log_level, format_string, ...) \
+#define BINARY_LOG(logger, format_string, ...) \
   [&logger]<typename... Args>(Args && ... args) \
   { \
     if (logger.m_format_string_table.find(format_string) \
@@ -74,9 +65,6 @@ struct binary_log
     { \
       logger.m_format_string_table[format_string] = \
           logger.m_format_string_index++; \
-      /* Write the log level as a single byte */ \
-      constexpr uint8_t log_level_byte = static_cast<uint8_t>(log_level); \
-      fwrite(&log_level_byte, 1, 1, logger.m_index_file); \
 \
       /* Write the length of the format string */ \
       constexpr uint8_t format_string_length = \
@@ -101,29 +89,3 @@ struct binary_log
     } \
   } \
   (__VA_ARGS__);
-
-#define LOG_DEBUG(logger, format_string, ...) \
-  BINARY_LOG(logger, \
-             binary_log::binary_log::level::debug, \
-             format_string, \
-             __VA_ARGS__)
-
-#define LOG_INFO(logger, format_string, ...) \
-  BINARY_LOG( \
-      logger, binary_log::binary_log::level::info, format_string, __VA_ARGS__)
-
-#define LOG_WARN(logger, format_string, ...) \
-  BINARY_LOG( \
-      logger, binary_log::binary_log::level::warn, format_string, __VA_ARGS__)
-
-#define LOG_ERROR(logger, format_string, ...) \
-  BINARY_LOG(logger, \
-             binary_log::binary_log::level::error, \
-             format_string, \
-             __VA_ARGS__)
-
-#define LOG_FATAL(logger, format_string, ...) \
-  BINARY_LOG(logger, \
-             binary_log::binary_log::level::fatal, \
-             format_string, \
-             __VA_ARGS__)

@@ -6,19 +6,14 @@
 int main()
 {
   binary_log::binary_log log("test.log");
-
-  constexpr uint64_t how_many = 1E6;
+  constexpr std::size_t how_many = 1E6;
   auto start = std::chrono::high_resolution_clock::now();
-  for (uint64_t j = 0; j < how_many; ++j) {
-    LOG_INFO(log, "{}", j);
+  for (std::size_t i = 0; i < how_many; ++i) {
+    BINARY_LOG(log, "Backup storage speeds (min): {} MB/s read", 181);
   }
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "Latency: " << diff_ns / how_many << " ns" << std::endl;
-  std::cout << "Total: "
-            << std::chrono::duration_cast<std::chrono::milliseconds>(end
-                                                                     - start)
-                   .count()
-            << " ms" << std::endl;
+  std::cout << "Latency: " << diff_ns / how_many << " ns\n";
+  std::cout << "Total: " << diff_ns << " ns\n";
 }
