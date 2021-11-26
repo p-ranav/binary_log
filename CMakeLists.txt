@@ -17,9 +17,6 @@ include(cmake/variables.cmake)
 
 # ---- Find dependencies ----
 find_package(Threads REQUIRED)
-find_package(msgpack REQUIRED)
-find_package(fmt REQUIRED)
-find_package(concurrentqueue REQUIRED)
 
 # ---- Declare library ----
 
@@ -39,7 +36,7 @@ target_include_directories(
     ${concurrentqueue_INCLUDE_DIRS}
 )
 
-target_link_libraries(binary_log_binary_log INTERFACE Threads::Threads msgpackc-cxx fmt::fmt concurrentqueue::concurrentqueue)
+target_link_libraries(binary_log_binary_log INTERFACE Threads::Threads)
 
 target_compile_features(binary_log_binary_log INTERFACE cxx_std_20)
 
