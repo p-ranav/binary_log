@@ -14,7 +14,7 @@ struct binary_log
 
   // Format string table
   std::map<std::string_view, std::size_t> m_format_string_table;
-  std::size_t m_format_string_index {0};
+  std::size_t m_format_string_index {0};  // 0 means "{}"
 
   template<typename T>
   void pack_arg(const T& input)
@@ -35,6 +35,11 @@ struct binary_log
   constexpr static inline uint8_t string_length(const char* str)
   {
     return *str ? 1 + string_length(str + 1) : 0;
+  }
+
+  constexpr static inline bool strings_equal(char const* a, char const* b)
+  {
+    return *a == *b && (*a == '\0' || strings_equal(a + 1, b + 1));
   }
 
   binary_log(std::string_view path)
@@ -60,8 +65,9 @@ struct binary_log
 #define BINARY_LOG(logger, format_string, ...) \
   [&logger]<typename... Args>(Args && ... args) \
   { \
-    if (logger.m_format_string_table.find(format_string) \
-        == logger.m_format_string_table.end()) \
+    if (!binary_log::binary_log::strings_equal(format_string, "{}") \
+        && logger.m_format_string_table.find(format_string) \
+            == logger.m_format_string_table.end()) \
     { \
       logger.m_format_string_table[format_string] = \
           logger.m_format_string_index++; \
@@ -80,8 +86,15 @@ struct binary_log
     } \
 \
     /* Write the format string index */ \
-    uint8_t format_string_index = logger.m_format_string_table[format_string]; \
-    fwrite(&format_string_index, 1, 1, logger.m_log_file); \
+    if constexpr (binary_log::binary_log::strings_equal(format_string, "{}")) \
+    { \
+      uint8_t format_string_index = \
+          logger.m_format_string_table[format_string]; \
+      fwrite(&format_string_index, 1, 1, logger.m_log_file); \
+    } else { \
+      constexpr uint8_t format_string_index = 0; \
+      fwrite(&format_string_index, 1, 1, logger.m_log_file); \
+    } \
 \
     /* Write the args */ \
     if constexpr (sizeof...(args) > 0) { \
