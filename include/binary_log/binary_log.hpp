@@ -3,28 +3,12 @@
 #include <string>
 #include <string_view>
 
+#include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
 
 namespace binary_log
 {
-template<unsigned N>
-struct fixed_string
-{
-  char buf[N + 1] {};
-  constexpr fixed_string(char const* s)
-  {
-    for (unsigned i = 0; i != N; ++i)
-      buf[i] = s[i];
-  }
-  constexpr operator char const *() const
-  {
-    return buf;
-  }
-};
-template<unsigned N>
-fixed_string(char const (&)[N]) -> fixed_string<N - 1>;
-
-struct binary_log
+class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
@@ -59,6 +43,7 @@ struct binary_log
     return *a == *b && (*a == '\0' || strings_equal(a + 1, b + 1));
   }
 
+public:
   binary_log(std::string_view path)
   {
     // Create the log file
