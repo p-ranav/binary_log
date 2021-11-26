@@ -58,6 +58,12 @@ struct binary_log
       throw std::invalid_argument("fopen failed");
     }
   }
+
+  ~binary_log() noexcept
+  {
+    fclose(m_log_file);
+    fclose(m_index_file);
+  }
 };
 
 }  // namespace binary_log
