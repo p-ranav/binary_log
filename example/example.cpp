@@ -15,8 +15,9 @@ void run_static_string_test()
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "[STATIC STRING        ] Latency: " << diff_ns / how_many
+  std::cout << "[STATIC STRING          ] Latency: " << diff_ns / how_many
             << " ns\n";
+  BINARY_LOG(log, "This is another static string");
 }
 
 void run_single_integer_test()
@@ -30,7 +31,7 @@ void run_single_integer_test()
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "[SINGLE RANDOM INTEGER] Latency: " << diff_ns / how_many
+  std::cout << "[SINGLE STATIC INTEGER  ] Latency: " << diff_ns / how_many
             << " ns\n";
 }
 
@@ -49,7 +50,7 @@ void run_two_integer_test()
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "[SINGLE RANDOM INTEGER] Latency: " << diff_ns / how_many
+  std::cout << "[DOUBLE STATIC INTEGERS ] Latency: " << diff_ns / how_many
             << " ns\n";
 }
 
@@ -64,7 +65,7 @@ void run_single_double_test()
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "[SINGLE RANDOM DOUBLE ] Latency: " << diff_ns / how_many
+  std::cout << "[SINGLE STATIC DOUBLE   ] Latency: " << diff_ns / how_many
             << " ns\n";
 }
 
@@ -86,7 +87,7 @@ void run_complex_format_test()
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "[COMPLEX FORMAT       ] Latency: " << diff_ns / how_many
+  std::cout << "[COMPLEX FORMAT         ] Latency: " << diff_ns / how_many
             << " ns\n";
 }
 
@@ -108,16 +109,16 @@ void run_string_concat_test()
   auto end = std::chrono::high_resolution_clock::now();
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-  std::cout << "[STRING CONCAT        ] Latency: " << diff_ns / how_many
+  std::cout << "[STRING CONCAT          ] Latency: " << diff_ns / how_many
             << " ns\n";
 }
 
 int main()
 {
   run_static_string_test();
-  run_single_integer_test();
-  run_two_integer_test();
-  run_single_double_test();
-  run_complex_format_test();
-  run_string_concat_test();
+  // run_single_integer_test();
+  // run_two_integer_test();
+  // run_single_double_test();
+  // run_complex_format_test();
+  // run_string_concat_test();
 }
