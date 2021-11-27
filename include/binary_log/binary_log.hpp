@@ -14,50 +14,9 @@ class binary_log
   uint8_t m_format_string_index {0};
 
   template<typename T>
-  constexpr void pack_arg_in_index_file(T&& input)
-  {
-    // If rvalue, store the value in the index file
-    // it does not need to go into every log entry in
-    // the log file
-
-    // TODO(pranav): Check if T is const char *
-    // Save this to index file as well
-    // even if the following checks fail
-
-    if constexpr (std::is_rvalue_reference<T&&>::value) {
-      constexpr bool is_rvalue = true;
-      fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
-      packer::pack_data(m_index_file, std::forward<T>(input));
-    } else if constexpr (std::is_lvalue_reference<T&&>::value) {
-      constexpr bool is_rvalue = false;
-      fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
-    } else {
-      static_assert(!std::is_rvalue_reference<T&&>::value
-                        && !std::is_lvalue_reference<T&&>::value,
-                    "Unsupported type");
-    }
-  }
-
-  template<class T, class... Ts>
-  constexpr void pack_args_in_index_file(T&& first, Ts&&... rest)
-  {
-    pack_arg_in_index_file(std::forward<T>(first));
-
-    if constexpr (sizeof...(rest) > 0) {
-      pack_args_in_index_file(std::forward<Ts>(rest)...);
-    }
-  }
-
-  template<typename T>
   constexpr void pack_arg(T&& input)
   {
-    // If rvalue, store the value in the index file
-    // it does not need to go into every log entry in
-    // the log file
-
-    if constexpr (std::is_lvalue_reference<T&&>::value) {
-      packer::pack_data(m_log_file, std::forward<T>(input));
-    }
+    packer::pack_data(m_log_file, std::forward<T>(input));
   }
 
   template<class T, class... Ts>
@@ -133,14 +92,15 @@ public:
   }
 
   template<fixed_string F, class... Args>
-  constexpr inline uint8_t log_index(Args&&... args)
+  constexpr inline uint8_t log_index()
   {
     // SPEC:
     // <format-string-length> <format-string>
     // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
-    // <arg-1-is-rvalue> <arg-1-value>? <arg-2-is-rvalue> <arg-2-value>? ...
+    // <arg-1-is-lvalue-ref> <arg-1-value>? <arg-2-is-lvalue-ref> <arg-2-value>?
+    // ...
     //
-    // If the arg is an rvalue, it is stored in the index file
+    // If the arg is not an lvalue, it is stored in the index file
     // and the value is not stored in the log file
     constexpr char const* Name = F;
     constexpr uint8_t num_args = sizeof...(Args);
@@ -160,7 +120,6 @@ public:
     // Write the type of each argument
     if constexpr (num_args > 0) {
       pack_arg_types<Args...>();
-      pack_args_in_index_file(std::forward<Args>(args)...);
     }
 
     return m_format_string_index - 1;
@@ -193,9 +152,9 @@ public:
 
 #define BINARY_LOG(logger, format_string, ...) \
   static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
-      [&logger]<typename... Args>(Args && ... args) constexpr \
+      [&logger]<typename... Args>(Args && ...) constexpr \
   { \
-    return logger.log_index<format_string>(std::forward<Args>(args)...); \
+    return logger.log_index<format_string, Args...>(); \
   } \
   (__VA_ARGS__); \
   logger.log<format_string>( \

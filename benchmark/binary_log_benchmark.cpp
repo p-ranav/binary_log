@@ -1,3 +1,5 @@
+#include <random>
+
 #include <benchmark/benchmark.h>
 #include <binary_log/binary_log.hpp>
 
@@ -79,16 +81,50 @@ static void BM_binary_log_latency_static_ints_and_doubles(
   }
 }
 
-static void BM_binary_log_latency_incrementing_integer(benchmark::State& state)
+static void BM_binary_log_latency_random_integer(benchmark::State& state)
 {
   // Perform setup here
   binary_log::binary_log log("log.out");
 
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<uint32_t> distr(0, 1E6);
+
   for (auto _ : state) {
     // This code gets timed
-    for (uint32_t j = 0; j < state.range(0); ++j) {
-      BINARY_LOG(log, "Hello logger: msg number {}", j);
-    }
+    BINARY_LOG(log, "Hello logger: msg number {}", distr(gen));
+  }
+}
+
+static void BM_binary_log_latency_random_float(benchmark::State& state)
+{
+  // Perform setup here
+  binary_log::binary_log log("log.out");
+
+  double lower_bound = 0;
+  double upper_bound = 1E6;
+  std::uniform_real_distribution<float> distr(lower_bound, upper_bound);
+  std::default_random_engine gen;
+
+  for (auto _ : state) {
+    // This code gets timed
+    BINARY_LOG(log, "Hello logger: msg number {}", distr(gen));
+  }
+}
+
+static void BM_binary_log_latency_random_double(benchmark::State& state)
+{
+  // Perform setup here
+  binary_log::binary_log log("log.out");
+
+  double lower_bound = 0;
+  double upper_bound = 1E6;
+  std::uniform_real_distribution<double> distr(lower_bound, upper_bound);
+  std::default_random_engine gen;
+
+  for (auto _ : state) {
+    // This code gets timed
+    BINARY_LOG(log, "Hello logger: msg number {}", distr(gen));
   }
 }
 
@@ -99,12 +135,9 @@ BENCHMARK(BM_binary_log_latency_two_static_integers);
 BENCHMARK(BM_binary_log_latency_one_static_float);
 BENCHMARK(BM_binary_log_latency_one_static_double);
 BENCHMARK(BM_binary_log_latency_static_ints_and_doubles);
-BENCHMARK(BM_binary_log_latency_incrementing_integer)
-	->Arg({1000})->Unit(benchmark::kMicrosecond);
-    ->Args({10000})
-    ->Args({100000})
-    ->Args({1000000})
-    ->Unit(benchmark::kMillisecond);
+BENCHMARK(BM_binary_log_latency_random_integer);
+BENCHMARK(BM_binary_log_latency_random_float);
+BENCHMARK(BM_binary_log_latency_random_double);
 
 // Run the benchmark
 BENCHMARK_MAIN();
