@@ -1,7 +1,5 @@
 #pragma once
-#include <array>
-#include <iostream>
-#include <string_view>
+#include <string>
 
 #include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
@@ -111,18 +109,18 @@ class binary_log
   }
 
 public:
-  binary_log(std::string_view path)
+  binary_log(const char* path)
   {
     // Create the log file
     // All the log contents go here
-    m_log_file = fopen(path.data(), "wb");
+    m_log_file = fopen(path, "wb");
     if (m_log_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
 
     // Create the index file
     std::string index_file_path = std::string {path} + ".index";
-    m_index_file = fopen(index_file_path.c_str(), "wb");
+    m_index_file = fopen(index_file_path.data(), "wb");
     if (m_index_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
