@@ -130,7 +130,7 @@ public:
       constexpr uint8_t num_args = sizeof...(args);
       fwrite(&num_args, 1, 1, m_index_file);
 
-      // Write the args
+      // Write the type of each argument
       if constexpr (sizeof...(args) > 0) {
         pack_arg_types<Args...>();
       }
