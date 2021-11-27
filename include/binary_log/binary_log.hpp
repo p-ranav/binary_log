@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
-#include <set>
 #include <string_view>
+#include <vector>
 
 #include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
@@ -14,7 +14,7 @@ class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
-  std::set<uint16_t> m_format_string_hashes;
+  std::vector<uint16_t> m_format_string_hashes;
 
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
@@ -143,15 +143,20 @@ public:
     constexpr uint16_t hash = H;
     constexpr uint8_t num_args = sizeof...(Args);
 
-    if (!m_format_string_hashes.contains(H)) {
+    auto it = std::find(
+        m_format_string_hashes.begin(), m_format_string_hashes.end(), hash);
+    auto pos = 0;
+
+    if (it == m_format_string_hashes.end()) {
       // SPEC:
       // <format-string-index> <format-string-length> <format-string>
       // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
 
-      m_format_string_hashes.insert(H);
+      m_format_string_hashes.push_back(H);
+      pos = m_format_string_hashes.size() - 1;
 
       // Write the hash of the format_string
-      fwrite(&hash, sizeof(uint16_t), 1, m_index_file);
+      fwrite(&pos, sizeof(uint8_t), 1, m_index_file);
 
       // Write the length of the format string
       constexpr uint8_t format_string_length = string_length(Name);
@@ -168,6 +173,8 @@ public:
         pack_arg_types<Args...>();
         pack_args_in_index_file(std::forward<Args>(args)...);
       }
+    } else {
+      pos = it - m_format_string_hashes.begin();
     }
 
     // Write to the main log file
@@ -179,7 +186,7 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    fwrite(&hash, sizeof(uint16_t), 1, m_log_file);
+    fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
 
     // Write the args
     if constexpr (num_args > 0) {
