@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include <binary_log/constant_wrapper.hpp>
+#include <binary_log/constant.hpp>
 #include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
 #include <binary_log/string_utils.hpp>
@@ -17,7 +17,7 @@ class binary_log
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
   {
-    if constexpr (is_specialization<decltype(input), constant_wrapper> {}) {
+    if constexpr (is_specialization<decltype(input), constant> {}) {
       constexpr bool is_constant = true;
       fwrite(&is_constant, sizeof(bool), 1, m_index_file);
       packer::pack_data(m_index_file, input.value);
@@ -40,7 +40,7 @@ class binary_log
   template<typename T>
   constexpr void pack_arg(T&& input)
   {
-    if constexpr (!is_specialization<T, constant_wrapper> {}) {
+    if constexpr (!is_specialization<T, constant> {}) {
       packer::pack_data(m_log_file, std::forward<T>(input));
     }
   }
@@ -186,9 +186,3 @@ public:
   (__VA_ARGS__); \
   logger.log<format_string>( \
       CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__);
-
-#define BINARY_LOG_CONSTANT(value) \
-  binary_log::constant_wrapper<decltype(value)> \
-  { \
-    value \
-  }

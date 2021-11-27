@@ -23,7 +23,7 @@ static void BM_binary_log_latency_one_static_integer(benchmark::State& state)
     // This code gets timed
     BINARY_LOG(log,
                "Backup storage speeds (min): {} MB/s read",
-               BINARY_LOG_CONSTANT(181));
+               binary_log::constant(181));
   }
 }
 
@@ -37,8 +37,8 @@ static void BM_binary_log_latency_two_static_integers(benchmark::State& state)
     BINARY_LOG(log,
                "buffer has consumed {} bytes of extra storage, current "
                "allocation: {} bytes",
-               BINARY_LOG_CONSTANT(1032024),
-               BINARY_LOG_CONSTANT(1016544));
+               binary_log::constant(1032024),
+               binary_log::constant(1016544));
   }
 }
 
@@ -51,7 +51,7 @@ static void BM_binary_log_latency_one_static_float(benchmark::State& state)
     // This code gets timed
     BINARY_LOG(log,
                "Using tombstone ratio balancer with ratio = {}",
-               BINARY_LOG_CONSTANT(3.1415f));
+               binary_log::constant(3.1415f));
   }
 }
 
@@ -64,7 +64,7 @@ static void BM_binary_log_latency_one_static_double(benchmark::State& state)
     // This code gets timed
     BINARY_LOG(log,
                "Using tombstone ratio balancer with ratio = {}",
-               BINARY_LOG_CONSTANT(0.4));
+               binary_log::constant(0.4));
   }
 }
 
@@ -79,11 +79,11 @@ static void BM_binary_log_latency_static_ints_and_doubles(
     BINARY_LOG(log,
                "Initialized InfUdDriver buffers: {} receive buffers ({} MB), "
                "{} transmit buffers ({} MB), took {} ms",
-               BINARY_LOG_CONSTANT(50000),
-               BINARY_LOG_CONSTANT(97),
-               BINARY_LOG_CONSTANT(50),
-               BINARY_LOG_CONSTANT(0),
-               BINARY_LOG_CONSTANT(26.2));
+               binary_log::constant(50000),
+               binary_log::constant(97),
+               binary_log::constant(50),
+               binary_log::constant(0),
+               binary_log::constant(26.2));
   }
 }
 
