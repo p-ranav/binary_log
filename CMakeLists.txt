@@ -43,6 +43,15 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
   include(cmake/install-rules.cmake)
 endif()
 
+# ---- Benchmarks ----
+
+if(PROJECT_IS_TOP_LEVEL)
+  option(BUILD_BENCHMARKS "Build benchmarks tree." "${binary_log_DEVELOPER_MODE}")
+  if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmark)
+  endif()
+endif()
+
 # ---- Examples ----
 
 if(PROJECT_IS_TOP_LEVEL)
