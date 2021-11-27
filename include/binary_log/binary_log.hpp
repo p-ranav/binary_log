@@ -104,11 +104,12 @@ public:
 
     if (!m_format_string_hashes.contains(H)) {
       // SPEC:
-      // <format-string-index [0-255]> <format-string-length> <format-string>
+      // <format-string-index> <format-string-length> <format-string>
       // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
 
       m_format_string_hashes.insert(H);
 
+      // Write the hash of the format_string
       fwrite(&hash, sizeof(uint16_t), 1, m_index_file);
 
       // Write the length of the format string
