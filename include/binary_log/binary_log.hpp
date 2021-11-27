@@ -10,6 +10,7 @@
 
 namespace binary_log
 {
+template<typename format_string_index_type = uint8_t>
 class binary_log
 {
   std::FILE* m_index_file;
@@ -35,8 +36,9 @@ class binary_log
       constexpr bool is_rvalue = false;
       fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
     } else {
-      std::cout << "Unsupported type for " << input << std::endl;
-      // static_assert(false, "Unsupported type");
+      static_assert(!std::is_rvalue_reference<T&&>::value
+                        && !std::is_lvalue_reference<T&&>::value,
+                    "Unsupported type");
     }
   }
 
@@ -138,7 +140,7 @@ public:
   constexpr inline void log_index(Args&&... args)
   {
     // SPEC:
-    // <format-string-index> <format-string-length> <format-string>
+    // <format-string-length> <format-string>
     // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
     // <arg-1-is-rvalue> <arg-1-value>? <arg-2-is-rvalue> <arg-2-value>? ...
     //
@@ -148,10 +150,6 @@ public:
     constexpr uint8_t num_args = sizeof...(Args);
 
     m_format_string_hashes.push_back(H);
-    const auto pos = m_format_string_hashes.size() - 1;
-
-    // Write the hash of the format_string
-    fwrite(&pos, sizeof(uint8_t), 1, m_index_file);
 
     // Write the length of the format string
     constexpr uint8_t format_string_length = string_length(Name);
@@ -161,7 +159,7 @@ public:
     fwrite(F, 1, format_string_length, m_index_file);
 
     // Write the number of args taken by the format string
-    fwrite(&num_args, 1, 1, m_index_file);
+    fwrite(&num_args, sizeof(uint8_t), 1, m_index_file);
 
     // Write the type of each argument
     if constexpr (num_args > 0) {
@@ -178,9 +176,10 @@ public:
     constexpr uint16_t hash = H;
     constexpr uint8_t num_args = sizeof...(Args);
 
-    auto it = std::find(
+    const auto it = std::find(
         m_format_string_hashes.begin(), m_format_string_hashes.end(), hash);
-    auto pos = it - m_format_string_hashes.begin();
+    const format_string_index_type pos =
+        std::distance(m_format_string_hashes.begin(), it);
 
     // Write to the main log file
     // SPEC:
@@ -191,7 +190,7 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
+    fwrite(&pos, sizeof(format_string_index_type), 1, m_log_file);
 
     // Write the args
     if constexpr (num_args > 0) {
@@ -210,7 +209,7 @@ public:
           Args && ... args) constexpr \
   { \
     logger.log_index<format_string, CONCAT(format_string_id, __LINE__)>( \
-        args...); \
+        std::forward<Args>(args)...); \
     return true; \
   } \
   (__VA_ARGS__); \
