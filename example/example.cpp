@@ -116,9 +116,9 @@ void run_string_concat_test()
 int main()
 {
   run_static_string_test();
-  // run_single_integer_test();
-  // run_two_integer_test();
-  // run_single_double_test();
-  // run_complex_format_test();
-  // run_string_concat_test();
+  run_single_integer_test();
+  run_two_integer_test();
+  run_single_double_test();
+  run_complex_format_test();
+  run_string_concat_test();
 }

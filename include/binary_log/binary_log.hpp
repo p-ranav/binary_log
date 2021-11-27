@@ -1,10 +1,11 @@
 #pragma once
-#include <map>
-#include <string>
 #include <string_view>
+#include <unordered_set>
 
+#include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
+#include <binary_log/string_utils.hpp>
 
 namespace binary_log
 {
@@ -14,8 +15,7 @@ class binary_log
   std::FILE* m_log_file;
 
   // Format string table
-  std::map<std::string_view, std::size_t> m_format_string_table;
-  std::size_t m_format_string_index {0};  // 0 means "{}"
+  std::unordered_set<uint16_t> m_format_string_table;
 
   template<typename T>
   void pack_arg(const T& input)
@@ -31,16 +31,6 @@ class binary_log
     if constexpr (sizeof...(rest) > 0) {
       pack_args(std::forward<Ts>(rest)...);
     }
-  }
-
-  constexpr static inline uint8_t string_length(const char* str)
-  {
-    return *str ? 1 + string_length(str + 1) : 0;
-  }
-
-  constexpr static inline bool strings_equal(char const* a, char const* b)
-  {
-    return *a == *b && (*a == '\0' || strings_equal(a + 1, b + 1));
   }
 
 public:
@@ -67,23 +57,20 @@ public:
     fclose(m_index_file);
   }
 
-  template<fixed_string F, class... Args>
+  template<fixed_string F, uint16_t H, class... Args>
   constexpr inline void log(Args&&... args)
   {
     // Check if we need to update the index file
     // For a new format string, we need to update the index file
     constexpr char const* Name = F;
-    if (!binary_log::binary_log::strings_equal(Name, "{}")
-        && m_format_string_table.find(Name) == m_format_string_table.end())
-    {
+    if (!strings_equal(Name, "{}") && m_format_string_table.count(H) == 0) {
       // SPEC:
       // <format-string-length> <format-string> <number-of-arguments>
 
-      m_format_string_table[Name] = ++m_format_string_index;
+      m_format_string_table.insert(H);
 
       // Write the length of the format string
-      constexpr uint8_t format_string_length =
-          binary_log::binary_log::string_length(Name);
+      constexpr uint8_t format_string_length = string_length(Name);
       fwrite(&format_string_length, 1, 1, m_index_file);
 
       // Write the format string
@@ -103,12 +90,12 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    if constexpr (!binary_log::binary_log::strings_equal(Name, "{}")) {
-      uint8_t format_string_index = m_format_string_table[Name];
-      fwrite(&format_string_index, 1, 1, m_log_file);
+    if constexpr (!strings_equal(Name, "{}")) {
+      uint16_t format_string_index = H;
+      fwrite(&format_string_index, sizeof(uint16_t), 1, m_log_file);
     } else {
-      constexpr uint8_t format_string_index = 0;
-      fwrite(&format_string_index, 1, 1, m_log_file);
+      constexpr uint16_t format_string_index = 0;
+      fwrite(&format_string_index, sizeof(uint16_t), 1, m_log_file);
     }
 
     // Write the args
@@ -121,4 +108,6 @@ public:
 }  // namespace binary_log
 
 #define BINARY_LOG(logger, format_string, ...) \
-  logger.log<format_string>(__VA_ARGS__);
+  constexpr uint16_t CONCAT(format_string_id, __LINE__) = crc16( \
+      format_string __AT__, binary_log::string_length(format_string __AT__)); \
+  logger.log<format_string, CONCAT(format_string_id, __LINE__)>(__VA_ARGS__);
