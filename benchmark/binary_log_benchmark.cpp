@@ -100,6 +100,7 @@ BENCHMARK(BM_binary_log_latency_one_static_float);
 BENCHMARK(BM_binary_log_latency_one_static_double);
 BENCHMARK(BM_binary_log_latency_static_ints_and_doubles);
 BENCHMARK(BM_binary_log_latency_incrementing_integer)
+	->Arg({1000})->Unit(benchmark::kMicrosecond);
     ->Args({10000})
     ->Args({100000})
     ->Args({1000000})
