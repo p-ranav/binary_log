@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 
+#include <binary_log/constant_wrapper.hpp>
 #include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
 #include <binary_log/string_utils.hpp>
@@ -14,9 +15,34 @@ class binary_log
   uint8_t m_format_string_index {0};
 
   template<typename T>
+  constexpr void pack_arg_in_index_file(T&& input)
+  {
+    if constexpr (is_specialization<decltype(input), constant_wrapper> {}) {
+      constexpr bool is_constant = true;
+      fwrite(&is_constant, sizeof(bool), 1, m_index_file);
+      packer::pack_data(m_index_file, input.value);
+    } else {
+      constexpr bool is_constant = false;
+      fwrite(&is_constant, sizeof(bool), 1, m_index_file);
+    }
+  }
+
+  template<class T, class... Ts>
+  constexpr void pack_args_in_index_file(T&& first, Ts&&... rest)
+  {
+    pack_arg_in_index_file(std::forward<T>(first));
+
+    if constexpr (sizeof...(rest) > 0) {
+      pack_args_in_index_file(std::forward<Ts>(rest)...);
+    }
+  }
+
+  template<typename T>
   constexpr void pack_arg(T&& input)
   {
-    packer::pack_data(m_log_file, std::forward<T>(input));
+    if constexpr (!is_specialization<T, constant_wrapper> {}) {
+      packer::pack_data(m_log_file, std::forward<T>(input));
+    }
   }
 
   template<class T, class... Ts>
@@ -92,7 +118,7 @@ public:
   }
 
   template<fixed_string F, class... Args>
-  constexpr inline uint8_t log_index()
+  constexpr inline uint8_t log_index(Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>
@@ -120,6 +146,7 @@ public:
     // Write the type of each argument
     if constexpr (num_args > 0) {
       pack_arg_types<Args...>();
+      pack_args_in_index_file(std::forward<Args>(args)...);
     }
 
     return m_format_string_index - 1;
@@ -152,10 +179,16 @@ public:
 
 #define BINARY_LOG(logger, format_string, ...) \
   static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
-      [&logger]<typename... Args>(Args && ...) constexpr \
+      [&logger]<typename... Args>(Args && ... args) constexpr \
   { \
-    return logger.log_index<format_string, Args...>(); \
+    return logger.log_index<format_string>(std::forward<Args>(args)...); \
   } \
   (__VA_ARGS__); \
   logger.log<format_string>( \
       CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__);
+
+#define BINARY_LOG_CONSTANT(value) \
+  binary_log::constant_wrapper<decltype(value)> \
+  { \
+    value \
+  }
