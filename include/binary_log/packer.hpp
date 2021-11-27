@@ -104,64 +104,6 @@ struct packer
     constexpr uint8_t type_byte = static_cast<uint8_t>(T);
     fwrite(&type_byte, sizeof(uint8_t), 1, f);
   }
-
-  template<typename T>
-  static inline void pack_type(std::FILE* f, const T& input) = delete;
-
-  constexpr static inline void pack_type(std::FILE* f, const char&)
-  {
-    write_type<datatype::type_char>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const uint8_t&)
-  {
-    write_type<datatype::type_uint8>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const uint16_t&)
-  {
-    write_type<datatype::type_uint16>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const uint32_t&)
-  {
-    write_type<datatype::type_uint32>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const uint64_t&)
-  {
-    write_type<datatype::type_uint64>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const int8_t&)
-  {
-    write_type<datatype::type_int8>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const int16_t&)
-  {
-    write_type<datatype::type_int16>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const int32_t&)
-  {
-    write_type<datatype::type_int32>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const int64_t&)
-  {
-    write_type<datatype::type_int64>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const float&)
-  {
-    write_type<datatype::type_float>(f);
-  }
-
-  constexpr static inline void pack_type(std::FILE* f, const double&)
-  {
-    write_type<datatype::type_double>(f);
-  }
 };
 
 }  // namespace binary_log

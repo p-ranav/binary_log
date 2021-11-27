@@ -1,9 +1,11 @@
 #pragma once
+#include <iostream>
 #include <set>
 #include <string_view>
 
 #include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
+#include <binary_log/is_constexpr.hpp>
 #include <binary_log/packer.hpp>
 #include <binary_log/string_utils.hpp>
 
@@ -34,18 +36,40 @@ class binary_log
   }
 
   template<typename T>
-  constexpr void pack_arg_type(const T& input)
+  constexpr void pack_arg_type()
   {
-    packer::pack_type(m_index_file, input);
+    if constexpr (std::is_same_v<T, char>) {
+      packer::write_type<packer::datatype::type_char>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
+      packer::write_type<packer::datatype::type_uint8>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+      packer::write_type<packer::datatype::type_uint16>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+      packer::write_type<packer::datatype::type_uint32>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+      packer::write_type<packer::datatype::type_uint64>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int8_t>) {
+      packer::write_type<packer::datatype::type_int8>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+      packer::write_type<packer::datatype::type_int16>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+      packer::write_type<packer::datatype::type_int32>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int64_t>) {
+      packer::write_type<packer::datatype::type_int64>(m_index_file);
+    } else if constexpr (std::is_same_v<T, float>) {
+      packer::write_type<packer::datatype::type_float>(m_index_file);
+    } else if constexpr (std::is_same_v<T, double>) {
+      packer::write_type<packer::datatype::type_double>(m_index_file);
+    }
   }
 
   template<class T, class... Ts>
-  constexpr void pack_arg_types(T&& first, Ts&&... rest)
+  constexpr void pack_arg_types()
   {
-    pack_arg_type(std::forward<T>(first));
+    pack_arg_type<T>();
 
-    if constexpr (sizeof...(rest) > 0) {
-      pack_arg_types(std::forward<Ts>(rest)...);
+    if constexpr (sizeof...(Ts) > 0) {
+      pack_arg_types<Ts...>();
     }
   }
 
@@ -109,7 +133,7 @@ public:
 
       // Write the args
       if constexpr (sizeof...(args) > 0) {
-        pack_arg_types(std::forward<Args>(args)...);
+        pack_arg_types<Args...>();
       }
 
     } else {
