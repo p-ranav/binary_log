@@ -178,11 +178,11 @@ public:
 }  // namespace binary_log
 
 #define BINARY_LOG(logger, format_string, ...) \
-  static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
+  static uint8_t __binary_log_format_string_id_pos##__LINE__ = \
       [&logger]<typename... Args>(Args && ... args) constexpr \
   { \
     return logger.log_index<format_string>(std::forward<Args>(args)...); \
   } \
   (__VA_ARGS__); \
-  logger.log<format_string>( \
-      CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__);
+  logger.log<format_string>(__binary_log_format_string_id_pos##__LINE__, \
+                            ##__VA_ARGS__);
