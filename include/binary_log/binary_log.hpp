@@ -5,7 +5,6 @@
 
 #include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
-#include <binary_log/is_constexpr.hpp>
 #include <binary_log/packer.hpp>
 #include <binary_log/string_utils.hpp>
 
