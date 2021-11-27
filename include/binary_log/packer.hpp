@@ -26,6 +26,78 @@ struct packer
     type_string,
   };
 
+  template<typename T>
+  static inline void pack_data(std::FILE* f, const T& input) = delete;
+
+  constexpr static inline void pack_data(std::FILE* f, const char& input)
+  {
+    fwrite(&input, sizeof(char), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const uint8_t& input)
+  {
+    fwrite(&input, sizeof(uint8_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const uint16_t& input)
+  {
+    fwrite(&input, sizeof(uint16_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const uint32_t& input)
+  {
+    fwrite(&input, sizeof(uint32_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const uint64_t& input)
+  {
+    fwrite(&input, sizeof(uint64_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const int8_t& input)
+  {
+    fwrite(&input, sizeof(int8_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const int16_t& input)
+  {
+    fwrite(&input, sizeof(int16_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const int32_t& input)
+  {
+    fwrite(&input, sizeof(int32_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const int64_t& input)
+  {
+    fwrite(&input, sizeof(int64_t), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const float& input)
+  {
+    fwrite(&input, sizeof(float), 1, f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f, const double& input)
+  {
+    fwrite(&input, sizeof(double), 1, f);
+  }
+
+  // static inline void pack_data(std::FILE* f, const std::string_view& input)
+  // {
+  // 	write_type<datatype::type_string>(f);
+  // 	pack<uint32_t>(f, input.size());
+  // 	fwrite(input.data(), sizeof(char), input.size(), f);
+  // }
+
+  // static inline void pack_data(std::FILE* f, const std::string& input)
+  // {
+  // 	write_type<datatype::type_string>(f);
+  // 	pack<uint32_t>(f, input.size());
+  // 	fwrite(input.data(), sizeof(char), input.size(), f);
+  // }
+
   template<datatype T>
   constexpr static inline void write_type(std::FILE* f)
   {
@@ -34,135 +106,62 @@ struct packer
   }
 
   template<typename T>
-  static inline void pack(std::FILE* f, const T& input) = delete;
+  static inline void pack_type(std::FILE* f, const T& input) = delete;
 
-  constexpr static inline void pack(std::FILE* f, const char& input)
+  constexpr static inline void pack_type(std::FILE* f, const char&)
   {
     write_type<datatype::type_char>(f);
-    fwrite(&input, sizeof(char), 1, f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const uint8_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const uint8_t&)
   {
     write_type<datatype::type_uint8>(f);
-    fwrite(&input, sizeof(uint8_t), 1, f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const uint16_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const uint16_t&)
   {
-    if (input < std::numeric_limits<uint8_t>::max()) {
-      write_type<datatype::type_uint8>(f);
-      fwrite(&input, sizeof(uint8_t), 1, f);
-    } else {
-      write_type<datatype::type_uint16>(f);
-      fwrite(&input, sizeof(uint16_t), 1, f);
-    }
+    write_type<datatype::type_uint16>(f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const uint32_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const uint32_t&)
   {
-    if (input < std::numeric_limits<uint8_t>::max()) {
-      write_type<datatype::type_uint8>(f);
-      fwrite(&input, sizeof(uint8_t), 1, f);
-    } else if (input < std::numeric_limits<uint16_t>::max()) {
-      write_type<datatype::type_uint16>(f);
-      fwrite(&input, sizeof(uint16_t), 1, f);
-    } else {
-      write_type<datatype::type_uint32>(f);
-      fwrite(&input, sizeof(uint32_t), 1, f);
-    }
+    write_type<datatype::type_uint32>(f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const uint64_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const uint64_t&)
   {
-    if (input < std::numeric_limits<uint8_t>::max()) {
-      write_type<datatype::type_uint8>(f);
-      fwrite(&input, sizeof(uint8_t), 1, f);
-    } else if (input < std::numeric_limits<uint16_t>::max()) {
-      write_type<datatype::type_uint16>(f);
-      fwrite(&input, sizeof(uint16_t), 1, f);
-    } else if (input < std::numeric_limits<uint32_t>::max()) {
-      write_type<datatype::type_uint32>(f);
-      fwrite(&input, sizeof(uint32_t), 1, f);
-    } else {
-      write_type<datatype::type_uint64>(f);
-      fwrite(&input, sizeof(uint64_t), 1, f);
-    }
+    write_type<datatype::type_uint64>(f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const int8_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const int8_t&)
   {
     write_type<datatype::type_int8>(f);
-    fwrite(&input, sizeof(int8_t), 1, f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const int16_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const int16_t&)
   {
-    if (input < std::numeric_limits<int8_t>::min()) {
-      write_type<datatype::type_int8>(f);
-      fwrite(&input, sizeof(int8_t), 1, f);
-    } else {
-      write_type<datatype::type_int16>(f);
-      fwrite(&input, sizeof(int16_t), 1, f);
-    }
+    write_type<datatype::type_int16>(f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const int32_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const int32_t&)
   {
-    if (input < std::numeric_limits<int8_t>::min()) {
-      write_type<datatype::type_int8>(f);
-      fwrite(&input, sizeof(int8_t), 1, f);
-    } else if (input < std::numeric_limits<int16_t>::min()) {
-      write_type<datatype::type_int16>(f);
-      fwrite(&input, sizeof(int16_t), 1, f);
-    } else {
-      write_type<datatype::type_int32>(f);
-      fwrite(&input, sizeof(int32_t), 1, f);
-    }
+    write_type<datatype::type_int32>(f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const int64_t& input)
+  constexpr static inline void pack_type(std::FILE* f, const int64_t&)
   {
-    if (input < std::numeric_limits<int8_t>::min()) {
-      write_type<datatype::type_int8>(f);
-      fwrite(&input, sizeof(int8_t), 1, f);
-    } else if (input < std::numeric_limits<int16_t>::min()) {
-      write_type<datatype::type_int16>(f);
-      fwrite(&input, sizeof(int16_t), 1, f);
-    } else if (input < std::numeric_limits<int32_t>::min()) {
-      write_type<datatype::type_int32>(f);
-      fwrite(&input, sizeof(int32_t), 1, f);
-    } else {
-      write_type<datatype::type_int64>(f);
-      fwrite(&input, sizeof(int64_t), 1, f);
-    }
+    write_type<datatype::type_int64>(f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const float& input)
+  constexpr static inline void pack_type(std::FILE* f, const float&)
   {
     write_type<datatype::type_float>(f);
-    fwrite(&input, sizeof(float), 1, f);
   }
 
-  constexpr static inline void pack(std::FILE* f, const double& input)
+  constexpr static inline void pack_type(std::FILE* f, const double&)
   {
     write_type<datatype::type_double>(f);
-    fwrite(&input, sizeof(double), 1, f);
   }
-
-  // static inline void pack(std::FILE* f, const std::string_view& input)
-  // {
-  // 	write_type<datatype::type_string>(f);
-  // 	pack<uint32_t>(f, input.size());
-  // 	fwrite(input.data(), sizeof(char), input.size(), f);
-  // }
-
-  // static inline void pack(std::FILE* f, const std::string& input)
-  // {
-  // 	write_type<datatype::type_string>(f);
-  // 	pack<uint32_t>(f, input.size());
-  // 	fwrite(input.data(), sizeof(char), input.size(), f);
-  // }
 };
 
 }  // namespace binary_log

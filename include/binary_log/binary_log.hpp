@@ -20,7 +20,7 @@ class binary_log
   template<typename T>
   constexpr void pack_arg(const T& input)
   {
-    packer::pack(m_log_file, input);
+    packer::pack_data(m_log_file, input);
   }
 
   template<class T, class... Ts>
@@ -33,21 +33,21 @@ class binary_log
     }
   }
 
-  // template<typename T>
-  // constexpr void pack_arg_type(const T& input)
-  // {
-  //   packer::pack_type(m_index_file, input);
-  // }
+  template<typename T>
+  constexpr void pack_arg_type(const T& input)
+  {
+    packer::pack_type(m_index_file, input);
+  }
 
-  // template<class T, class... Ts>
-  // constexpr void pack_arg_types(T&& first, Ts&&... rest)
-  // {
-  //   pack_arg_type(std::forward<T>(first));
+  template<class T, class... Ts>
+  constexpr void pack_arg_types(T&& first, Ts&&... rest)
+  {
+    pack_arg_type(std::forward<T>(first));
 
-  //   if constexpr (sizeof...(rest) > 0) {
-  //     pack_arg_types(std::forward<Ts>(rest)...);
-  //   }
-  // }
+    if constexpr (sizeof...(rest) > 0) {
+      pack_arg_types(std::forward<Ts>(rest)...);
+    }
+  }
 
 public:
   binary_log(std::string_view path)
@@ -87,7 +87,7 @@ public:
     if (it == m_format_string_table.end()) {
       // SPEC:
       // <format-string-index [0-255]> <format-string-length> <format-string>
-      // <number-of-arguments>
+      // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
 
       auto result = m_format_string_table.insert(H);
 
@@ -106,6 +106,11 @@ public:
       // Write the number of args taken by the format string
       constexpr uint8_t num_args = sizeof...(args);
       fwrite(&num_args, 1, 1, m_index_file);
+
+      // Write the args
+      if constexpr (sizeof...(args) > 0) {
+        pack_arg_types(std::forward<Args>(args)...);
+      }
 
     } else {
       pos = std::distance(m_format_string_table.begin(), it);
