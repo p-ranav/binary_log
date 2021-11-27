@@ -124,7 +124,7 @@ public:
       fwrite(&num_args, 1, 1, m_index_file);
 
       // Write the type of each argument
-      if constexpr (sizeof...(args) > 0) {
+      if constexpr (sizeof...(Args) > 0) {
         pack_arg_types<Args...>();
       }
     }
@@ -141,7 +141,7 @@ public:
     fwrite(&hash, sizeof(uint16_t), 1, m_log_file);
 
     // Write the args
-    if constexpr (sizeof...(args) > 0) {
+    if constexpr (sizeof...(Args) > 0) {
       pack_args(std::forward<Args>(args)...);
     }
   }
