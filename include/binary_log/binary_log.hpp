@@ -140,6 +140,10 @@ public:
     // SPEC:
     // <format-string-index> <format-string-length> <format-string>
     // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
+    // <arg-1-is-rvalue> (<arg-1-value>?) <arg-2-is-rvalue> (<arg-2-value>)? ...
+    //
+    // If the arg is an rvalue, it is stored in the index file
+    // and the value is not stored in the log file
     constexpr char const* Name = F;
     constexpr uint8_t num_args = sizeof...(Args);
 
