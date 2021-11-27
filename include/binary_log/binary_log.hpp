@@ -17,9 +17,49 @@ class binary_log
   std::set<uint16_t> m_format_string_hashes;
 
   template<typename T>
-  constexpr void pack_arg(const T& input)
+  constexpr void pack_arg_in_index_file(T&& input)
   {
-    packer::pack_data(m_log_file, input);
+    // If rvalue, store the value in the index file
+    // it does not need to go into every log entry in
+    // the log file
+
+    // TODO(pranav): Check if T is const char *
+    // Save this to index file as well
+    // even if the following checks fail
+
+    if constexpr (std::is_rvalue_reference<T&&>::value) {
+      constexpr bool is_rvalue = true;
+      fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
+      packer::pack_data(m_index_file, std::forward<T>(input));
+    } else if constexpr (std::is_lvalue_reference<T&&>::value) {
+      constexpr bool is_rvalue = false;
+      fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
+    } else {
+      std::cout << "Unsupported type for " << input << std::endl;
+      // static_assert(false, "Unsupported type");
+    }
+  }
+
+  template<class T, class... Ts>
+  constexpr void pack_args_in_index_file(T&& first, Ts&&... rest)
+  {
+    pack_arg_in_index_file(std::forward<T>(first));
+
+    if constexpr (sizeof...(rest) > 0) {
+      pack_args_in_index_file(std::forward<Ts>(rest)...);
+    }
+  }
+
+  template<typename T>
+  constexpr void pack_arg(T&& input)
+  {
+    // If rvalue, store the value in the index file
+    // it does not need to go into every log entry in
+    // the log file
+
+    if constexpr (std::is_lvalue_reference<T&&>::value) {
+      packer::pack_data(m_log_file, std::forward<T>(input));
+    }
   }
 
   template<class T, class... Ts>
@@ -126,6 +166,7 @@ public:
       // Write the type of each argument
       if constexpr (num_args > 0) {
         pack_arg_types<Args...>();
+        pack_args_in_index_file(std::forward<Args>(args)...);
       }
     }
 
