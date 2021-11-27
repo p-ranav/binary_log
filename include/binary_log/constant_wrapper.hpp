@@ -16,8 +16,8 @@ template<typename T>
 struct constant_wrapper
 {
   T value;
-  constant_wrapper(T&& v)
-      : value(std::forward<T>(v))
+  constexpr constant_wrapper(T v)
+      : value(v)
   {
   }
 };
