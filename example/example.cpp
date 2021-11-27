@@ -17,7 +17,6 @@ void run_static_string_test()
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
   std::cout << "[STATIC STRING          ] Latency: " << diff_ns / how_many
             << " ns\n";
-  BINARY_LOG(log, "This is another static string");
 }
 
 void run_single_integer_test()
@@ -51,6 +50,21 @@ void run_two_integer_test()
   auto diff_ns =
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
   std::cout << "[DOUBLE STATIC INTEGERS ] Latency: " << diff_ns / how_many
+            << " ns\n";
+}
+
+void run_single_float_test()
+{
+  binary_log::binary_log log("test.log");
+  constexpr std::size_t how_many = 1E6;
+  auto start = std::chrono::high_resolution_clock::now();
+  for (std::size_t i = 0; i < how_many; ++i) {
+    BINARY_LOG(log, "Using tombstone ratio balancer with ratio = {}", 3.1415f);
+  }
+  auto end = std::chrono::high_resolution_clock::now();
+  auto diff_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  std::cout << "[SINGLE STATIC FLOAT    ] Latency: " << diff_ns / how_many
             << " ns\n";
 }
 
@@ -113,12 +127,29 @@ void run_string_concat_test()
             << " ns\n";
 }
 
+void run_incrementing_integer_test()
+{
+  binary_log::binary_log log("test.log");
+  constexpr uint64_t how_many = 1E6;
+  auto start = std::chrono::high_resolution_clock::now();
+  for (uint64_t i = 0; i < how_many; ++i) {
+    BINARY_LOG(log, "Hello logger: msg number {}", i);
+  }
+  auto end = std::chrono::high_resolution_clock::now();
+  auto diff_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  std::cout << "[DYNAMIC INTEGER        ] Latency: " << diff_ns / how_many
+            << " ns\n";
+}
+
 int main()
 {
   run_static_string_test();
-  // run_single_integer_test();
-  // run_two_integer_test();
-  // run_single_double_test();
-  // run_complex_format_test();
-  // run_string_concat_test();
+  run_single_integer_test();
+  run_two_integer_test();
+  run_single_float_test();
+  run_single_double_test();
+  run_complex_format_test();
+  run_string_concat_test();
+  run_incrementing_integer_test();
 }

@@ -1,10 +1,12 @@
 #pragma once
-#include <map>
-#include <string>
+#include <iostream>
+#include <set>
 #include <string_view>
 
+#include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
+#include <binary_log/string_utils.hpp>
 
 namespace binary_log
 {
@@ -12,19 +14,56 @@ class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
-
-  // Format string table
-  std::map<std::string_view, std::size_t> m_format_string_table;
-  std::size_t m_format_string_index {0};  // 0 means "{}"
+  std::set<uint16_t> m_format_string_hashes;
 
   template<typename T>
-  void pack_arg(const T& input)
+  constexpr void pack_arg_in_index_file(T&& input)
   {
-    packer::pack(m_log_file, input);
+    // If rvalue, store the value in the index file
+    // it does not need to go into every log entry in
+    // the log file
+
+    // TODO(pranav): Check if T is const char *
+    // Save this to index file as well
+    // even if the following checks fail
+
+    if constexpr (std::is_rvalue_reference<T&&>::value) {
+      constexpr bool is_rvalue = true;
+      fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
+      packer::pack_data(m_index_file, std::forward<T>(input));
+    } else if constexpr (std::is_lvalue_reference<T&&>::value) {
+      constexpr bool is_rvalue = false;
+      fwrite(&is_rvalue, sizeof(bool), 1, m_index_file);
+    } else {
+      std::cout << "Unsupported type for " << input << std::endl;
+      // static_assert(false, "Unsupported type");
+    }
   }
 
   template<class T, class... Ts>
-  void pack_args(T&& first, Ts&&... rest)
+  constexpr void pack_args_in_index_file(T&& first, Ts&&... rest)
+  {
+    pack_arg_in_index_file(std::forward<T>(first));
+
+    if constexpr (sizeof...(rest) > 0) {
+      pack_args_in_index_file(std::forward<Ts>(rest)...);
+    }
+  }
+
+  template<typename T>
+  constexpr void pack_arg(T&& input)
+  {
+    // If rvalue, store the value in the index file
+    // it does not need to go into every log entry in
+    // the log file
+
+    if constexpr (std::is_lvalue_reference<T&&>::value) {
+      packer::pack_data(m_log_file, std::forward<T>(input));
+    }
+  }
+
+  template<class T, class... Ts>
+  constexpr void pack_args(T&& first, Ts&&... rest)
   {
     pack_arg(std::forward<T>(first));
 
@@ -33,14 +72,42 @@ class binary_log
     }
   }
 
-  constexpr static inline uint8_t string_length(const char* str)
+  template<typename T>
+  constexpr void pack_arg_type()
   {
-    return *str ? 1 + string_length(str + 1) : 0;
+    if constexpr (std::is_same_v<T, char>) {
+      packer::write_type<packer::datatype::type_char>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
+      packer::write_type<packer::datatype::type_uint8>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+      packer::write_type<packer::datatype::type_uint16>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
+      packer::write_type<packer::datatype::type_uint32>(m_index_file);
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
+      packer::write_type<packer::datatype::type_uint64>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int8_t>) {
+      packer::write_type<packer::datatype::type_int8>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int16_t>) {
+      packer::write_type<packer::datatype::type_int16>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int32_t>) {
+      packer::write_type<packer::datatype::type_int32>(m_index_file);
+    } else if constexpr (std::is_same_v<T, int64_t>) {
+      packer::write_type<packer::datatype::type_int64>(m_index_file);
+    } else if constexpr (std::is_same_v<T, float>) {
+      packer::write_type<packer::datatype::type_float>(m_index_file);
+    } else if constexpr (std::is_same_v<T, double>) {
+      packer::write_type<packer::datatype::type_double>(m_index_file);
+    }
   }
 
-  constexpr static inline bool strings_equal(char const* a, char const* b)
+  template<class T, class... Ts>
+  constexpr void pack_arg_types()
   {
-    return *a == *b && (*a == '\0' || strings_equal(a + 1, b + 1));
+    pack_arg_type<T>();
+
+    if constexpr (sizeof...(Ts) > 0) {
+      pack_arg_types<Ts...>();
+    }
   }
 
 public:
@@ -67,31 +134,40 @@ public:
     fclose(m_index_file);
   }
 
-  template<fixed_string F, class... Args>
+  template<fixed_string F, uint16_t H, class... Args>
   constexpr inline void log(Args&&... args)
   {
     // Check if we need to update the index file
     // For a new format string, we need to update the index file
     constexpr char const* Name = F;
-    if (!binary_log::binary_log::strings_equal(Name, "{}")
-        && m_format_string_table.find(Name) == m_format_string_table.end())
-    {
-      // SPEC:
-      // <format-string-length> <format-string> <number-of-arguments>
+    constexpr uint16_t hash = H;
+    constexpr uint8_t num_args = sizeof...(Args);
 
-      m_format_string_table[Name] = ++m_format_string_index;
+    if (!m_format_string_hashes.contains(H)) {
+      // SPEC:
+      // <format-string-index> <format-string-length> <format-string>
+      // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
+
+      m_format_string_hashes.insert(H);
+
+      // Write the hash of the format_string
+      fwrite(&hash, sizeof(uint16_t), 1, m_index_file);
 
       // Write the length of the format string
-      constexpr uint8_t format_string_length =
-          binary_log::binary_log::string_length(Name);
+      constexpr uint8_t format_string_length = string_length(Name);
       fwrite(&format_string_length, 1, 1, m_index_file);
 
       // Write the format string
       fwrite(F, 1, format_string_length, m_index_file);
 
       // Write the number of args taken by the format string
-      constexpr uint8_t num_args = sizeof...(args);
       fwrite(&num_args, 1, 1, m_index_file);
+
+      // Write the type of each argument
+      if constexpr (num_args > 0) {
+        pack_arg_types<Args...>();
+        pack_args_in_index_file(std::forward<Args>(args)...);
+      }
     }
 
     // Write to the main log file
@@ -103,16 +179,10 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    if constexpr (!binary_log::binary_log::strings_equal(Name, "{}")) {
-      uint8_t format_string_index = m_format_string_table[Name];
-      fwrite(&format_string_index, 1, 1, m_log_file);
-    } else {
-      constexpr uint8_t format_string_index = 0;
-      fwrite(&format_string_index, 1, 1, m_log_file);
-    }
+    fwrite(&hash, sizeof(uint16_t), 1, m_log_file);
 
     // Write the args
-    if constexpr (sizeof...(args) > 0) {
+    if constexpr (num_args > 0) {
       pack_args(std::forward<Args>(args)...);
     }
   }
@@ -121,4 +191,6 @@ public:
 }  // namespace binary_log
 
 #define BINARY_LOG(logger, format_string, ...) \
-  logger.log<format_string>(__VA_ARGS__);
+  constexpr uint16_t CONCAT(format_string_id, __LINE__) = crc16( \
+      format_string __AT__, binary_log::string_length(format_string __AT__)); \
+  logger.log<format_string, CONCAT(format_string_id, __LINE__)>(__VA_ARGS__);
