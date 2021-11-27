@@ -101,6 +101,7 @@ public:
     // For a new format string, we need to update the index file
     constexpr char const* Name = F;
     constexpr uint16_t hash = H;
+    constexpr uint8_t num_args = sizeof...(Args);
 
     if (!m_format_string_hashes.contains(H)) {
       // SPEC:
@@ -120,11 +121,10 @@ public:
       fwrite(F, 1, format_string_length, m_index_file);
 
       // Write the number of args taken by the format string
-      constexpr uint8_t num_args = sizeof...(args);
       fwrite(&num_args, 1, 1, m_index_file);
 
       // Write the type of each argument
-      if constexpr (sizeof...(Args) > 0) {
+      if constexpr (num_args > 0) {
         pack_arg_types<Args...>();
       }
     }
@@ -141,7 +141,7 @@ public:
     fwrite(&hash, sizeof(uint16_t), 1, m_log_file);
 
     // Write the args
-    if constexpr (sizeof...(Args) > 0) {
+    if constexpr (num_args > 0) {
       pack_args(std::forward<Args>(args)...);
     }
   }
