@@ -17,7 +17,6 @@ void run_static_string_test()
       std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
   std::cout << "[STATIC STRING          ] Latency: " << diff_ns / how_many
             << " ns\n";
-  BINARY_LOG(log, "This is another static string");
 }
 
 void run_single_integer_test()
@@ -113,6 +112,21 @@ void run_string_concat_test()
             << " ns\n";
 }
 
+void run_incrementing_integer_test()
+{
+  binary_log::binary_log log("test.log");
+  constexpr std::size_t how_many = 1E6;
+  auto start = std::chrono::high_resolution_clock::now();
+  for (std::size_t i = 0; i < how_many; ++i) {
+    BINARY_LOG(log, "Hello logger: msg number {}", i);
+  }
+  auto end = std::chrono::high_resolution_clock::now();
+  auto diff_ns =
+      std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  std::cout << "[DYNAMIC INTEGER        ] Latency: " << diff_ns / how_many
+            << " ns\n";
+}
+
 int main()
 {
   run_static_string_test();
@@ -121,4 +135,5 @@ int main()
   run_single_double_test();
   run_complex_format_test();
   run_string_concat_test();
+  run_incrementing_integer_test();
 }
