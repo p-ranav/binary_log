@@ -80,6 +80,12 @@ class binary_log
       packer::write_type<packer::datatype::type_float>(m_index_file);
     } else if constexpr (std::is_same_v<T, double>) {
       packer::write_type<packer::datatype::type_double>(m_index_file);
+    } else if constexpr (std::is_same_v<T, const char*>) {
+      packer::write_type<packer::datatype::type_cstring>(m_index_file);
+    } else if constexpr (std::is_same_v<T, std::string>) {
+      packer::write_type<packer::datatype::type_string>(m_index_file);
+    } else if constexpr (std::is_same_v<T, std::string_view>) {
+      packer::write_type<packer::datatype::type_string_view>(m_index_file);
     }
   }
 

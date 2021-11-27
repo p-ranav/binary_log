@@ -22,8 +22,9 @@ struct packer
     type_int64,
     type_float,
     type_double,
-    type_string_view,
+    type_cstring,
     type_string,
+    type_string_view,
   };
 
   template<typename T>
@@ -84,19 +85,24 @@ struct packer
     fwrite(&input, sizeof(double), 1, f);
   }
 
-  // static inline void pack_data(std::FILE* f, const std::string_view& input)
-  // {
-  // 	write_type<datatype::type_string>(f);
-  // 	pack<uint32_t>(f, input.size());
-  // 	fwrite(input.data(), sizeof(char), input.size(), f);
-  // }
+  constexpr static inline void pack_data(std::FILE* f, const char* input)
+  {
+    pack_data(f, static_cast<uint8_t>(std::strlen(input)));
+    fwrite(input, sizeof(char), std::strlen(input), f);
+  }
 
-  // static inline void pack_data(std::FILE* f, const std::string& input)
-  // {
-  // 	write_type<datatype::type_string>(f);
-  // 	pack<uint32_t>(f, input.size());
-  // 	fwrite(input.data(), sizeof(char), input.size(), f);
-  // }
+  static inline void pack_data(std::FILE* f, const std::string& input)
+  {
+    pack_data(f, static_cast<uint8_t>(input.size()));
+    fwrite(input.data(), sizeof(char), input.size(), f);
+  }
+
+  constexpr static inline void pack_data(std::FILE* f,
+                                         const std::string_view& input)
+  {
+    pack_data(f, static_cast<uint8_t>(input.size()));
+    fwrite(input.data(), sizeof(char), input.size(), f);
+  }
 
   template<datatype T>
   constexpr static inline void write_type(std::FILE* f)
