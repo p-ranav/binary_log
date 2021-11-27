@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
+#include <set>
 #include <string_view>
-#include <vector>
 
 #include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
@@ -14,7 +14,7 @@ class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
-  std::vector<uint16_t> m_format_string_hashes;
+  std::set<uint16_t> m_format_string_hashes;
 
   template<typename T>
   constexpr void pack_arg(const T& input)
@@ -100,20 +100,16 @@ public:
     // Check if we need to update the index file
     // For a new format string, we need to update the index file
     constexpr char const* Name = F;
+    constexpr uint16_t hash = H;
 
-    auto it = std::find(
-        m_format_string_hashes.begin(), m_format_string_hashes.end(), H);
-    auto pos = 0;
-
-    if (it == m_format_string_hashes.end()) {
+    if (!m_format_string_hashes.contains(H)) {
       // SPEC:
       // <format-string-index [0-255]> <format-string-length> <format-string>
       // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
 
-      m_format_string_hashes.push_back(H);
-      pos = m_format_string_hashes.size() - 1;
+      m_format_string_hashes.insert(H);
 
-      fwrite(&pos, sizeof(uint8_t), 1, m_index_file);
+      fwrite(&hash, sizeof(uint16_t), 1, m_index_file);
 
       // Write the length of the format string
       constexpr uint8_t format_string_length = string_length(Name);
@@ -130,11 +126,6 @@ public:
       if constexpr (sizeof...(args) > 0) {
         pack_arg_types<Args...>();
       }
-    } else {
-      // We already have this format string in the index file
-      // We need to find the position of the format string in the index file
-      // and skip to the next format string
-      pos = std::distance(m_format_string_hashes.begin(), it);
     }
 
     // Write to the main log file
@@ -146,7 +137,7 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
+    fwrite(&hash, sizeof(uint16_t), 1, m_log_file);
 
     // Write the args
     if constexpr (sizeof...(args) > 0) {
