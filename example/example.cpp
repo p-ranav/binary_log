@@ -130,9 +130,9 @@ void run_string_concat_test()
 void run_incrementing_integer_test()
 {
   binary_log::binary_log log("test.log");
-  constexpr uint64_t how_many = 1E6;
+  constexpr uint32_t how_many = 1E6;
   auto start = std::chrono::high_resolution_clock::now();
-  for (uint64_t i = 0; i < how_many; ++i) {
+  for (uint32_t i = 0; i < how_many; ++i) {
     BINARY_LOG(log, "Hello logger: msg number {}", i);
   }
   auto end = std::chrono::high_resolution_clock::now();

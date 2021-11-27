@@ -1,21 +1,19 @@
 #pragma once
+#include <array>
 #include <iostream>
 #include <string_view>
-#include <vector>
 
-#include <binary_log/crc16.hpp>
 #include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
 #include <binary_log/string_utils.hpp>
 
 namespace binary_log
 {
-template<typename format_string_index_type = uint8_t>
 class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
-  std::vector<uint16_t> m_format_string_hashes;
+  uint8_t m_format_string_index {0};
 
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
@@ -136,8 +134,8 @@ public:
     fclose(m_index_file);
   }
 
-  template<fixed_string F, uint16_t H, class... Args>
-  constexpr inline void log_index(Args&&... args)
+  template<fixed_string F, class... Args>
+  constexpr inline uint8_t log_index(Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>
@@ -149,7 +147,7 @@ public:
     constexpr char const* Name = F;
     constexpr uint8_t num_args = sizeof...(Args);
 
-    m_format_string_hashes.push_back(H);
+    m_format_string_index++;
 
     // Write the length of the format string
     constexpr uint8_t format_string_length = string_length(Name);
@@ -166,20 +164,14 @@ public:
       pack_arg_types<Args...>();
       pack_args_in_index_file(std::forward<Args>(args)...);
     }
+
+    return m_format_string_index - 1;
   }
 
-  template<fixed_string F, uint16_t H, class... Args>
-  constexpr inline void log(Args&&... args)
+  template<fixed_string F, class... Args>
+  constexpr inline void log(uint8_t pos, Args&&... args)
   {
-    // Check if we need to update the index file
-    // For a new format string, we need to update the index file
-    constexpr uint16_t hash = H;
     constexpr uint8_t num_args = sizeof...(Args);
-
-    const auto it = std::find(
-        m_format_string_hashes.begin(), m_format_string_hashes.end(), hash);
-    const format_string_index_type pos =
-        std::distance(m_format_string_hashes.begin(), it);
 
     // Write to the main log file
     // SPEC:
@@ -190,7 +182,7 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    fwrite(&pos, sizeof(format_string_index_type), 1, m_log_file);
+    fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
 
     // Write the args
     if constexpr (num_args > 0) {
@@ -202,16 +194,11 @@ public:
 }  // namespace binary_log
 
 #define BINARY_LOG(logger, format_string, ...) \
-  constexpr uint16_t CONCAT(format_string_id, __LINE__) = crc16( \
-      format_string __AT__, binary_log::string_length(format_string __AT__)); \
-  static bool CONCAT(first_time, __LINE__) = \
-      [&logger, &CONCAT(format_string_id, __LINE__)]<typename... Args>( \
-          Args && ... args) constexpr \
+  static uint8_t CONCAT(format_string_id_pos, __LINE__) = \
+      [&logger]<typename... Args>(Args && ... args) constexpr \
   { \
-    logger.log_index<format_string, CONCAT(format_string_id, __LINE__)>( \
-        std::forward<Args>(args)...); \
-    return true; \
+    return logger.log_index<format_string>(std::forward<Args>(args)...); \
   } \
   (__VA_ARGS__); \
-  (void)CONCAT(first_time, __LINE__); \
-  logger.log<format_string, CONCAT(format_string_id, __LINE__)>(__VA_ARGS__);
+  logger.log<format_string>(CONCAT(format_string_id_pos, __LINE__), \
+                            ##__VA_ARGS__);
