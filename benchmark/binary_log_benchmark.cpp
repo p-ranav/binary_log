@@ -199,23 +199,23 @@ static void BM_binary_log_latency_random_std_string_of_size(
 
 // Register the function as a benchmark
 BENCHMARK(BM_binary_log_latency_static_string);
-// BENCHMARK(BM_binary_log_latency_one_static_integer);
-// BENCHMARK(BM_binary_log_latency_two_static_integers);
-// BENCHMARK(BM_binary_log_latency_one_static_float);
-// BENCHMARK(BM_binary_log_latency_one_static_double);
-// BENCHMARK(BM_binary_log_latency_static_ints_and_doubles);
-// BENCHMARK(BM_binary_log_latency_static_cstring);
-// BENCHMARK(BM_binary_log_latency_static_std_string);
-// BENCHMARK(BM_binary_log_latency_static_std_string_view);
-// BENCHMARK(BM_binary_log_latency_random_integer);
-// BENCHMARK(BM_binary_log_latency_random_float);
-// BENCHMARK(BM_binary_log_latency_random_double);
-// BENCHMARK(BM_binary_log_latency_random_std_string_of_size)
-//     ->Arg({4})
-//     ->Arg({8})
-//     ->Arg({16})
-//     ->Arg({32})
-//     ->Arg({64});
+BENCHMARK(BM_binary_log_latency_one_static_integer);
+BENCHMARK(BM_binary_log_latency_two_static_integers);
+BENCHMARK(BM_binary_log_latency_one_static_float);
+BENCHMARK(BM_binary_log_latency_one_static_double);
+BENCHMARK(BM_binary_log_latency_static_ints_and_doubles);
+BENCHMARK(BM_binary_log_latency_static_cstring);
+BENCHMARK(BM_binary_log_latency_static_std_string);
+BENCHMARK(BM_binary_log_latency_static_std_string_view);
+BENCHMARK(BM_binary_log_latency_random_integer);
+BENCHMARK(BM_binary_log_latency_random_float);
+BENCHMARK(BM_binary_log_latency_random_double);
+BENCHMARK(BM_binary_log_latency_random_std_string_of_size)
+    ->Arg({4})
+    ->Arg({8})
+    ->Arg({16})
+    ->Arg({32})
+    ->Arg({64});
 
 // Run the benchmark
 BENCHMARK_MAIN();
