@@ -43,6 +43,15 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
   include(cmake/install-rules.cmake)
 endif()
 
+# ---- Unpacker ----
+
+if(PROJECT_IS_TOP_LEVEL)
+  option(BUILD_UNPACKER "Build unpacker tree." "${binary_log_DEVELOPER_MODE}")
+  if(BUILD_UNPACKER)
+    add_subdirectory(tools)
+  endif()
+endif()
+
 # ---- Benchmarks ----
 
 if(PROJECT_IS_TOP_LEVEL)

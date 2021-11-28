@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(binary_logExamples CXX)
+project(binary_logBenchmark CXX)
 
 include(../cmake/project-is-top-level.cmake)
 include(../cmake/folders.cmake)
