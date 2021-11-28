@@ -29,8 +29,6 @@ target_include_directories(
     binary_log_binary_log ${warning_guard}
     INTERFACE
     "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
-    ${fmt_INCLUDE_DIRS}
-    ${concurrentqueue_INCLUDE_DIRS}
 )
 
 target_link_libraries(binary_log_binary_log INTERFACE)
