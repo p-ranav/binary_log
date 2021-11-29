@@ -15,6 +15,11 @@ class binary_log
   std::FILE* m_log_file;
   format_string_index_type m_format_string_index {0};
 
+  // Used for run-length encoding of log calls
+  bool m_first_time {true};
+  int m_last_index {-1};
+  int m_num_calls_for_current_index {-1};
+
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
   {
@@ -100,6 +105,21 @@ class binary_log
     }
   }
 
+  constexpr static inline bool all_args_are_constants()
+  {
+    return true;
+  }
+
+  template<class T, class... Ts>
+  constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
+  {
+    if constexpr (is_specialization<T, constant> {}) {
+      return all_args_are_constants(std::forward<Ts>(rest)...);
+    } else {
+      return false;
+    }
+  }
+
 public:
   binary_log(const char* path)
   {
@@ -120,6 +140,14 @@ public:
 
   ~binary_log() noexcept
   {
+    // no more log calls
+    // If a run-length was not written, write it now
+    if (m_num_calls_for_current_index != -1) {
+      // write the number of calls for the previous format string
+      fwrite(&m_num_calls_for_current_index, sizeof(uint32_t), 1, m_log_file);
+      m_num_calls_for_current_index = -1;
+    }
+
     fclose(m_log_file);
     fclose(m_index_file);
   }
@@ -171,21 +199,61 @@ public:
     // <arg1> <arg2> ... <argN> are the arguments to the format string
     //
     // Each <arg> is a pair: <type, value>
+    //
+    // Optimization 1:
+    //   If all the arguments to the log call are constants, they will go in the
+    //   index file. In this case, we can use run-length encoding to
+    //   store the number of times the log call was made
+    //   e.g., BINARY_LOG("Foo bar")
+    //   If the above call is made 1 million times, we can store
+    //   <format-string-index> <1000000>
+    //   instead of storing <format-string-index> 1 million times
 
     // Write the format string index
-    fwrite(&pos, sizeof(format_string_index_type), 1, m_log_file);
+    if (m_last_index == -1) {
+      // first time
+      fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
+      m_last_index = pos;
+    } else {
+      if (m_last_index != pos) {
+        // new format string
+        if (m_num_calls_for_current_index != -1) {
+          // write the number of calls for the previous format string
+          fwrite(
+              &m_num_calls_for_current_index, sizeof(uint32_t), 1, m_log_file);
+          m_num_calls_for_current_index = -1;
+        }
+
+        // write the new format string index
+        fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
+        m_last_index = pos;
+      }
+    }
 
     // Write the args
-    if constexpr (num_args > 0) {
+    if constexpr (num_args > 0
+                  && !all_args_are_constants(std::forward<Args>(args)...))
+    {
       pack_args(std::forward<Args>(args)...);
+      m_last_index = -1;
+    } else {
+      // Increment num calls for current index
+      if (m_num_calls_for_current_index == -1) {
+        m_num_calls_for_current_index = 1;
+      } else {
+        m_num_calls_for_current_index++;
+      }
     }
   }
 };
 
 }  // namespace binary_log
 
+#define CONCAT0(a, b) a##b
+#define CONCAT(a, b) CONCAT0(a, b)
+
 #define BINARY_LOG(logger, format_string, ...) \
-  static uint8_t __binary_log_format_string_id_pos##__LINE__ = \
+  static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
       logger.log_index<format_string>(__VA_ARGS__); \
-  logger.log<format_string>(__binary_log_format_string_id_pos##__LINE__, \
-                            ##__VA_ARGS__);
+  logger.log<format_string>( \
+      CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__);
