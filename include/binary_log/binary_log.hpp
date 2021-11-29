@@ -8,11 +8,12 @@
 
 namespace binary_log
 {
+template<typename format_string_index_type = uint8_t>
 class binary_log
 {
   std::FILE* m_index_file;
   std::FILE* m_log_file;
-  uint8_t m_format_string_index {0};
+  format_string_index_type m_format_string_index {0};
 
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
@@ -172,7 +173,7 @@ public:
     // Each <arg> is a pair: <type, value>
 
     // Write the format string index
-    fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
+    fwrite(&pos, sizeof(format_string_index_type), 1, m_log_file);
 
     // Write the args
     if constexpr (num_args > 0) {
