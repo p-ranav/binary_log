@@ -26,6 +26,26 @@ The above code:
 * Runs in ~980 ms (average latency less than 1 nanosecond!)
 * Writes just 18 bytes
 
+## Design Goals & Decisions
+
+* Design for embedded applications, e.g., ESP32
+  - Log fast
+  - Be space efficient
+* Implement a single-threaded, synchronous logger - Do not provide thread safety
+  - If the user wants multi-threaded behavior, the user can choose and implement their own queueing solution
+  - There are numerous well-known lock-free queues available for this purpose ([moody::concurrentqueue](https://github.com/cameron314/concurrentqueue), [atomic_queue](https://github.com/max0x7ba/atomic_queue) etc.)
+  - The latency of enqueuing into a lock-free queue is large enough to matter - Users who do not care about this should NOT suffer the cost.
+* Avoid writing information that is not requested by the user - log level, timestamp etc.
+* Avoid writing static information (format string, and constants) more than once
+  - Store the static information in an "index" file 
+  - Store the dynamic information in the log file (refer to the index file where possible)
+* Do as little work as possible in the runtime hot path
+  - No formatting of any kind
+  - All formatting will happen offline using an unpacker that deflates the binary logs
+* Compress the logged information as much as possible
+  - Never at the cost of latency
+  - Use run-length encoding, if possible, to encode the number of consecutive log calls made
+
 ## Benchmarks
 
 ```console
