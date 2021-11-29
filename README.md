@@ -18,12 +18,12 @@ int main() {
   constexpr auto how_many = 1E9; // 1 billion
 
   for (std::size_t i = 0; i < how_many; ++i)
-    BINARY_LOG(log, "Hello {}", binary_log::constant("World"));
+    BINARY_LOG(log, "Hello World")
 }
 
 /*
  * The above code:
- *   Runs in ~980 ms (average latency less than 1 nanosecond!)
+ *   Runs in ~680 ms
  *   Writes just 18 bytes
 */
 ```
