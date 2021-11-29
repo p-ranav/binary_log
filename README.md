@@ -20,11 +20,13 @@ int main() {
   for (std::size_t i = 0; i < how_many; ++i)
     BINARY_LOG(log, "Hello {}", binary_log::constant("World"));
 }
-```
 
-The above code:
-* Runs in ~980 ms (average latency less than 1 nanosecond!)
-* Writes just 18 bytes
+/*
+ * The above code:
+ *   Runs in ~980 ms (average latency less than 1 nanosecond!)
+ *   Writes just 18 bytes
+*/
+```
 
 ## Design Goals & Decisions
 
