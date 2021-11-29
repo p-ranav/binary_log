@@ -1,6 +1,40 @@
 # binary_log
 
-This is the binary_log project.
+## Motivation
+
+Consider the example:
+
+```cpp
+for (std::size_t i = 0; i < 1E6; ++i) {
+  logger.log("Hello World");
+}
+```
+
+Most state-of-the-art loggers will output:
+* 1 million lines
+* At least 11 MB (spdlog basic_logger writes out 60MB with timestamp and log level)
+* Takes hundreds of milliseconds (spdlog takes ~500ms)
+
+## Better packing
+
+`binary_log` extracts static log information (format string, number of args, which args are constant, etc.) at compile-time and logs them to an index file. Only the dynamic parts of the log call are logged to a log file in the runtime hot path. The formatting is deferred to an offline process.
+
+```cpp
+#include <binary_log/binary_log.hpp>
+
+int main() {
+  binary_log::binary_log log("log.out");
+
+  for (std::size_t i = 0; i < 1E6; ++i) {
+    BINARY_LOG(log, "Hello World");
+  }
+}
+```
+
+* Two files are written: `log.out` and `log.out.index`
+* File Size: 18 bytes
+* Time taken: 15.8 ms 
+* Average latency after the first call: 1.7 ns
 
 ## Benchmarks
 
