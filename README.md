@@ -6,9 +6,9 @@
 * Run-length encoding is used, where possible, to encode repeated log calls
 * An offline process can be used to deflate and format the log messages
 * Average latency (measured on a Surface Laptop 4, Ubuntu in WSL)
-  - ~9 ns for static data
-  - ~30 ns for random integers, floats, doubles
+  - ~30 ns for random integers, floats, and doubles
   - ~270 ns for random 32-byte strings
+* Almost no-op on static data after the first call (that writes to the index file)
 
 The following code completes in ~980 ms and writes just 18 bytes. The average latency of the log call is under 1 ns!
 
