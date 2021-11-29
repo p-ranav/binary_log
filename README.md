@@ -1,23 +1,16 @@
 # binary_log
 
-## Motivation
+* Logs messages in compact binary format
+* Extracts static information at compile-time and logs them to an index file
+* Only dynamic parts of the logs are written in the runtime hot path
+* Run-length encoding is used, where possible, to encode repeated log calls
+* An offline process can be used to deflate and format the log messages
+* Average latency (measured on a Surface Laptop 4, Ubuntu in WSL)
+  - ~9 ns for static data
+  - ~30 ns for random integers, floats, doubles
+  - ~270 ns for random 32-byte strings
 
-Consider the example:
-
-```cpp
-for (std::size_t i = 0; i < 1E6; ++i) {
-  logger.log("Hello World");
-}
-```
-
-Most state-of-the-art loggers will output:
-* 1 million lines
-* At least 11 MB (spdlog basic_logger writes out 60MB with timestamp and log level)
-* Takes hundreds of milliseconds (spdlog takes ~500ms)
-
-## Better packing
-
-`binary_log` extracts static log information (format string, number of args, which args are constant, etc.) at compile-time and logs them to an index file. Only the dynamic parts of the log call are logged to a log file in the runtime hot path. The formatting is deferred to an offline process.
+The following code completes in ~980 ms and writes just 18 bytes. The average latency of the log call is under 1 ns!
 
 ```cpp
 #include <binary_log/binary_log.hpp>
@@ -25,16 +18,11 @@ Most state-of-the-art loggers will output:
 int main() {
   binary_log::binary_log log("log.out");
 
-  for (std::size_t i = 0; i < 1E6; ++i) {
-    BINARY_LOG(log, "Hello World");
+  for (std::size_t i = 0; i < 1E9; ++i) {
+    BINARY_LOG(log, "Hello {}", binary_log::constant("World"));
   }
 }
 ```
-
-* Two files are written: `log.out` and `log.out.index`
-* File Size: 18 bytes
-* Time taken: 15.8 ms 
-* Average latency after the first call: 1.7 ns
 
 ## Benchmarks
 
