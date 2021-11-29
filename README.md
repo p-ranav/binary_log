@@ -2,7 +2,7 @@
 
 ## Highlights
 
-* Logs messages in a compact binary format with as little as 10-20 ns latency
+* Logs messages in a compact binary format
 * Extracts static information at compile-time and logs them to an index file
 * Only dynamic parts of the logs are written in the runtime hot path
 * An offline process can be used to deflate and format the log messages
