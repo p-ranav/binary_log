@@ -15,11 +15,6 @@ class binary_log
   std::FILE* m_log_file;
   format_string_index_type m_format_string_index {0};
 
-  // Used for run-length encoding of log calls
-  bool m_first_time {true};
-  int m_last_index {-1};
-  int m_num_calls_for_current_index {-1};
-
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
   {
@@ -140,14 +135,6 @@ public:
 
   ~binary_log() noexcept
   {
-    // no more log calls
-    // If a run-length was not written, write it now
-    if (m_num_calls_for_current_index != -1) {
-      // write the number of calls for the previous format string
-      fwrite(&m_num_calls_for_current_index, sizeof(uint32_t), 1, m_log_file);
-      m_num_calls_for_current_index = -1;
-    }
-
     fclose(m_log_file);
     fclose(m_index_file);
   }
@@ -195,54 +182,18 @@ public:
     // Write to the main log file
     // SPEC:
     // <format-string-index> <arg1> <arg2> ... <argN>
-    // <format-string-index> is the index of the format string in the index file
-    // <arg1> <arg2> ... <argN> are the arguments to the format string
-    //
-    // Each <arg> is a pair: <type, value>
-    //
-    // Optimization 1:
-    //   If all the arguments to the log call are constants, they will go in the
-    //   index file. In this case, we can use run-length encoding to
-    //   store the number of times the log call was made
-    //   e.g., BINARY_LOG("Foo bar")
-    //   If the above call is made 1 million times, we can store
-    //   <format-string-index> <1000000>
-    //   instead of storing <format-string-index> 1 million times
+    // where:
+    //   <format-string-index> is the index of the format string in the index
+    //   file <arg1> <arg2> ... <argN> are the arguments to the format string
+    //     Each <arg> is a pair: <type, value>
 
-    // Write the format string index
-    if (m_last_index == -1) {
-      // first time
-      fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
-      m_last_index = pos;
-    } else {
-      if (m_last_index != pos) {
-        // new format string
-        if (m_num_calls_for_current_index != -1) {
-          // write the number of calls for the previous format string
-          fwrite(
-              &m_num_calls_for_current_index, sizeof(uint32_t), 1, m_log_file);
-          m_num_calls_for_current_index = -1;
-        }
-
-        // write the new format string index
-        fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
-        m_last_index = pos;
-      }
-    }
+    fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
 
     // Write the args
     if constexpr (num_args > 0
                   && !all_args_are_constants(std::forward<Args>(args)...))
     {
       pack_args(std::forward<Args>(args)...);
-      m_last_index = -1;
-    } else {
-      // Increment num calls for current index
-      if (m_num_calls_for_current_index == -1) {
-        m_num_calls_for_current_index = 1;
-      } else {
-        m_num_calls_for_current_index++;
-      }
     }
   }
 };
