@@ -9,19 +9,22 @@
 * Requires C++20
 * MIT License
 
-The following code completes in ~980 ms (average latency less than 1 ns) and writes just 18 bytes.
-
 ```cpp
 #include <binary_log/binary_log.hpp>
 
 int main() {
   binary_log::binary_log log("log.out");
+  
+  constexpr auto how_many = 1E9; // 1 billion
 
-  for (std::size_t i = 0; i < 1000000000 /* 1 billion */; ++i) {
+  for (std::size_t i = 0; i < how_many; ++i)
     BINARY_LOG(log, "Hello {}", binary_log::constant("World"));
-  }
 }
 ```
+
+The above code:
+* Runs in ~980 ms (average latency less than 1 nanosecond!)
+* Writes just 18 bytes
 
 ## Benchmarks
 
