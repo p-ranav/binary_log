@@ -1,16 +1,12 @@
 # binary_log
 
-* Logs messages in compact binary format
+* Logs messages in a handful of nanoseconds! 
 * Extracts static information at compile-time and logs them to an index file
 * Only dynamic parts of the logs are written in the runtime hot path
 * Run-length encoding is used, where possible, to encode repeated log calls
 * An offline process can be used to deflate and format the log messages
-* Average latency (measured on a Surface Laptop 4, Ubuntu in WSL)
-  - ~30 ns for random integers, floats, and doubles
-  - ~270 ns for random 32-byte strings
-* Almost no-op on static data after the first call (that writes to the index file)
 
-The following code completes in ~980 ms and writes just 18 bytes. The average latency of the log call is under 1 ns!
+The following code completes in ~980 ms and writes just 18 bytes. **The average latency here is less than 1 ns.**
 
 ```cpp
 #include <binary_log/binary_log.hpp>
