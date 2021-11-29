@@ -12,19 +12,19 @@
 ```cpp
 #include <binary_log/binary_log.hpp>
 
-int main() {
+int main()
+{
   binary_log::binary_log log("log.out");
-  
-  constexpr auto how_many = 1E9; // 1 billion
 
-  for (std::size_t i = 0; i < how_many; ++i)
-    BINARY_LOG(log, "Hello World")
+  for (uint32_t i = 0; i < 1E6; ++i)
+    BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
 
 /*
  * The above code:
- *   Runs in ~680 ms
- *   Writes just 18 bytes
+ *   Runs in ~40 ms
+ *   Average latency is ~23 ns
+ *   File size: 5 MB
 */
 ```
 
