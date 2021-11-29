@@ -3,8 +3,8 @@
 ## Highlights
 
 * Logs messages in a compact binary format
-* Extracts static information at compile-time and logs them to an index file
-* Only dynamic parts of the logs are written in the runtime hot path
+* Extracts static information at compile-time
+* Only log the dynamic parts of the messages at runtime in the hot path
 * An offline process can be used to deflate and format the log messages
 * Requires C++20
 * MIT License
