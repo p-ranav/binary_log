@@ -253,7 +253,9 @@ public:
 #define CONCAT(a, b) CONCAT0(a, b)
 
 #define BINARY_LOG(logger, format_string, ...) \
-  static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
-      logger.log_index<format_string>(__VA_ARGS__); \
-  logger.log<format_string>( \
-      CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__);
+  { \
+    static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
+        logger.log_index<format_string>(__VA_ARGS__); \
+    logger.log<format_string>( \
+        CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__); \
+  }
