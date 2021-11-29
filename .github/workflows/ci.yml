@@ -63,32 +63,3 @@ jobs:
       uses: codecov/codecov-action@v1
       with:
         file: build/coverage/coverage.info
-
-  test:
-    needs: [lint]
-
-    strategy:
-      matrix:
-        os: [macos, ubuntu, windows]
-
-    runs-on: ${{ matrix.os }}-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install static analyzers
-      if: matrix.os == 'ubuntu'
-      run: sudo apt-get install clang-tidy cppcheck -y -q
-
-    - name: Configure
-      run: cmake --preset=ci-${{ matrix.os }}
-
-    - name: Build
-      run: cmake --build build --config Release -j 2
-
-    - name: Install
-      run: cmake --install build --config Release --prefix prefix
-
-    - name: Test
-      working-directory: build
-      run: ctest --output-on-failure -C Release -j 2
