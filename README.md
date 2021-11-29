@@ -6,7 +6,7 @@
 * Run-length encoding is used, where possible, to encode repeated log calls
 * An offline process can be used to deflate and format the log messages
 
-The following code completes in ~980 ms and writes just 18 bytes. **The average latency here is less than 1 ns.**
+The following code completes in ~980 ms (average latency less than 1 ns) and writes just 18 bytes.
 
 ```cpp
 #include <binary_log/binary_log.hpp>
@@ -14,7 +14,7 @@ The following code completes in ~980 ms and writes just 18 bytes. **The average 
 int main() {
   binary_log::binary_log log("log.out");
 
-  for (std::size_t i = 0; i < 1E9; ++i) {
+  for (std::size_t i = 0; i < 1000000000 /* 1 billion */; ++i) {
     BINARY_LOG(log, "Hello {}", binary_log::constant("World"));
   }
 }
