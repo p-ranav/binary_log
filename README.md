@@ -49,9 +49,6 @@ int main()
 * Do as little work as possible in the runtime hot path
   - No formatting of any kind
   - All formatting will happen offline using an unpacker that deflates the binary logs
-* Compress the logged information as much as possible
-  - Never at the cost of latency
-  - Use run-length encoding, if possible, to encode the number of consecutive log calls made
 
 ## Benchmarks
 
