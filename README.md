@@ -11,6 +11,7 @@
 * Only logs the dynamic parts of the messages at runtime in the hot path
 * An offline process can be used to deflate and format the log messages
 * Synchronous logging - not thread safe
+* Header-only library
 * Requires C++20
 * MIT License
 
