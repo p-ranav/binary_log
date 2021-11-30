@@ -4,12 +4,13 @@
 
 * Logs messages in a compact binary format
   * Average Latency:
-      * ~8 ns for static data
+      * ~7 ns for static data
       * ~20 ns for integers, floats, and doubles 
-      * ~240 ns for random 32-byte strings
+      * ~130 ns for random 16-byte strings
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
 * An offline process can be used to deflate and format the log messages
+* Synchronous logging - not thread safe
 * Requires C++20
 * MIT License
 
