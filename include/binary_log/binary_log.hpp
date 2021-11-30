@@ -89,6 +89,9 @@ class binary_log
       packer::write_type<packer::datatype::type_string>(m_index_file);
     } else if constexpr (std::is_same_v<type, std::string_view>) {
       packer::write_type<packer::datatype::type_string_view>(m_index_file);
+    } else if constexpr (is_specialization<type, constant> {}) {
+      // This is a constant
+      pack_arg_type<typename T::type>();
     } else {
       []<bool flag = false>()
       {

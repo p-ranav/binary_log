@@ -15,6 +15,7 @@ struct is_specialization<Template<Args...>, Template> : std::true_type
 template<typename T>
 struct constant
 {
+  using type = T;
   const T value;
   constexpr constant(T v)
       : value(v)
