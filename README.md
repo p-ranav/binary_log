@@ -63,15 +63,15 @@ Load Average: 0.52, 0.58, 0.59
 ---------------------------------------------------------------------------------------------
 Benchmark                                                   Time             CPU   Iterations
 ---------------------------------------------------------------------------------------------
-BM_binary_log_latency_static_string                      7.67 ns         7.67 ns     89600000
-BM_binary_log_latency_one_static_integer                 7.85 ns         7.85 ns     89600000
+BM_binary_log_latency_static_string                      7.53 ns         7.50 ns     89600000
+BM_binary_log_latency_one_static_integer                 7.52 ns         7.67 ns     89600000
 BM_binary_log_latency_two_static_integers                7.89 ns         7.85 ns     89600000
-BM_binary_log_latency_one_static_float                   7.91 ns         7.85 ns     89600000
-BM_binary_log_latency_one_static_double                  7.93 ns         8.02 ns     89600000
+BM_binary_log_latency_one_static_float                   7.63 ns         7.53 ns    112000000
+BM_binary_log_latency_one_static_double                  7.79 ns         7.67 ns     89600000
 BM_binary_log_latency_static_ints_and_doubles            7.78 ns         7.67 ns     89600000
-BM_binary_log_latency_static_cstring                     7.94 ns         8.02 ns     89600000
+BM_binary_log_latency_static_cstring                     7.70 ns         7.67 ns     89600000
 BM_binary_log_latency_static_std_string                  8.64 ns         8.54 ns     89600000
-BM_binary_log_latency_static_std_string_view             7.66 ns         7.67 ns     89600000
+BM_binary_log_latency_static_std_string_view             7.52 ns         7.50 ns     89600000
 BM_binary_log_latency_random_integer                     25.1 ns         25.1 ns     28000000
 BM_binary_log_latency_random_float                       19.2 ns         19.0 ns     34461538
 BM_binary_log_latency_random_double                      24.7 ns         25.1 ns     28000000
