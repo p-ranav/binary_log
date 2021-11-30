@@ -72,14 +72,14 @@ BM_binary_log_latency_static_ints_and_doubles            7.78 ns         7.67 ns
 BM_binary_log_latency_static_cstring                     7.70 ns         7.67 ns     89600000
 BM_binary_log_latency_static_std_string                  8.64 ns         8.54 ns     89600000
 BM_binary_log_latency_static_std_string_view             7.52 ns         7.50 ns     89600000
-BM_binary_log_latency_random_integer                     25.1 ns         25.1 ns     28000000
-BM_binary_log_latency_random_float                       19.2 ns         19.0 ns     34461538
-BM_binary_log_latency_random_double                      24.7 ns         25.1 ns     28000000
-BM_binary_log_latency_random_std_string_of_size/4        51.9 ns         51.6 ns     10000000
-BM_binary_log_latency_random_std_string_of_size/8        76.8 ns         76.7 ns      8960000
-BM_binary_log_latency_random_std_string_of_size/16        133 ns          131 ns      5600000
-BM_binary_log_latency_random_std_string_of_size/32        239 ns          240 ns      2800000
-BM_binary_log_latency_random_std_string_of_size/64        439 ns          439 ns      1600000
+BM_binary_log_latency_random_integer                     24.3 ns         24.6 ns     28000000
+BM_binary_log_latency_random_float                       18.7 ns         18.8 ns     37333333
+BM_binary_log_latency_random_double                      26.4 ns         26.8 ns     28000000
+BM_binary_log_latency_random_std_string_of_size/4        50.7 ns         51.6 ns     10000000
+BM_binary_log_latency_random_std_string_of_size/8        74.6 ns         75.3 ns     11200000
+BM_binary_log_latency_random_std_string_of_size/16        131 ns          132 ns      4977778
+BM_binary_log_latency_random_std_string_of_size/32        235 ns          235 ns      2986667
+BM_binary_log_latency_random_std_string_of_size/64        421 ns          420 ns      1600000
 ```
 
 # Building and installing
