@@ -8,7 +8,7 @@
       * ~20 ns for integers, floats, and doubles 
       * ~240 ns for random 32-byte strings
 * Extracts static information at compile-time
-* Only log the dynamic parts of the messages at runtime in the hot path
+* Only logs the dynamic parts of the messages at runtime in the hot path
 * An offline process can be used to deflate and format the log messages
 * Requires C++20
 * MIT License
