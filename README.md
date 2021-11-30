@@ -36,9 +36,6 @@ int main()
 
 ## Design Goals & Decisions
 
-* Design for embedded applications, e.g., ESP32
-  - Log fast
-  - Be space efficient
 * Implement a single-threaded, synchronous logger - Do not provide thread safety
   - If the user wants multi-threaded behavior, the user can choose and implement their own queueing solution
   - There are numerous well-known lock-free queues available for this purpose ([moody::concurrentqueue](https://github.com/cameron314/concurrentqueue), [atomic_queue](https://github.com/max0x7ba/atomic_queue) etc.)
