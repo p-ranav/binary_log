@@ -28,9 +28,9 @@ int main()
 
 /*
  * The above code:
- *   Runs in ~40 ms
- *   Average latency is ~23 ns
- *   File size: 5 MB
+ *   Runs in ~23.6 ms
+ *   Average latency is ~18 ns
+ *   File size: 5 MB (+ 32 bytes for an index file) 
 */
 ```
 
