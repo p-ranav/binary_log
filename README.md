@@ -38,7 +38,7 @@ int main()
 
 * Implement a single-threaded, synchronous logger - Do not provide thread safety
   - If the user wants multi-threaded behavior, the user can choose and implement their own queueing solution
-  - There are numerous well-known lock-free queues available for this purpose ([moody::concurrentqueue](https://github.com/cameron314/concurrentqueue), [atomic_queue](https://github.com/max0x7ba/atomic_queue) etc.)
+  - There are numerous well-known lock-free queues available for this purpose ([moody::concurrentqueue](https://github.com/cameron314/concurrentqueue), [atomic_queue](https://github.com/max0x7ba/atomic_queue) etc.) - let the user choose the technology they want to use.
   - The latency of enqueuing into a lock-free queue is large enough to matter
     - Users who do not care about multi-threaded scenarios should NOT suffer the cost
     - Looking at the [atomic_queue benchmarks](https://max0x7ba.github.io/atomic_queue/html/benchmarks.html), the average latency across many state-of-the-art multi-producer, multi-consumer queues is around 150-250 ns
