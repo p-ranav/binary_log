@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <string>
 
 #include <binary_log/constant.hpp>
@@ -59,34 +60,41 @@ class binary_log
   template<typename T>
   constexpr void pack_arg_type()
   {
-    if constexpr (std::is_same_v<T, char>) {
+    using type = typename std::remove_reference<T>::type;
+    if constexpr (std::is_same_v<type, char>) {
       packer::write_type<packer::datatype::type_char>(m_index_file);
-    } else if constexpr (std::is_same_v<T, uint8_t>) {
+    } else if constexpr (std::is_same_v<type, uint8_t>) {
       packer::write_type<packer::datatype::type_uint8>(m_index_file);
-    } else if constexpr (std::is_same_v<T, uint16_t>) {
+    } else if constexpr (std::is_same_v<type, uint16_t>) {
       packer::write_type<packer::datatype::type_uint16>(m_index_file);
-    } else if constexpr (std::is_same_v<T, uint32_t>) {
+    } else if constexpr (std::is_same_v<type, uint32_t>) {
       packer::write_type<packer::datatype::type_uint32>(m_index_file);
-    } else if constexpr (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_same_v<type, uint64_t>) {
       packer::write_type<packer::datatype::type_uint64>(m_index_file);
-    } else if constexpr (std::is_same_v<T, int8_t>) {
+    } else if constexpr (std::is_same_v<type, int8_t>) {
       packer::write_type<packer::datatype::type_int8>(m_index_file);
-    } else if constexpr (std::is_same_v<T, int16_t>) {
+    } else if constexpr (std::is_same_v<type, int16_t>) {
       packer::write_type<packer::datatype::type_int16>(m_index_file);
-    } else if constexpr (std::is_same_v<T, int32_t>) {
+    } else if constexpr (std::is_same_v<type, int32_t>) {
       packer::write_type<packer::datatype::type_int32>(m_index_file);
-    } else if constexpr (std::is_same_v<T, int64_t>) {
+    } else if constexpr (std::is_same_v<type, int64_t>) {
       packer::write_type<packer::datatype::type_int64>(m_index_file);
-    } else if constexpr (std::is_same_v<T, float>) {
+    } else if constexpr (std::is_same_v<type, float>) {
       packer::write_type<packer::datatype::type_float>(m_index_file);
-    } else if constexpr (std::is_same_v<T, double>) {
+    } else if constexpr (std::is_same_v<type, double>) {
       packer::write_type<packer::datatype::type_double>(m_index_file);
-    } else if constexpr (std::is_same_v<T, const char*>) {
+    } else if constexpr (std::is_same_v<type, const char*>) {
       packer::write_type<packer::datatype::type_cstring>(m_index_file);
-    } else if constexpr (std::is_same_v<T, std::string>) {
+    } else if constexpr (std::is_same_v<type, std::string>) {
       packer::write_type<packer::datatype::type_string>(m_index_file);
-    } else if constexpr (std::is_same_v<T, std::string_view>) {
+    } else if constexpr (std::is_same_v<type, std::string_view>) {
       packer::write_type<packer::datatype::type_string_view>(m_index_file);
+    } else {
+      []<bool flag = false>()
+      {
+        static_assert(flag, "unsupported type");
+      }
+      ();
     }
   }
 
