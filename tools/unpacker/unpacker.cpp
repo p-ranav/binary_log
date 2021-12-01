@@ -27,19 +27,17 @@ int main(int argc, char* argv[])
   auto index_file_path = program.get<std::string>("-i");
   auto log_file_path = program.get<std::string>("-l");
 
-  std::cout << index_file_path << std::endl;
-  std::cout << log_file_path << std::endl;
-
+  // Parse index file
   auto index_file_parser =
       binary_log::index_file_parser(index_file_path.c_str());
   auto index_entries = index_file_parser.parse();
 
+  // Parse log file
   auto log_file_parser = binary_log::log_file_parser(log_file_path.c_str());
   auto log_entries = log_file_parser.parse(index_entries);
 
+  // Print log entries
   for (auto& entry : log_entries) {
-    // Print the log entry
-
     const auto& format_string =
         index_entries[entry.format_string_index].format_string;
     fmt::dynamic_format_arg_store<fmt::format_context> store;
@@ -49,10 +47,9 @@ int main(int argc, char* argv[])
         uint32_t value = *(uint32_t*)&arg.value.data()[0];
         store.push_back(value);
       }
+      // TODO: Add support for other types
     }
 
     fmt::print("{}\n", fmt::vformat(format_string, store));
-    // std::string result = fmt::vformat("{} is {}", store);
-    // result is "answer to everything is 42"
   }
 }
