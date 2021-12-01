@@ -3,9 +3,7 @@
 #include <string>
 
 #include <binary_log/constant.hpp>
-#include <binary_log/fixed_string.hpp>
 #include <binary_log/packer.hpp>
-#include <binary_log/string_utils.hpp>
 
 namespace binary_log
 {
@@ -152,8 +150,8 @@ public:
     fclose(m_index_file);
   }
 
-  template<fixed_string F, class... Args>
-  constexpr inline uint8_t log_index(Args&&... args)
+  template<class... Args>
+  constexpr inline uint8_t log_index(std::string_view f, Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>
@@ -163,17 +161,16 @@ public:
     //
     // If the arg is not an lvalue, it is stored in the index file
     // and the value is not stored in the log file
-    constexpr char const* Name = F;
     constexpr uint8_t num_args = sizeof...(Args);
 
     m_format_string_index++;
 
     // Write the length of the format string
-    constexpr uint8_t format_string_length = string_length(Name);
+    const uint8_t format_string_length = f.size();
     fwrite(&format_string_length, 1, 1, m_index_file);
 
     // Write the format string
-    fwrite(F, 1, format_string_length, m_index_file);
+    fwrite(f.data(), 1, format_string_length, m_index_file);
 
     // Write the number of args taken by the format string
     fwrite(&num_args, sizeof(uint8_t), 1, m_index_file);
@@ -187,7 +184,7 @@ public:
     return m_format_string_index - 1;
   }
 
-  template<fixed_string F, class... Args>
+  template<class... Args>
   constexpr inline void log(uint8_t pos, Args&&... args)
   {
     constexpr uint8_t num_args = sizeof...(Args);
@@ -219,7 +216,7 @@ public:
 #define BINARY_LOG(logger, format_string, ...) \
   { \
     static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
-        logger.log_index<format_string>(__VA_ARGS__); \
-    logger.log<format_string>( \
-        CONCAT(__binary_log_format_string_id_pos, __LINE__), ##__VA_ARGS__); \
+        logger.log_index(format_string, ##__VA_ARGS__); \
+    logger.log(CONCAT(__binary_log_format_string_id_pos, __LINE__), \
+               ##__VA_ARGS__); \
   }
