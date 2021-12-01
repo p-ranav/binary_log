@@ -37,21 +37,22 @@ int main(int argc, char* argv[])
   auto log_file_parser = binary_log::log_file_parser(log_file_path.c_str());
   auto log_entries = log_file_parser.parse(index_entries);
 
-  for (auto& entry: log_entries) {
+  for (auto& entry : log_entries) {
     // Print the log entry
 
-    const auto& format_string = index_entries[entry.format_string_index].format_string;
+    const auto& format_string =
+        index_entries[entry.format_string_index].format_string;
     fmt::dynamic_format_arg_store<fmt::format_context> store;
 
-    for (auto& arg: entry.args) {
+    for (auto& arg : entry.args) {
       if (arg.type == binary_log::packer::datatype::type_uint32) {
-        uint32_t value = *(uint32_t *)&arg.value.data()[0];
+        uint32_t value = *(uint32_t*)&arg.value.data()[0];
         store.push_back(value);
-      }      
+      }
     }
-    
+
     fmt::print("{}\n", fmt::vformat(format_string, store));
     // std::string result = fmt::vformat("{} is {}", store);
-    // result is "answer to everything is 42"    
+    // result is "answer to everything is 42"
   }
 }
