@@ -4,6 +4,7 @@
 
 #include <argparse.hpp>
 #include <index_file_parser.hpp>
+#include <log_file_parser.hpp>
 
 int main(int argc, char* argv[])
 {
