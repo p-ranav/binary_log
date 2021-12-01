@@ -4,6 +4,7 @@ int main()
 {
   binary_log::binary_log log("log.out");
 
+/*
   // Static string
   BINARY_LOG(log, "Hello world!");
 
@@ -16,8 +17,8 @@ int main()
   // Integer types
   BINARY_LOG(log, "Integer: {}", -12);
   BINARY_LOG(log, "Unsigned integer: {}", 34u);
-  BINARY_LOG(log, "Long integer: {}", -56l);
-  BINARY_LOG(log, "Unsigned long integer: {}", 78ul);
+  BINARY_LOG(log, "Long integer: {}", (int64_t)-56);
+  BINARY_LOG(log, "Unsigned long integer: {}", (uint64_t)78);
 
   // Float types
   BINARY_LOG(log, "Float: {}", 123.456f);
@@ -25,7 +26,8 @@ int main()
 
   // String types
   BINARY_LOG(log, "String: {}", "Hello world!");
+*/
 
-  // for (uint32_t i = 0; i < 1E6; ++i)
-  //   BINARY_LOG(log, "Hello logger, msg number: {}", i);
+  for (uint32_t i = 0; i < 1E6; ++i)
+    BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }

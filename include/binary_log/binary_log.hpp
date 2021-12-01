@@ -14,6 +14,8 @@ class binary_log
   std::FILE* m_log_file;
   format_string_index_type m_format_string_index {0};
 
+  constexpr void pack_args_in_index_file() {}
+
   template<typename T>
   constexpr void pack_arg_in_index_file(T&& input)
   {
@@ -37,6 +39,8 @@ class binary_log
     }
   }
 
+  constexpr void pack_arg() {}
+
   template<typename T>
   constexpr void pack_arg(T&& input)
   {
@@ -55,8 +59,10 @@ class binary_log
     }
   }
 
+  constexpr void pack_args() {}
+
   template<typename T>
-  constexpr void pack_arg_type()
+  constexpr void pack_arg_type(T&& first)
   {
     using type = typename std::decay<T>::type;
     if constexpr (std::is_same_v<type, bool>) {
@@ -91,7 +97,8 @@ class binary_log
       packer::write_type<packer::datatype::type_string>(m_index_file);
     } else if constexpr (is_specialization<type, constant> {}) {
       // This is a constant
-      pack_arg_type<typename T::type>();
+      using inner_type = typename T::type;
+      pack_arg_type<inner_type>(std::forward<inner_type>(first.value));
     } else {
       []<bool flag = false>()
       {
@@ -101,13 +108,15 @@ class binary_log
     }
   }
 
+  constexpr void pack_arg_types() {}
+
   template<class T, class... Ts>
-  constexpr void pack_arg_types()
+  constexpr void pack_arg_types(T&& first, Ts&&... rest)
   {
-    pack_arg_type<T>();
+    pack_arg_type(std::forward<T>(first));
 
     if constexpr (sizeof...(Ts) > 0) {
-      pack_arg_types<Ts...>();
+      pack_arg_types(std::forward<Ts>(rest)...);
     }
   }
 
@@ -151,7 +160,7 @@ public:
   }
 
   template<class... Args>
-  constexpr inline uint8_t log_index(std::string_view f, Args&&... args)
+  inline uint8_t log_index(std::string_view f, Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>
@@ -161,7 +170,7 @@ public:
     //
     // If the arg is not an lvalue, it is stored in the index file
     // and the value is not stored in the log file
-    constexpr uint8_t num_args = sizeof...(Args);
+    const uint8_t num_args = sizeof...(Args);
 
     m_format_string_index++;
 
@@ -176,8 +185,8 @@ public:
     fwrite(&num_args, sizeof(uint8_t), 1, m_index_file);
 
     // Write the type of each argument
-    if constexpr (num_args > 0) {
-      pack_arg_types<Args...>();
+    if (num_args > 0) {
+      pack_arg_types(std::forward<Args>(args)...);
       pack_args_in_index_file(std::forward<Args>(args)...);
     }
 
@@ -185,9 +194,9 @@ public:
   }
 
   template<class... Args>
-  constexpr inline void log(uint8_t pos, Args&&... args)
+  inline void log(uint8_t pos, Args&&... args)
   {
-    constexpr uint8_t num_args = sizeof...(Args);
+    const uint8_t num_args = sizeof...(Args);
 
     // Write to the main log file
     // SPEC:
@@ -200,7 +209,7 @@ public:
     fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
 
     // Write the args
-    if constexpr (num_args > 0
+    if (num_args > 0
                   && !all_args_are_constants(std::forward<Args>(args)...))
     {
       pack_args(std::forward<Args>(args)...);
