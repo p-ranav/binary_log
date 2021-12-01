@@ -10,6 +10,9 @@ int main()
   // Dynamic string
   BINARY_LOG(log, "Hello {}!", "world!");
 
+  // Bool
+  BINARY_LOG(log, "Bool: {}", true);
+
   // Integer types
   BINARY_LOG(log, "Integer: {}", -12);
   BINARY_LOG(log, "Unsigned integer: {}", 34u);
@@ -18,7 +21,7 @@ int main()
 
   // Float types
   BINARY_LOG(log, "Float: {}", 123.456f);
-  BINARY_LOG(log, "Double: {}", 78910.1112131415);
+  BINARY_LOG(log, "Double: {:.4f}", 78910.1112131415);
 
   // String types
   BINARY_LOG(log, "String: {}", "Hello world!");

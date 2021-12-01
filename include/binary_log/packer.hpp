@@ -11,6 +11,7 @@ struct packer
 {
   enum class datatype
   {
+    type_bool,
     type_char,
     type_uint8,
     type_uint16,
@@ -28,6 +29,8 @@ struct packer
   static inline std::size_t sizeof_datatype(datatype type)
   {
     switch (type) {
+      case datatype::type_bool:
+        return sizeof(bool);
       case datatype::type_char:
         return sizeof(char);
       case datatype::type_uint8:
@@ -59,6 +62,11 @@ struct packer
 
   template<typename T>
   static inline void pack_data(std::FILE* f, const T& input) = delete;
+
+  constexpr static inline void pack_data(std::FILE* f, const bool& input)
+  {
+    fwrite(&input, sizeof(bool), 1, f);
+  }
 
   constexpr static inline void pack_data(std::FILE* f, const char& input)
   {

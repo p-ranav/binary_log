@@ -61,7 +61,9 @@ class binary_log
   constexpr void pack_arg_type()
   {
     using type = typename std::decay<T>::type;
-    if constexpr (std::is_same_v<type, char>) {
+    if constexpr (std::is_same_v<type, bool>) {
+      packer::write_type<packer::datatype::type_bool>(m_index_file);
+    } else if constexpr (std::is_same_v<type, char>) {
       packer::write_type<packer::datatype::type_char>(m_index_file);
     } else if constexpr (std::is_same_v<type, uint8_t>) {
       packer::write_type<packer::datatype::type_uint8>(m_index_file);

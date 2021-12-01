@@ -43,7 +43,10 @@ int main(int argc, char* argv[])
     fmt::dynamic_format_arg_store<fmt::format_context> store;
 
     for (auto& arg : entry.args) {
-      if (arg.type == binary_log::packer::datatype::type_char) {
+      if (arg.type == binary_log::packer::datatype::type_bool) {
+        bool value = *(bool*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.type == binary_log::packer::datatype::type_char) {
         char value = *(char*)&arg.value.data()[0];
         store.push_back(value);
       } else if (arg.type == binary_log::packer::datatype::type_uint8) {
