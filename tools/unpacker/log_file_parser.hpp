@@ -62,10 +62,7 @@ class log_file_parser
         // first find out how many bytes the argument takes
         // then parse the argument
 
-        if (arg_info.type == packer::datatype::type_cstring
-            || arg_info.type == packer::datatype::type_string
-            || arg_info.type == packer::datatype::type_string_view)
-        {
+        if (arg_info.type == packer::datatype::type_string) {
           // string
           // first byte is the length
           // then the string

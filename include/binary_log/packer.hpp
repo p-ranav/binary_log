@@ -22,46 +22,8 @@ struct packer
     type_int64,
     type_float,
     type_double,
-    type_cstring,
     type_string,
-    type_string_view,
   };
-
-  constexpr static inline std::string_view datatype_to_string(datatype type)
-  {
-    switch (type) {
-      case datatype::type_char:
-        return "char";
-      case datatype::type_uint8:
-        return "uint8";
-      case datatype::type_uint16:
-        return "uint16";
-      case datatype::type_uint32:
-        return "uint32";
-      case datatype::type_uint64:
-        return "uint64";
-      case datatype::type_int8:
-        return "int8";
-      case datatype::type_int16:
-        return "int16";
-      case datatype::type_int32:
-        return "int32";
-      case datatype::type_int64:
-        return "int64";
-      case datatype::type_float:
-        return "float";
-      case datatype::type_double:
-        return "double";
-      case datatype::type_cstring:
-        return "cstring";
-      case datatype::type_string:
-        return "string";
-      case datatype::type_string_view:
-        return "string_view";
-      default:
-        return "";
-    }
-  }
 
   static inline std::size_t sizeof_datatype(datatype type)
   {
@@ -88,11 +50,7 @@ struct packer
         return sizeof(float);
       case datatype::type_double:
         return sizeof(double);
-      case datatype::type_cstring:
-        return sizeof(char);
       case datatype::type_string:
-        return sizeof(char);
-      case datatype::type_string_view:
         return sizeof(char);
       default:
         return 0;

@@ -76,10 +76,7 @@ int main(int argc, char* argv[])
       } else if (arg.type == binary_log::packer::datatype::type_double) {
         double value = *(double*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_cstring
-                 || arg.type == binary_log::packer::datatype::type_string
-                 || arg.type == binary_log::packer::datatype::type_string_view)
-      {
+      } else if (arg.type == binary_log::packer::datatype::type_string) {
         char* value = (char*)&arg.value.data()[0];
         store.push_back(value);
       }

@@ -76,10 +76,7 @@ private:
         if (arg.is_constant) {
           // the next byte will be the value
           // size is determined by the type of the arg
-          if (arg.type == packer::datatype::type_cstring
-              || arg.type == packer::datatype::type_string
-              || arg.type == packer::datatype::type_string_view)
-          {
+          if (arg.type == packer::datatype::type_string) {
             // the next byte will be the size of the string
             std::size_t size = next_byte();
 
