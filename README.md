@@ -9,7 +9,7 @@
   * ~130 ns for random 16-byte strings
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
-* An offline process can be used to deflate and format the log messages
+* Use the [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
 * Synchronous logging - not thread safe
 * Header-only library
 * Requires C++20
