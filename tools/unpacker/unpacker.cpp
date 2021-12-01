@@ -6,6 +6,10 @@
 #include <index_file_parser.hpp>
 #include <log_file_parser.hpp>
 
+#define FMT_HEADER_ONLY
+#include <fmt/args.h>
+#include <fmt/format.h>
+
 int main(int argc, char* argv[])
 {
   argparse::ArgumentParser program("unpacker");
@@ -28,19 +32,26 @@ int main(int argc, char* argv[])
 
   auto index_file_parser =
       binary_log::index_file_parser(index_file_path.c_str());
-  auto entries = index_file_parser.parse();
+  auto index_entries = index_file_parser.parse();
 
-  for (auto& entry : entries) {
-    std::cout << entry.format_string << " " << entry.args.size() << " args\n";
-    for (auto& arg : entry.args) {
-      std::cout << "Arg:\n";
-      std::cout << "  type                "
-                << binary_log::packer::datatype_to_string(arg.type) << "\n";
-      std::cout << "  is constant?        " << std::boolalpha << arg.is_constant
-                << "\n";
-      std::cout << "  data in index file? " << std::boolalpha
-                << (arg.arg_data.size() > 0) << "\n";
-      std::cout << "---\n";
+  auto log_file_parser = binary_log::log_file_parser(log_file_path.c_str());
+  auto log_entries = log_file_parser.parse(index_entries);
+
+  for (auto& entry: log_entries) {
+    // Print the log entry
+
+    const auto& format_string = index_entries[entry.format_string_index].format_string;
+    fmt::dynamic_format_arg_store<fmt::format_context> store;
+
+    for (auto& arg: entry.args) {
+      if (arg.type == binary_log::packer::datatype::type_uint32) {
+        uint32_t value = *(uint32_t *)&arg.value.data()[0];
+        store.push_back(value);
+      }      
     }
+    
+    fmt::print("{}\n", fmt::vformat(format_string, store));
+    // std::string result = fmt::vformat("{} is {}", store);
+    // result is "answer to everything is 42"    
   }
 }

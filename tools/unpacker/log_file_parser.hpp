@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <binary_log/packer.hpp>
+#include <index_file_parser.hpp>
 #include <mio.hpp>
 
 namespace binary_log
@@ -16,19 +17,81 @@ class log_file_parser
   std::size_t m_index {0};  // into m_buffer
 
   struct arg {
-	std::vector<uint8_t> arg_data;
+	packer::datatype type;
+	std::vector<uint8_t> value;
   };
 
   struct log_entry
   {
-    std::size_t format_string_index;
+	std::size_t format_string_index;
     std::vector<arg> args;
   };  
 
-  void parse_entry()
+  uint8_t next_byte()
+  {
+    return *reinterpret_cast<const uint8_t*>(&m_buffer[m_index++]);
+  }  
+
+  log_entry parse_entry(const std::vector<index_file_parser::index_entry>& index_table)
   {
     log_entry entry;
 
+	// First parse the index into the index table
+	std::size_t index = next_byte();
+
+	entry.format_string_index = index;
+
+	auto index_entry = index_table[index];
+
+	// Now we know the format string and the number of arguments
+	// along with the type of each argument to be parsed
+
+	for (const auto& arg_info: index_entry.args)
+	{
+		arg new_arg;
+		new_arg.type = arg_info.type;
+
+		if (arg_info.is_constant)
+		{
+			// The argument value is in the index table
+			new_arg.value = arg_info.arg_data;
+		}
+		else
+		{
+			// argument is not constant
+			// need to parse it from the log file
+			// 
+			// first find out how many bytes the argument takes
+			// then parse the argument
+
+          	if (arg_info.type == packer::datatype::type_cstring
+              || arg_info.type == packer::datatype::type_string
+              || arg_info.type == packer::datatype::type_string_view)
+          	{
+				// string
+				// first byte is the length
+				// then the string
+				std::size_t size = next_byte();
+
+				// the next bytes will be the string
+				new_arg.value.resize(size);
+				std::memcpy(new_arg.value.data(), m_buffer + m_index, size);
+				m_index += size;				
+			}
+			else
+			{
+				// just parse the value bytes
+				new_arg.value.resize(packer::sizeof_datatype(arg_info.type));
+				std::memcpy(
+					new_arg.value.data(), m_buffer + m_index, new_arg.value.size());
+				m_index += new_arg.value.size();				
+			}
+		}
+
+		entry.args.push_back(new_arg);
+	}
+
+	return entry;
   };  
 
 public:
@@ -43,11 +106,15 @@ public:
     m_buffer_size = m_mmap.mapped_length();
   }
 
-  void parse(/* Take index table as argument? */)
+  std::vector<log_entry> parse(const std::vector<index_file_parser::index_entry>& index_table)
   {
+	std::vector<log_entry> entries;
+
     while (m_index < m_buffer_size) {
-      parse_entry();
+      entries.push_back(parse_entry(index_table));
     }
+
+	return entries;
   }
 };
 }
