@@ -60,7 +60,7 @@ class binary_log
   template<typename T>
   constexpr void pack_arg_type()
   {
-    using type = typename std::remove_reference<T>::type;
+    using type = typename std::decay<T>::type;
     if constexpr (std::is_same_v<type, char>) {
       packer::write_type<packer::datatype::type_char>(m_index_file);
     } else if constexpr (std::is_same_v<type, uint8_t>) {
