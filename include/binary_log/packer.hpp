@@ -8,6 +8,31 @@
 
 namespace binary_log
 {
+template<typename T, typename... U>
+concept is_any_of = (std::same_as<T, U> || ...);
+
+template<typename T>
+concept is_numeric_type =
+    is_any_of<std::remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>,
+              bool,
+              char,
+              uint8_t,
+              int8_t,
+              uint16_t,
+              int16_t,
+              uint32_t,
+              int32_t,
+              uint64_t,
+              int64_t,
+              float,
+              double>;
+
+template<typename T>
+concept is_string_type =
+    is_any_of<std::remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>,
+              std::string,
+              std::string_view>;
+
 struct packer
 {
   enum class datatype
@@ -62,91 +87,31 @@ struct packer
   }
 
   template<typename T>
-  static inline void pack_data(std::FILE* f, const T& input) = delete;
+  static inline void pack_data(std::FILE* f, T&& input) = delete;
 
-  static inline void pack_data(std::FILE* f, const bool& input)
-  {
-    fwrite(&input, sizeof(bool), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const char& input)
-  {
-    fwrite(&input, sizeof(char), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const uint8_t& input)
-  {
-    fwrite(&input, sizeof(uint8_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const uint16_t& input)
-  {
-    fwrite(&input, sizeof(uint16_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const uint32_t& input)
-  {
-    fwrite(&input, sizeof(uint32_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const uint64_t& input)
-  {
-    fwrite(&input, sizeof(uint64_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const int8_t& input)
-  {
-    fwrite(&input, sizeof(int8_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const int16_t& input)
-  {
-    fwrite(&input, sizeof(int16_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const int32_t& input)
-  {
-    fwrite(&input, sizeof(int32_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const int64_t& input)
-  {
-    fwrite(&input, sizeof(int64_t), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const float& input)
-  {
-    fwrite(&input, sizeof(float), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const double& input)
-  {
-    fwrite(&input, sizeof(double), 1, f);
-  }
-
-   static inline void pack_data(std::FILE* f, const char* input)
+  static inline void pack_data(std::FILE* f, const char* input)
   {
     pack_data(f, static_cast<uint8_t>(std::strlen(input)));
     fwrite(input, sizeof(char), std::strlen(input), f);
   }
 
-  template <typename T>
-  requires std::same_as <T, std::string>
-  static inline void pack_data(std::FILE* f, const T&& input)
+  template<typename T>
+  requires is_numeric_type<T> static inline void pack_data(std::FILE* f,
+                                                           T&& input)
   {
-    pack_data(f, static_cast<uint8_t>(input.size()));
-    fwrite(input.data(), sizeof(char), input.size(), f);
+    fwrite(&input, sizeof(T), 1, f);
   }
 
-   static inline void pack_data(std::FILE* f,
-                                         const std::string_view& input)
+  template<typename T>
+  requires is_string_type<T> static inline void pack_data(std::FILE* f,
+                                                          T&& input)
   {
     pack_data(f, static_cast<uint8_t>(input.size()));
     fwrite(input.data(), sizeof(char), input.size(), f);
   }
 
   template<datatype T>
-   static inline void write_type(std::FILE* f)
+  static inline void write_type(std::FILE* f)
   {
     constexpr uint8_t type_byte = static_cast<uint8_t>(T);
     fwrite(&type_byte, sizeof(uint8_t), 1, f);

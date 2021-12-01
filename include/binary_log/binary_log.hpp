@@ -209,9 +209,7 @@ public:
     fwrite(&pos, sizeof(uint8_t), 1, m_log_file);
 
     // Write the args
-    if (num_args > 0
-                  && !all_args_are_constants(std::forward<Args>(args)...))
-    {
+    if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
       pack_args(std::forward<Args>(args)...);
     }
   }
