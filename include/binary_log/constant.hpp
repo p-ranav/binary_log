@@ -2,7 +2,6 @@
 
 namespace binary_log
 {
-
 template<typename T>
 struct constant
 {

@@ -1,14 +1,14 @@
 #pragma once
 #include <array>
 #include <cstring>
+#include <iostream>
 #include <limits>
 #include <string>
 #include <string_view>
-#include <binary_log/detail/concepts.hpp>
+
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/args.hpp>
-
-#include <iostream>
+#include <binary_log/detail/concepts.hpp>
 
 namespace binary_log
 {
@@ -25,14 +25,14 @@ struct packer
 
   template<typename T>
   requires is_numeric_type<T> static inline void write_arg_value(std::FILE* f,
-                                                           T&& input)
+                                                                 T&& input)
   {
     fwrite(&input, sizeof(T), 1, f);
   }
 
   template<typename T>
   requires is_string_type<T> static inline void write_arg_value(std::FILE* f,
-                                                          T&& input)
+                                                                T&& input)
   {
     write_arg_value(f, static_cast<uint8_t>(input.size()));
     fwrite(input.data(), sizeof(char), input.size(), f);
@@ -47,9 +47,10 @@ struct packer
   }
 
   template<class... Args>
-  constexpr static inline void update_log_file(std::FILE* f, Args&&... args)
+  constexpr static inline void update_log_file([[maybe_unused]] std::FILE* f,
+                                               Args&&... args)
   {
-    ((void) pack_arg(f, std::forward<Args>(args)), ...);
+    ((void)pack_arg(f, std::forward<Args>(args)), ...);
   }
 
   template<fmt_arg_type T>
@@ -79,8 +80,7 @@ struct packer
     if constexpr (!is_specialization<T, constant> {}) {
       constexpr bool is_constant = false;
       fwrite(&is_constant, sizeof(bool), 1, f);
-    }
-    else {
+    } else {
       constexpr bool is_constant = true;
       fwrite(&is_constant, sizeof(bool), 1, f);
       write_arg_value(f, input.value);
@@ -88,12 +88,12 @@ struct packer
   }
 
   template<class... Args>
-  constexpr static inline void update_index_file(std::FILE* f, Args&&... args)
+  constexpr static inline void update_index_file([[maybe_unused]] std::FILE* f,
+                                                 Args&&... args)
   {
-    ((void) save_arg_type<Args>(f), ...);
-    ((void) save_arg_constness(f, std::forward<Args>(args)), ...);
+    ((void)save_arg_type<Args>(f), ...);
+    ((void)save_arg_constness(f, std::forward<Args>(args)), ...);
   }
-
 };
 
 }  // namespace binary_log

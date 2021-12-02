@@ -1,11 +1,12 @@
 #pragma once
 #include <cstdint>
+
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/concepts.hpp>
 #include <binary_log/detail/is_specialization.hpp>
 
-namespace binary_log {
-
+namespace binary_log
+{
 enum class fmt_arg_type
 {
   type_bool,
@@ -57,90 +58,89 @@ static inline std::size_t sizeof_arg_type(fmt_arg_type type)
   }
 }
 
-template <typename T>
+template<typename T>
 constexpr static inline fmt_arg_type get_arg_type() = delete;
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<bool>()
 {
   return fmt_arg_type::type_bool;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<char>()
 {
   return fmt_arg_type::type_char;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<uint8_t>()
 {
   return fmt_arg_type::type_uint8;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<uint16_t>()
 {
   return fmt_arg_type::type_uint16;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<uint32_t>()
 {
   return fmt_arg_type::type_uint32;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<uint64_t>()
 {
   return fmt_arg_type::type_uint64;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<int8_t>()
 {
   return fmt_arg_type::type_int8;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<int16_t>()
 {
   return fmt_arg_type::type_int16;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<int32_t>()
 {
   return fmt_arg_type::type_int32;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<int64_t>()
 {
   return fmt_arg_type::type_int64;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<float>()
 {
   return fmt_arg_type::type_float;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<double>()
 {
   return fmt_arg_type::type_double;
 }
 
-template <>
+template<>
 constexpr inline fmt_arg_type get_arg_type<const char*>()
 {
   return fmt_arg_type::type_string;
 }
 
-template <typename T>
-requires is_string_type<T>
-constexpr inline fmt_arg_type get_arg_type()
+template<typename T>
+requires is_string_type<T> constexpr inline fmt_arg_type get_arg_type()
 {
   return fmt_arg_type::type_string;
 }
@@ -160,4 +160,4 @@ constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
   }
 }
 
-}
+}  // namespace binary_log

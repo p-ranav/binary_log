@@ -1,8 +1,8 @@
 #pragma once
 #include <concepts>
 
-namespace binary_log {
-
+namespace binary_log
+{
 template<typename T, typename... U>
 concept is_any_of = (std::same_as<T, U> || ...);
 
@@ -28,4 +28,4 @@ concept is_string_type =
               std::string,
               std::string_view>;
 
-}
+}  // namespace binary_log

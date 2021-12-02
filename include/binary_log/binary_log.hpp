@@ -2,8 +2,8 @@
 #include <iostream>
 #include <string>
 
-#include <binary_log/detail/args.hpp>
 #include <binary_log/constant.hpp>
+#include <binary_log/detail/args.hpp>
 #include <binary_log/detail/packer.hpp>
 
 namespace binary_log
