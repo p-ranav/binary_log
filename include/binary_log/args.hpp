@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <binary_log/concepts.hpp>
 
 namespace binary_log {
 
@@ -54,11 +55,92 @@ static inline std::size_t sizeof_arg_type(fmt_arg_type type)
   }
 }
 
-template<fmt_arg_type T>
-static inline void write_arg_type(std::FILE* f)
+template <typename T>
+constexpr static inline fmt_arg_type get_arg_type() = delete;
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<bool>()
 {
-  constexpr uint8_t type_byte = static_cast<uint8_t>(T);
-  fwrite(&type_byte, sizeof(uint8_t), 1, f);
+  return fmt_arg_type::type_bool;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<char>()
+{
+  return fmt_arg_type::type_char;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<uint8_t>()
+{
+  return fmt_arg_type::type_uint8;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<uint16_t>()
+{
+  return fmt_arg_type::type_uint16;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<uint32_t>()
+{
+  return fmt_arg_type::type_uint32;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<uint64_t>()
+{
+  return fmt_arg_type::type_uint64;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<int8_t>()
+{
+  return fmt_arg_type::type_int8;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<int16_t>()
+{
+  return fmt_arg_type::type_int16;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<int32_t>()
+{
+  return fmt_arg_type::type_int32;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<int64_t>()
+{
+  return fmt_arg_type::type_int64;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<float>()
+{
+  return fmt_arg_type::type_float;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<double>()
+{
+  return fmt_arg_type::type_double;
+}
+
+template <>
+constexpr inline fmt_arg_type get_arg_type<const char*>()
+{
+  return fmt_arg_type::type_string;
+}
+
+template <typename T>
+requires is_string_type<T>
+constexpr inline fmt_arg_type get_arg_type()
+{
+  return fmt_arg_type::type_string;
 }
 
 }

@@ -66,8 +66,7 @@ public:
 
     // Write the type of each argument
     if (num_args > 0) {
-      packer::pack_arg_types(m_index_file, std::forward<Args>(args)...);
-      packer::pack_args_in_index_file(m_index_file, std::forward<Args>(args)...);
+      packer::update_index_file(m_index_file, std::forward<Args>(args)...);
     }
 
     return m_format_string_index - 1;
@@ -90,7 +89,7 @@ public:
 
     // Write the args
     if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
-      packer::pack_args(m_log_file, std::forward<Args>(args)...);
+      packer::update_log_file(m_log_file, std::forward<Args>(args)...);
     }
   }
 };

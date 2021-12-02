@@ -13,26 +13,26 @@ namespace binary_log
 struct packer
 {
   template<typename T>
-  static inline void pack_data(std::FILE* f, T&& input) = delete;
+  static inline void write_arg_value(std::FILE* f, T&& input) = delete;
 
-  static inline void pack_data(std::FILE* f, const char* input)
+  static inline void write_arg_value(std::FILE* f, const char* input)
   {
-    pack_data(f, static_cast<uint8_t>(std::strlen(input)));
+    write_arg_value(f, static_cast<uint8_t>(std::strlen(input)));
     fwrite(input, sizeof(char), std::strlen(input), f);
   }
 
   template<typename T>
-  requires is_numeric_type<T> static inline void pack_data(std::FILE* f,
+  requires is_numeric_type<T> static inline void write_arg_value(std::FILE* f,
                                                            T&& input)
   {
     fwrite(&input, sizeof(T), 1, f);
   }
 
   template<typename T>
-  requires is_string_type<T> static inline void pack_data(std::FILE* f,
+  requires is_string_type<T> static inline void write_arg_value(std::FILE* f,
                                                           T&& input)
   {
-    pack_data(f, static_cast<uint8_t>(input.size()));
+    write_arg_value(f, static_cast<uint8_t>(input.size()));
     fwrite(input.data(), sizeof(char), input.size(), f);
   }
 
@@ -40,71 +40,39 @@ struct packer
   constexpr static inline void pack_arg(std::FILE* f, T&& input)
   {
     if constexpr (!is_specialization<T, constant> {}) {
-      pack_data(f, std::forward<T>(input));
+      write_arg_value(f, std::forward<T>(input));
     }
   }
 
   template<class... Args>
-  constexpr static inline void pack_args(std::FILE* f, Args&&... args)
+  constexpr static inline void update_log_file(std::FILE* f, Args&&... args)
   {
     ((void) pack_arg(f, std::forward<Args>(args)), ...);
   }
 
+  template<fmt_arg_type T>
+  static inline void write_arg_type(std::FILE* f)
+  {
+    constexpr uint8_t type_byte = static_cast<uint8_t>(T);
+    fwrite(&type_byte, sizeof(uint8_t), 1, f);
+  }
+
   template<typename T>
-  constexpr static inline void pack_arg_type(std::FILE* f, T&& first)
+  constexpr static inline void save_arg_type(std::FILE* f, T&& first)
   {
     using type = typename std::decay<T>::type;
-    if constexpr (std::is_same_v<type, bool>) {
-      write_arg_type<fmt_arg_type::type_bool>(f);
-    } else if constexpr (std::is_same_v<type, char>) {
-      write_arg_type<fmt_arg_type::type_char>(f);
-    } else if constexpr (std::is_same_v<type, uint8_t>) {
-      write_arg_type<fmt_arg_type::type_uint8>(f);
-    } else if constexpr (std::is_same_v<type, uint16_t>) {
-      write_arg_type<fmt_arg_type::type_uint16>(f);
-    } else if constexpr (std::is_same_v<type, uint32_t>) {
-      write_arg_type<fmt_arg_type::type_uint32>(f);
-    } else if constexpr (std::is_same_v<type, uint64_t>) {
-      write_arg_type<fmt_arg_type::type_uint64>(f);
-    } else if constexpr (std::is_same_v<type, int8_t>) {
-      write_arg_type<fmt_arg_type::type_int8>(f);
-    } else if constexpr (std::is_same_v<type, int16_t>) {
-      write_arg_type<fmt_arg_type::type_int16>(f);
-    } else if constexpr (std::is_same_v<type, int32_t>) {
-      write_arg_type<fmt_arg_type::type_int32>(f);
-    } else if constexpr (std::is_same_v<type, int64_t>) {
-      write_arg_type<fmt_arg_type::type_int64>(f);
-    } else if constexpr (std::is_same_v<type, float>) {
-      write_arg_type<fmt_arg_type::type_float>(f);
-    } else if constexpr (std::is_same_v<type, double>) {
-      write_arg_type<fmt_arg_type::type_double>(f);
-    } else if constexpr (std::is_same_v<type, const char*>) {
-      write_arg_type<fmt_arg_type::type_string>(f);
-    } else if constexpr (std::is_same_v<type, std::string>) {
-      write_arg_type<fmt_arg_type::type_string>(f);
-    } else if constexpr (std::is_same_v<type, std::string_view>) {
-      write_arg_type<fmt_arg_type::type_string>(f);
-    } else if constexpr (is_specialization<type, constant> {}) {
+
+    if constexpr (is_specialization<type, constant> {}) {
       // This is a constant
       using inner_type = typename T::type;
-      pack_arg_type<inner_type>(f, std::forward<inner_type>(first.value));
+      save_arg_type<inner_type>(f, std::forward<inner_type>(first.value));
     } else {
-      []<bool flag = false>()
-      {
-        static_assert(flag, "unsupported type");
-      }
-      ();
+      write_arg_type<binary_log::get_arg_type<type>()>(f);
     }
   }
 
-  template<class... Args>
-  constexpr static inline void pack_arg_types(std::FILE* f, Args&&... args)
-  {
-    ((void) pack_arg_type(f, std::forward<Args>(args)), ...);
-  }
-
   template<typename T>
-  constexpr static inline void pack_arg_in_index_file(std::FILE* f, T&& input)
+  constexpr static inline void save_arg_constness(std::FILE* f, T&& input)
   {
     if constexpr (is_specialization<decltype(input), constant> {}) {
       constexpr bool is_constant = true;
@@ -117,9 +85,10 @@ struct packer
   }
 
   template<class... Args>
-  constexpr static inline void pack_args_in_index_file(std::FILE* f, Args&&... args)
+  constexpr static inline void update_index_file(std::FILE* f, Args&&... args)
   {
-    ((void) pack_arg_in_index_file(f, std::forward<Args>(args)), ...);
+    ((void) save_arg_type(f, std::forward<Args>(args)), ...);
+    ((void) save_arg_constness(f, std::forward<Args>(args)), ...);
   }
 
 };
