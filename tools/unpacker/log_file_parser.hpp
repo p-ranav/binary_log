@@ -18,7 +18,7 @@ class log_file_parser
 
   struct arg
   {
-    packer::datatype type;
+    fmt_arg_type type;
     std::vector<uint8_t> value;
   };
 
@@ -62,7 +62,7 @@ class log_file_parser
         // first find out how many bytes the argument takes
         // then parse the argument
 
-        if (arg_info.type == packer::datatype::type_string) {
+        if (arg_info.type == fmt_arg_type::type_string) {
           // string
           // first byte is the length
           // then the string
@@ -74,7 +74,7 @@ class log_file_parser
           m_index += size;
         } else {
           // just parse the value bytes
-          new_arg.value.resize(packer::sizeof_datatype(arg_info.type));
+          new_arg.value.resize(sizeof_arg_type(arg_info.type));
           std::memcpy(
               new_arg.value.data(), m_buffer + m_index, new_arg.value.size());
           m_index += new_arg.value.size();

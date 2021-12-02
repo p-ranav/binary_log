@@ -18,7 +18,7 @@ class index_file_parser
 public:
   struct arg
   {
-    packer::datatype type;
+    fmt_arg_type type;
     bool is_constant;
 
     // if constant, this will have the static data
@@ -59,10 +59,10 @@ private:
     if (num_args > 0) {
       // Parse the arg type of each arg
       // This is 1 byte * num_args
-      std::vector<packer::datatype> arg_types;
+      std::vector<fmt_arg_type> arg_types;
       for (std::size_t i = 0; i < num_args; ++i) {
         uint8_t arg_type = next_byte();
-        packer::datatype type = static_cast<packer::datatype>(arg_type);
+        fmt_arg_type type = static_cast<fmt_arg_type>(arg_type);
         arg_types.push_back(type);
       }
 
@@ -76,7 +76,7 @@ private:
         if (arg.is_constant) {
           // the next byte will be the value
           // size is determined by the type of the arg
-          if (arg.type == packer::datatype::type_string) {
+          if (arg.type == fmt_arg_type::type_string) {
             // the next byte will be the size of the string
             std::size_t size = next_byte();
 
@@ -87,7 +87,7 @@ private:
           } else {
             // the next bytes will be the value
             // size is determined by the type of the arg
-            arg.arg_data.resize(packer::sizeof_datatype(arg.type));
+            arg.arg_data.resize(sizeof_arg_type(arg.type));
             std::memcpy(
                 arg.arg_data.data(), m_buffer + m_index, arg.arg_data.size());
             m_index += arg.arg_data.size();

@@ -43,43 +43,43 @@ int main(int argc, char* argv[])
     fmt::dynamic_format_arg_store<fmt::format_context> store;
 
     for (auto& arg : entry.args) {
-      if (arg.type == binary_log::packer::datatype::type_bool) {
+      if (arg.type == binary_log::fmt_arg_type::type_bool) {
         bool value = *(bool*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_char) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_char) {
         char value = *(char*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_uint8) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_uint8) {
         uint8_t value = *(uint8_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_uint16) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
         uint16_t value = *(uint16_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_uint32) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_uint32) {
         uint32_t value = *(uint32_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_uint64) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
         uint64_t value = *(uint64_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_int8) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
         int8_t value = *(int8_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_int16) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_int16) {
         int16_t value = *(int16_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_int32) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_int32) {
         int32_t value = *(int32_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_int64) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
         int64_t value = *(int64_t*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_float) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_float) {
         float value = *(float*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_double) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_double) {
         double value = *(double*)&arg.value.data()[0];
         store.push_back(value);
-      } else if (arg.type == binary_log::packer::datatype::type_string) {
+      } else if (arg.type == binary_log::fmt_arg_type::type_string) {
         char* value = (char*)&arg.value.data()[0];
         store.push_back(value);
       }

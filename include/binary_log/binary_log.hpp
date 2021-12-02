@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 
+#include <binary_log/args.hpp>
 #include <binary_log/constant.hpp>
 #include <binary_log/packer.hpp>
 
@@ -66,35 +67,35 @@ class binary_log
   {
     using type = typename std::decay<T>::type;
     if constexpr (std::is_same_v<type, bool>) {
-      packer::write_type<packer::datatype::type_bool>(m_index_file);
+      write_arg_type<fmt_arg_type::type_bool>(m_index_file);
     } else if constexpr (std::is_same_v<type, char>) {
-      packer::write_type<packer::datatype::type_char>(m_index_file);
+      write_arg_type<fmt_arg_type::type_char>(m_index_file);
     } else if constexpr (std::is_same_v<type, uint8_t>) {
-      packer::write_type<packer::datatype::type_uint8>(m_index_file);
+      write_arg_type<fmt_arg_type::type_uint8>(m_index_file);
     } else if constexpr (std::is_same_v<type, uint16_t>) {
-      packer::write_type<packer::datatype::type_uint16>(m_index_file);
+      write_arg_type<fmt_arg_type::type_uint16>(m_index_file);
     } else if constexpr (std::is_same_v<type, uint32_t>) {
-      packer::write_type<packer::datatype::type_uint32>(m_index_file);
+      write_arg_type<fmt_arg_type::type_uint32>(m_index_file);
     } else if constexpr (std::is_same_v<type, uint64_t>) {
-      packer::write_type<packer::datatype::type_uint64>(m_index_file);
+      write_arg_type<fmt_arg_type::type_uint64>(m_index_file);
     } else if constexpr (std::is_same_v<type, int8_t>) {
-      packer::write_type<packer::datatype::type_int8>(m_index_file);
+      write_arg_type<fmt_arg_type::type_int8>(m_index_file);
     } else if constexpr (std::is_same_v<type, int16_t>) {
-      packer::write_type<packer::datatype::type_int16>(m_index_file);
+      write_arg_type<fmt_arg_type::type_int16>(m_index_file);
     } else if constexpr (std::is_same_v<type, int32_t>) {
-      packer::write_type<packer::datatype::type_int32>(m_index_file);
+      write_arg_type<fmt_arg_type::type_int32>(m_index_file);
     } else if constexpr (std::is_same_v<type, int64_t>) {
-      packer::write_type<packer::datatype::type_int64>(m_index_file);
+      write_arg_type<fmt_arg_type::type_int64>(m_index_file);
     } else if constexpr (std::is_same_v<type, float>) {
-      packer::write_type<packer::datatype::type_float>(m_index_file);
+      write_arg_type<fmt_arg_type::type_float>(m_index_file);
     } else if constexpr (std::is_same_v<type, double>) {
-      packer::write_type<packer::datatype::type_double>(m_index_file);
+      write_arg_type<fmt_arg_type::type_double>(m_index_file);
     } else if constexpr (std::is_same_v<type, const char*>) {
-      packer::write_type<packer::datatype::type_string>(m_index_file);
+      write_arg_type<fmt_arg_type::type_string>(m_index_file);
     } else if constexpr (std::is_same_v<type, std::string>) {
-      packer::write_type<packer::datatype::type_string>(m_index_file);
+      write_arg_type<fmt_arg_type::type_string>(m_index_file);
     } else if constexpr (std::is_same_v<type, std::string_view>) {
-      packer::write_type<packer::datatype::type_string>(m_index_file);
+      write_arg_type<fmt_arg_type::type_string>(m_index_file);
     } else if constexpr (is_specialization<type, constant> {}) {
       // This is a constant
       using inner_type = typename T::type;
