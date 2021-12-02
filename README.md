@@ -42,7 +42,6 @@ int main()
   - The latency of enqueuing into a lock-free queue is large enough to matter
     - Users who do not care about multi-threaded scenarios should NOT suffer the cost
     - Looking at the [atomic_queue benchmarks](https://max0x7ba.github.io/atomic_queue/html/benchmarks.html), the average latency across many state-of-the-art multi-producer, multi-consumer queues is around 150-250 ns
-* Avoid writing information that is not requested by the user - log level, timestamp etc.
 * Avoid writing static information (format string, and constants) more than once
   - Store the static information in an "index" file 
   - Store the dynamic information in the log file (refer to the index file where possible)
