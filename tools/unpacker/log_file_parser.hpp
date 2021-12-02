@@ -2,7 +2,6 @@
 #include <string_view>
 #include <vector>
 
-#include <binary_log/detail/packer.hpp>
 #include <index_file_parser.hpp>
 #include <mio.hpp>
 
