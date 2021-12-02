@@ -21,7 +21,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 function(add_unpacker NAME)
   add_executable("${NAME}" "${NAME}.cpp")
-  target_link_libraries("${NAME}" PRIVATE binary_log::binary_log benchmark::benchmark)
+  target_link_libraries("${NAME}" PRIVATE binary_log::binary_log)
   target_compile_features("${NAME}" PRIVATE cxx_std_20)
   add_custom_target("run_${NAME}" COMMAND "${NAME}" VERBATIM)
   add_dependencies("run_${NAME}" "${NAME}")

@@ -18,7 +18,7 @@ class log_file_parser
   struct arg
   {
     fmt_arg_type type;
-    std::vector<uint8_t> value;
+    std::string_view value;
   };
 
   struct log_entry
@@ -61,23 +61,19 @@ class log_file_parser
         // first find out how many bytes the argument takes
         // then parse the argument
 
+        std::size_t size = 0;
         if (arg_info.type == fmt_arg_type::type_string) {
           // string
           // first byte is the length
-          // then the string
-          std::size_t size = next_byte();
-
-          // the next bytes will be the string
-          new_arg.value.resize(size);
-          std::memcpy(new_arg.value.data(), m_buffer + m_index, size);
-          m_index += size;
+          size = next_byte();
         } else {
-          // just parse the value bytes
-          new_arg.value.resize(sizeof_arg_type(arg_info.type));
-          std::memcpy(
-              new_arg.value.data(), m_buffer + m_index, new_arg.value.size());
-          m_index += new_arg.value.size();
+          // size if the size of the type
+          size = sizeof_arg_type(arg_info.type);
         }
+        // the next bytes will be the data
+        new_arg.value = std::string_view(
+            reinterpret_cast<const char*>(&m_buffer[m_index]), size);
+        m_index += size;
       }
 
       entry.args.push_back(new_arg);

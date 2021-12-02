@@ -9,7 +9,7 @@ Here are the steps for building in release mode with a single-configuration
 generator, like the Unix Makefiles one:
 
 ```sh
-cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_EXAMPLES=ON
+cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_EXAMPLES=ON -D BUILD_BENCHMARKS=ON -D BUILD_UNPACKER=ON
 cmake --build build
 ```
 

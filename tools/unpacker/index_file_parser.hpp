@@ -1,6 +1,5 @@
 #pragma once
 #include <string_view>
-#include <vector>
 
 #include <binary_log/detail/args.hpp>
 #include <mio.hpp>
@@ -22,7 +21,7 @@ public:
     bool is_constant;
 
     // if constant, this will have the static data
-    std::vector<uint8_t> arg_data;
+    std::string_view arg_data;
   };
 
   struct index_entry
@@ -76,22 +75,17 @@ private:
         if (arg.is_constant) {
           // the next byte will be the value
           // size is determined by the type of the arg
+          std::size_t size = 0;
           if (arg.type == fmt_arg_type::type_string) {
             // the next byte will be the size of the string
-            std::size_t size = next_byte();
-
-            // the next bytes will be the string
-            arg.arg_data.resize(size);
-            std::memcpy(arg.arg_data.data(), m_buffer + m_index, size);
-            m_index += size;
+            size = next_byte();
           } else {
-            // the next bytes will be the value
             // size is determined by the type of the arg
-            arg.arg_data.resize(sizeof_arg_type(arg.type));
-            std::memcpy(
-                arg.arg_data.data(), m_buffer + m_index, arg.arg_data.size());
-            m_index += arg.arg_data.size();
+            size = sizeof_arg_type(arg.type);
           }
+          // the next bytes will be the data
+          arg.arg_data = std::string_view(m_buffer + m_index, size);
+          m_index += size;
         }
         entry.args.push_back(arg);
       }
