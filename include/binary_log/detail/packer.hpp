@@ -8,6 +8,8 @@
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/args.hpp>
 
+#include <iostream>
+
 namespace binary_log
 {
 struct packer
@@ -58,14 +60,14 @@ struct packer
   }
 
   template<typename T>
-  constexpr static inline void save_arg_type(std::FILE* f, T&& first)
+  constexpr static inline void save_arg_type(std::FILE* f)
   {
     using type = typename std::decay<T>::type;
 
     if constexpr (is_specialization<type, constant> {}) {
       // This is a constant
       using inner_type = typename T::type;
-      save_arg_type<inner_type>(f, std::forward<inner_type>(first.value));
+      write_arg_type<binary_log::get_arg_type<inner_type>()>(f);
     } else {
       write_arg_type<binary_log::get_arg_type<type>()>(f);
     }
@@ -74,20 +76,21 @@ struct packer
   template<typename T>
   constexpr static inline void save_arg_constness(std::FILE* f, T&& input)
   {
-    if constexpr (is_specialization<decltype(input), constant> {}) {
-      constexpr bool is_constant = true;
-      fwrite(&is_constant, sizeof(bool), 1, f);
-      pack_data(f, input.value);
-    } else {
+    if constexpr (!is_specialization<T, constant> {}) {
       constexpr bool is_constant = false;
       fwrite(&is_constant, sizeof(bool), 1, f);
+    }
+    else {
+      constexpr bool is_constant = true;
+      fwrite(&is_constant, sizeof(bool), 1, f);
+      write_arg_value(f, input.value);
     }
   }
 
   template<class... Args>
   constexpr static inline void update_index_file(std::FILE* f, Args&&... args)
   {
-    ((void) save_arg_type(f, std::forward<Args>(args)), ...);
+    ((void) save_arg_type<Args>(f), ...);
     ((void) save_arg_constness(f, std::forward<Args>(args)), ...);
   }
 

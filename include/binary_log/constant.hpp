@@ -7,7 +7,7 @@ template<typename T>
 struct constant
 {
   using type = T;
-  T value;
+  const T value;
   constexpr constant(T v)
       : value(v)
   {

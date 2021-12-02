@@ -26,6 +26,8 @@ int main()
   // String types
   BINARY_LOG(log, "String: {}", "Hello world!");
 
-  // for (uint32_t i = 0; i < 1E6; ++i)
-  //   BINARY_LOG(log, "Hello logger, msg number: {}", i);
+  BINARY_LOG(log, "Const integer: {}", binary_log::constant(5));
+
+  for (uint32_t i = 0; i < 3; ++i)
+    BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
