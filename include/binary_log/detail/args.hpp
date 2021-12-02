@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
-#include <binary_log/concepts.hpp>
+#include <binary_log/constant.hpp>
+#include <binary_log/detail/concepts.hpp>
+#include <binary_log/detail/is_specialization.hpp>
 
 namespace binary_log {
 
@@ -141,6 +143,21 @@ requires is_string_type<T>
 constexpr inline fmt_arg_type get_arg_type()
 {
   return fmt_arg_type::type_string;
+}
+
+constexpr static inline bool all_args_are_constants()
+{
+  return true;
+}
+
+template<class T, class... Ts>
+constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
+{
+  if constexpr (is_specialization<T, constant> {}) {
+    return all_args_are_constants(std::forward<Ts>(rest)...);
+  } else {
+    return false;
+  }
 }
 
 }

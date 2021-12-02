@@ -4,9 +4,9 @@
 #include <limits>
 #include <string>
 #include <string_view>
-#include <binary_log/concepts.hpp>
+#include <binary_log/detail/concepts.hpp>
 #include <binary_log/constant.hpp>
-#include <binary_log/args.hpp>
+#include <binary_log/detail/args.hpp>
 
 namespace binary_log
 {

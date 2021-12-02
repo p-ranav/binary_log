@@ -2,7 +2,7 @@
 #include <string_view>
 #include <vector>
 
-#include <binary_log/packer.hpp>
+#include <binary_log/detail/packer.hpp>
 #include <mio.hpp>
 
 namespace binary_log
