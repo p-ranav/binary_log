@@ -211,11 +211,11 @@ BENCHMARK(BM_binary_log_latency_random_integer);
 BENCHMARK(BM_binary_log_latency_random_float);
 BENCHMARK(BM_binary_log_latency_random_double);
 BENCHMARK(BM_binary_log_latency_random_std_string_of_size)
-    ->Arg({4})
-    ->Arg({8})
-    ->Arg({16})
-    ->Arg({32})
-    ->Arg({64});
+    ->Arg(4)
+    ->Arg(8)
+    ->Arg(16)
+    ->Arg(32)
+    ->Arg(64);
 
 // Run the benchmark
 BENCHMARK_MAIN();

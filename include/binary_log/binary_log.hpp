@@ -15,127 +15,6 @@ class binary_log
   std::FILE* m_log_file;
   format_string_index_type m_format_string_index {0};
 
-  constexpr void pack_args_in_index_file() {}
-
-  template<typename T>
-  constexpr void pack_arg_in_index_file(T&& input)
-  {
-    if constexpr (is_specialization<decltype(input), constant> {}) {
-      constexpr bool is_constant = true;
-      fwrite(&is_constant, sizeof(bool), 1, m_index_file);
-      packer::pack_data(m_index_file, input.value);
-    } else {
-      constexpr bool is_constant = false;
-      fwrite(&is_constant, sizeof(bool), 1, m_index_file);
-    }
-  }
-
-  template<class T, class... Ts>
-  constexpr void pack_args_in_index_file(T&& first, Ts&&... rest)
-  {
-    pack_arg_in_index_file(std::forward<T>(first));
-
-    if constexpr (sizeof...(rest) > 0) {
-      pack_args_in_index_file(std::forward<Ts>(rest)...);
-    }
-  }
-
-  constexpr void pack_arg() {}
-
-  template<typename T>
-  constexpr void pack_arg(T&& input)
-  {
-    if constexpr (!is_specialization<T, constant> {}) {
-      packer::pack_data(m_log_file, std::forward<T>(input));
-    }
-  }
-
-  template<class T, class... Ts>
-  constexpr void pack_args(T&& first, Ts&&... rest)
-  {
-    pack_arg(std::forward<T>(first));
-
-    if constexpr (sizeof...(rest) > 0) {
-      pack_args(std::forward<Ts>(rest)...);
-    }
-  }
-
-  constexpr void pack_args() {}
-
-  template<typename T>
-  constexpr void pack_arg_type(T&& first)
-  {
-    using type = typename std::decay<T>::type;
-    if constexpr (std::is_same_v<type, bool>) {
-      write_arg_type<fmt_arg_type::type_bool>(m_index_file);
-    } else if constexpr (std::is_same_v<type, char>) {
-      write_arg_type<fmt_arg_type::type_char>(m_index_file);
-    } else if constexpr (std::is_same_v<type, uint8_t>) {
-      write_arg_type<fmt_arg_type::type_uint8>(m_index_file);
-    } else if constexpr (std::is_same_v<type, uint16_t>) {
-      write_arg_type<fmt_arg_type::type_uint16>(m_index_file);
-    } else if constexpr (std::is_same_v<type, uint32_t>) {
-      write_arg_type<fmt_arg_type::type_uint32>(m_index_file);
-    } else if constexpr (std::is_same_v<type, uint64_t>) {
-      write_arg_type<fmt_arg_type::type_uint64>(m_index_file);
-    } else if constexpr (std::is_same_v<type, int8_t>) {
-      write_arg_type<fmt_arg_type::type_int8>(m_index_file);
-    } else if constexpr (std::is_same_v<type, int16_t>) {
-      write_arg_type<fmt_arg_type::type_int16>(m_index_file);
-    } else if constexpr (std::is_same_v<type, int32_t>) {
-      write_arg_type<fmt_arg_type::type_int32>(m_index_file);
-    } else if constexpr (std::is_same_v<type, int64_t>) {
-      write_arg_type<fmt_arg_type::type_int64>(m_index_file);
-    } else if constexpr (std::is_same_v<type, float>) {
-      write_arg_type<fmt_arg_type::type_float>(m_index_file);
-    } else if constexpr (std::is_same_v<type, double>) {
-      write_arg_type<fmt_arg_type::type_double>(m_index_file);
-    } else if constexpr (std::is_same_v<type, const char*>) {
-      write_arg_type<fmt_arg_type::type_string>(m_index_file);
-    } else if constexpr (std::is_same_v<type, std::string>) {
-      write_arg_type<fmt_arg_type::type_string>(m_index_file);
-    } else if constexpr (std::is_same_v<type, std::string_view>) {
-      write_arg_type<fmt_arg_type::type_string>(m_index_file);
-    } else if constexpr (is_specialization<type, constant> {}) {
-      // This is a constant
-      using inner_type = typename T::type;
-      pack_arg_type<inner_type>(std::forward<inner_type>(first.value));
-    } else {
-      []<bool flag = false>()
-      {
-        static_assert(flag, "unsupported type");
-      }
-      ();
-    }
-  }
-
-  constexpr void pack_arg_types() {}
-
-  template<class T, class... Ts>
-  constexpr void pack_arg_types(T&& first, Ts&&... rest)
-  {
-    pack_arg_type(std::forward<T>(first));
-
-    if constexpr (sizeof...(Ts) > 0) {
-      pack_arg_types(std::forward<Ts>(rest)...);
-    }
-  }
-
-  constexpr static inline bool all_args_are_constants()
-  {
-    return true;
-  }
-
-  template<class T, class... Ts>
-  constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
-  {
-    if constexpr (is_specialization<T, constant> {}) {
-      return all_args_are_constants(std::forward<Ts>(rest)...);
-    } else {
-      return false;
-    }
-  }
-
 public:
   binary_log(const char* path)
   {
@@ -187,8 +66,8 @@ public:
 
     // Write the type of each argument
     if (num_args > 0) {
-      pack_arg_types(std::forward<Args>(args)...);
-      pack_args_in_index_file(std::forward<Args>(args)...);
+      packer::pack_arg_types(m_index_file, std::forward<Args>(args)...);
+      packer::pack_args_in_index_file(m_index_file, std::forward<Args>(args)...);
     }
 
     return m_format_string_index - 1;
@@ -211,7 +90,7 @@ public:
 
     // Write the args
     if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
-      pack_args(std::forward<Args>(args)...);
+      packer::pack_args(m_log_file, std::forward<Args>(args)...);
     }
   }
 };
