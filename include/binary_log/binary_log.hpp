@@ -45,7 +45,7 @@ public:
     // SPEC:
     // <format-string-length> <format-string>
     // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
-    // <arg-1-is-lvalue-ref> <arg-1-value>? <arg-2-is-lvalue-ref> <arg-2-value>?
+    // <arg-1-is- const> <arg-1-value>? <arg-2-is- const> <arg-2-value>?
     // ...
     //
     // If the arg is not an lvalue, it is stored in the index file
