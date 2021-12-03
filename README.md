@@ -14,6 +14,13 @@
 * Requires C++20
 * MIT License
 
+## Performance
+
+On a Surface Laptop 4, the following code 
+* Runs in ~5 ms
+* ~200 million logs per second
+* Throughput of ~1 GB/s
+
 ```cpp
 #include <binary_log/binary_log.hpp>
 
@@ -24,13 +31,6 @@ int main()
   for (uint32_t i = 0; i < 1E6; ++i)
     BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
-
-/*
- * The above code:
- *   Runs in ~23 ms
- *   Average latency is ~18 ns
- *   File size: 5 MB (+ 32 bytes for an index file) 
-*/
 ```
 
 ## Design Goals & Decisions
