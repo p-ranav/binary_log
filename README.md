@@ -5,7 +5,7 @@
 ## Highlights
 
 * Logs messages in a compact binary format
-* 100-200 million logs per second!
+  * ***Hundreds of millions*** of logs per second!
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
 * Provides an [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
@@ -16,11 +16,11 @@
 
 ## Performance
 
-On a Surface Laptop 4, the following code 
-* Runs in ~5 ms
-* ~200 million logs per second
-* Throughput of ~1 GB/s
-* Average latency of ~4.5 ns
+On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.xpg.com/us/xpg/583?tab=specification), the following code 
+* Runs in ~4 ms
+* ~333 million logs per second
+* Throughput of ~1.67 GB/s
+* Average latency of ~3.64 ns
 
 ```cpp
 #include <binary_log/binary_log.hpp>
