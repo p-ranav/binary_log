@@ -35,16 +35,16 @@ On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://
 | Type            | Value                                       |
 | --------------- | ------------------------------------------- |
 | Time Taken      | 4.1s                                        | 
-| Throughput      | 1.463 Gb/s                                  |
+| Throughput      | 1.465 Gb/s                                  |
 | Performance     | ~244 million logs/s                         |
 | File Size       | ~6 GB (log file) + 32 bytes (index file)    |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/example/example
 
-real    0m4.100s
-user    0m2.844s
-sys     0m1.250s
+real    0m4.093s
+user    0m2.672s
+sys     0m1.422s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
 -rw-r--r-- 1 pranav pranav         32 Dec  3 13:33 log.out.index
