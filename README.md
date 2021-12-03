@@ -34,9 +34,9 @@ On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://
 
 | Type            | Value                                       |
 | --------------- | ------------------------------------------- |
-| Time Taken      | ~4.1s                                        | 
-| Throughput      | ~1.465 Gb/s                                  |
-| Performance     | ~244 million logs/s                         |
+| Time Taken      | 4.1 s                                       | 
+| Throughput      | 1.465 Gb/s                                  |
+| Performance     | 244 million logs/s                          |
 | File Size       | ~6 GB (log file) + 32 bytes (index file)    |
 
 ```console
