@@ -6,6 +6,10 @@
 #include <index_file_parser.hpp>
 #include <mio.hpp>
 
+#define FMT_HEADER_ONLY
+#include <fmt/args.h>
+#include <fmt/format.h>
+
 namespace binary_log
 {
 class log_file_parser
@@ -23,27 +27,18 @@ class log_file_parser
     std::string_view value;
   };
 
-  struct log_entry
-  {
-    std::size_t format_string_index;
-    std::vector<arg> args;
-  };
-
   uint8_t next_byte()
   {
     return *reinterpret_cast<const uint8_t*>(&m_buffer[m_index++]);
   }
 
-  log_entry parse_entry(
+  void parse_and_print_log_entry(
       const std::vector<index_file_parser::index_entry>& index_table)
   {
-    log_entry entry;
+    fmt::dynamic_format_arg_store<fmt::format_context> store;
 
     // First parse the index into the index table
     std::size_t index = next_byte();
-
-    entry.format_string_index = index;
-
     auto index_entry = index_table[index];
 
     // Now we know the format string and the number of arguments
@@ -89,13 +84,117 @@ class log_file_parser
         new_arg.value = std::string_view(
             reinterpret_cast<const char*>(&m_buffer[m_index]), size);
         m_index += size;
+        update_store(store, new_arg);
       }
-
-      entry.args.push_back(new_arg);
     }
+    fmt::print("{}\n", fmt::vformat(index_entry.format_string, store));
+  }
 
-    return entry;
-  };
+  void update_store(fmt::dynamic_format_arg_store<fmt::format_context>& store,
+                    arg& arg)
+  {
+    if (arg.type == binary_log::fmt_arg_type::type_bool) {
+      bool value = *(bool*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_char) {
+      char value = *(char*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_uint8) {
+      uint8_t value = *(uint8_t*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
+      if (arg.size == 1) {
+        // actually a uint8_t
+        uint8_t value = *(uint8_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else {
+        uint16_t value = *(uint16_t*)&arg.value.data()[0];
+        store.push_back(value);
+      }
+    } else if (arg.type == binary_log::fmt_arg_type::type_uint32) {
+      if (arg.size == 1) {
+        // actually a uint8_t
+        uint8_t value = *(uint8_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.size == 2) {
+        // actually a uint16_t
+        uint16_t value = *(uint16_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else {
+        uint32_t value = *(uint32_t*)&arg.value.data()[0];
+        store.push_back(value);
+      }
+    } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
+      if (arg.size == 1) {
+        // actually a uint8_t
+        uint8_t value = *(uint8_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.size == 2) {
+        // actually a uint16_t
+        uint16_t value = *(uint16_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.size == 4) {
+        // actually a uint32_t
+        uint32_t value = *(uint32_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else {
+        uint64_t value = *(uint64_t*)&arg.value.data()[0];
+        store.push_back(value);
+      }
+    } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
+      int8_t value = *(int8_t*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_int16) {
+      if (arg.size == 1) {
+        // actually a int8_t
+        int8_t value = *(int8_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else {
+        int16_t value = *(int16_t*)&arg.value.data()[0];
+        store.push_back(value);
+      }
+    } else if (arg.type == binary_log::fmt_arg_type::type_int32) {
+      if (arg.size == 1) {
+        // actually a int8_t
+        int8_t value = *(int8_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.size == 2) {
+        // actually a int16_t
+        int16_t value = *(int16_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else {
+        int32_t value = *(int32_t*)&arg.value.data()[0];
+        store.push_back(value);
+      }
+    } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
+      if (arg.size == 1) {
+        // actually a int8_t
+        int8_t value = *(int8_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.size == 2) {
+        // actually a int16_t
+        int16_t value = *(int16_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else if (arg.size == 4) {
+        // actually a int32_t
+        int32_t value = *(int32_t*)&arg.value.data()[0];
+        store.push_back(value);
+      } else {
+        int64_t value = *(int64_t*)&arg.value.data()[0];
+        store.push_back(value);
+      }
+    } else if (arg.type == binary_log::fmt_arg_type::type_float) {
+      float value = *(float*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_double) {
+      double value = *(double*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_string) {
+      std::string value =
+          std::string((char*)&arg.value.data()[0], arg.value.size());
+      store.push_back(value);
+    }
+  }
 
 public:
   log_file_parser(const char* path)
@@ -109,16 +208,12 @@ public:
     m_buffer_size = m_mmap.mapped_length();
   }
 
-  std::vector<log_entry> parse(
+  void parse_and_print(
       const std::vector<index_file_parser::index_entry>& index_table)
   {
-    std::vector<log_entry> entries;
-
     while (m_index < m_buffer_size) {
-      entries.push_back(parse_entry(index_table));
+      parse_and_print_log_entry(index_table);
     }
-
-    return entries;
   }
 };
 }  // namespace binary_log
