@@ -85,7 +85,7 @@ public:
   template<typename T>
   requires is_numeric_type<T> inline void write_arg_value_to_log_file(T&& input)
   {
-    buffer_or_write(&input, sizeof(T) / sizeof(uint8_t));
+    buffer_or_write(&input, sizeof(T));
   }
 
   template<typename T>
