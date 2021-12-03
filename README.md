@@ -30,14 +30,21 @@ int main()
 }
 ```
 
-On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in ~6.1s
+On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in ~6.14s and writes 2 files: a log file and an index file.
+
+| Type            | Value                                       |
+| --------------- | ------------------------------------------- |
+| Time Taken      | 6.14s                                       | 
+| Throughput      | 1.465 Gb/s                                  |
+| Performance     | ~163 million logs/s                         |
+| File Size       | 9 GB (log file) + 32 bytes (index file)     |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/example/example
 
-real    0m6.148s
-user    0m4.188s
-sys     0m1.922s
+real    0m6.144s
+user    0m4.172s
+sys     0m1.969s
 ```
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
