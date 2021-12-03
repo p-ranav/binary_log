@@ -14,7 +14,7 @@
 * Requires C++20
 * MIT License
 
-## Performance
+## Usage and Performance
 
 On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the following code 
 * Runs in ~4 ms
@@ -34,6 +34,8 @@ int main()
     BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
 ```
+
+See [benchmarks]() for more performance metrics.
 
 ## Design Goals & Decisions
 
