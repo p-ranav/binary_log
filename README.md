@@ -78,18 +78,18 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
 
 ```console
 foo@bar:~/dev/binary_log$  ./build/benchmark/binary_log_benchmark --benchmark_counters_tabular=true
-2021-12-03T10:59:47-06:00
+2021-12-03T13:42:15-06:00
 Running ./build/benchmark/binary_log_benchmark
 Run on (16 X 3504 MHz CPU s)
 Load Average: 0.52, 0.58, 0.59
 -------------------------------------------------------------------------------------------------------
 Benchmark                            Time             CPU   Iterations    Bytes/s    Latency     Logs/s
 -------------------------------------------------------------------------------------------------------
-BM_binary_log_static_string      0.676 ns        0.680 ns    896000000 1.47036G/s  680.106ps 1.47036G/s
-BM_binary_log_constants          0.680 ns        0.672 ns   1000000000 1.48837G/s  671.875ps 1.48837G/s
-BM_binary_log_integer             3.37 ns         3.38 ns    203636364 1.48099G/s  3.37612ns 296.198M/s
+BM_binary_log_static_string      0.678 ns        0.672 ns   1000000000 1.48837G/s  671.875ps 1.48837G/s
+BM_binary_log_constants          0.676 ns        0.680 ns    896000000 1.47036G/s  680.106ps 1.47036G/s
+BM_binary_log_integer             2.05 ns         2.04 ns    344615385  2.4506G/s  2.04032ns  490.12M/s
 BM_binary_log_double              6.14 ns         6.14 ns    112000000 1.46618G/s  6.13839ns 162.909M/s
-BM_binary_log_string              11.5 ns         11.5 ns     64000000 1.48153G/s  11.4746ns 87.1489M/s
+BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/s   12.207ns   81.92M/s
 ```
 
 # Building and installing
