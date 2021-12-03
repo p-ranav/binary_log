@@ -21,7 +21,7 @@ On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://
 * ~250 million logs per second
 * Throughput of ~1.25 GB/s
 * Average latency of ~4.3 ns
-* Write 2 files - a log file (5 MB) and an index file (32 bytes)
+* Writes 2 files - a log file (5 MB) and an index file (32 bytes)
 
 ```cpp
 #include <binary_log/binary_log.hpp>
