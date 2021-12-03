@@ -45,6 +45,10 @@ foo@bar:~/dev/binary_log$ time ./build/example/example
 real    0m6.144s
 user    0m4.172s
 sys     0m1.969s
+
+foo@bar:~/dev/binary_log$ ls -lart log.out*
+-rw-r--r-- 1 pranav pranav         32 Dec  3 12:03 log.out.index
+-rw-r--r-- 1 pranav pranav 9000000000 Dec  3 12:03 log.out
 ```
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
