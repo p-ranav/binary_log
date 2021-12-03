@@ -35,7 +35,7 @@ int main()
 }
 ```
 
-See [benchmarks]() for more performance metrics.
+See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
 
 ## Design Goals & Decisions
 
