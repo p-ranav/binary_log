@@ -28,6 +28,34 @@ static void BM_binary_log_static_string(benchmark::State& state)
   remove("log.out.index");
 }
 
+static void BM_binary_log_constants(benchmark::State& state)
+{
+  binary_log::binary_log log("log.out");
+
+  for (auto _ : state) {
+    // Code to be benchmarked
+    BINARY_LOG(log, "Integer: {}, Float: {}, Double: {}, String: {}",
+	       binary_log::constant(42),
+	       binary_log::constant(3.14f),
+	       binary_log::constant(2.718),
+	       binary_log::constant("Hello"));
+  }
+
+  state.counters["Logs/s"] =
+      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
+
+  // 1 byte to store the format string index
+  state.counters["Bytes/s"] = benchmark::Counter(
+      state.iterations() * sizeof(uint8_t), benchmark::Counter::kIsRate);
+
+  state.counters["Latency"] = benchmark::Counter(
+      state.iterations(),
+      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+
+  remove("log.out");
+  remove("log.out.index");
+}
+
 static void BM_binary_log_integer(benchmark::State& state)
 {
   // Perform setup here
@@ -83,11 +111,11 @@ static void BM_binary_log_string(benchmark::State& state)
   // Perform setup here
   binary_log::binary_log log("log.out");
 
-  std::string_view str = "Hello World";
+  std::string_view str = "Motors enabled!";
 
   for (auto _ : state) {
     // This code gets timed
-    BINARY_LOG(log, "{}", str);
+    BINARY_LOG(log, "[Motor Controller] {}", str);
   }
 
   state.counters["Logs/s"] =
@@ -106,6 +134,7 @@ static void BM_binary_log_string(benchmark::State& state)
 }
 
 BENCHMARK(BM_binary_log_static_string);
+BENCHMARK(BM_binary_log_constants);
 BENCHMARK(BM_binary_log_integer);
 BENCHMARK(BM_binary_log_double);
 BENCHMARK(BM_binary_log_string);
