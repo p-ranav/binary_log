@@ -20,6 +20,10 @@ static void BM_binary_log_static_string(benchmark::State& state)
   state.counters["Bytes/s"] = benchmark::Counter(
       state.iterations() * sizeof(uint8_t), benchmark::Counter::kIsRate);
 
+  state.counters["Latency"] = benchmark::Counter(
+      state.iterations(),
+      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+
   remove("log.out");
   remove("log.out.index");
 }
@@ -36,9 +40,14 @@ static void BM_binary_log_integer(benchmark::State& state)
 
   state.counters["Logs/s"] =
       benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
+
   const auto size_of_each_log_entry = (1 + sizeof(int));
   state.counters["Bytes/s"] = benchmark::Counter(
       state.iterations() * size_of_each_log_entry, benchmark::Counter::kIsRate);
+
+  state.counters["Latency"] = benchmark::Counter(
+      state.iterations(),
+      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 
   remove("log.out");
   remove("log.out.index");
@@ -56,9 +65,14 @@ static void BM_binary_log_double(benchmark::State& state)
 
   state.counters["Logs/s"] =
       benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
+
   const auto size_of_each_log_entry = (1 + sizeof(double));
   state.counters["Bytes/s"] = benchmark::Counter(
       state.iterations() * size_of_each_log_entry, benchmark::Counter::kIsRate);
+
+  state.counters["Latency"] = benchmark::Counter(
+      state.iterations(),
+      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 
   remove("log.out");
   remove("log.out.index");
@@ -78,9 +92,14 @@ static void BM_binary_log_string(benchmark::State& state)
 
   state.counters["Logs/s"] =
       benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
+
   const auto size_of_each_log_entry = (1 + 1 + str.size());
   state.counters["Bytes/s"] = benchmark::Counter(
       state.iterations() * size_of_each_log_entry, benchmark::Counter::kIsRate);
+
+  state.counters["Latency"] = benchmark::Counter(
+      state.iterations(),
+      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 
   remove("log.out");
   remove("log.out.index");
