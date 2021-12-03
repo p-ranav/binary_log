@@ -18,9 +18,9 @@
 
 On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the following code 
 * Runs in ~4 ms
-* ~333 million logs per second
-* Throughput of ~1.67 GB/s
-* Average latency of ~3.64 ns
+* ~250 million logs per second
+* Throughput of ~1.25 GB/s
+* Average latency of ~4.3 ns
 
 ```cpp
 #include <binary_log/binary_log.hpp>
