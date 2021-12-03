@@ -53,17 +53,17 @@ int main()
 
 ```console
 foo@bar:~/dev/binary_log$  ./build/benchmark/binary_log_benchmark --benchmark_counters_tabular=true
-2021-12-02T23:02:36-06:00
+2021-12-03T07:52:40-06:00
 Running ./build/benchmark/binary_log_benchmark
-Run on (8 X 2611 MHz CPU s)
+Run on (16 X 3504 MHz CPU s)
 Load Average: 0.52, 0.58, 0.59
 -------------------------------------------------------------------------------------------------------
 Benchmark                            Time             CPU   Iterations    Bytes/s    Latency     Logs/s
 -------------------------------------------------------------------------------------------------------
-BM_binary_log_static_string      0.858 ns        0.858 ns    746666667 1.16553G/s   857.98ps 1.16553G/s
-BM_binary_log_integer             4.62 ns         4.59 ns    160000000 1089.36M/s  4.58984ns 217.872M/s
-BM_binary_log_double              7.81 ns         7.67 ns     89600000 1.17295G/s  7.67299ns 130.327M/s
-BM_binary_log_string              11.3 ns         11.2 ns     64000000 1.15757G/s  11.2305ns 89.0435M/s
+BM_binary_log_static_string      0.733 ns        0.734 ns   1000000000  1.3617G/s  734.375ps  1.3617G/s
+BM_binary_log_integer             3.67 ns         3.69 ns    194782609 1.35501G/s  3.69001ns 271.002M/s
+BM_binary_log_double              6.38 ns         6.28 ns    112000000  1.4336G/s   6.2779ns 159.289M/s
+BM_binary_log_string              15.9 ns         9.63 ns     74666667 1.35049G/s  9.62612ns 103.884M/s
 ```
 
 # Building and installing
