@@ -16,12 +16,7 @@
 
 ## Usage and Performance
 
-On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the following code 
-* Runs in ~4 ms
-* ~250 million logs per second
-* Throughput of ~1.25 GB/s
-* Average latency of ~4.3 ns
-* Writes 2 files - a log file (5 MB) and an index file (32 bytes)
+The following code logs 1 billion `uint64_t` integers to file.
 
 ```cpp
 #include <binary_log/binary_log.hpp>
@@ -30,9 +25,19 @@ int main()
 {
   binary_log::binary_log log("log.out");
 
-  for (uint32_t i = 0; i < 1E6; ++i)
+  for (uint64_t i = 0; i < 1E9; ++i)
     BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
+```
+
+On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in ~6.1s
+
+```console
+foo@bar:~/dev/binary_log$ time ./build/example/example
+
+real    0m6.148s
+user    0m4.188s
+sys     0m1.922s
 ```
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
