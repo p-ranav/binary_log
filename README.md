@@ -30,25 +30,25 @@ int main()
 }
 ```
 
-On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in ~6.14s and writes 2 files: a log file and an index file.
+On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in ~4.1s and writes 2 files: a log file and an index file.
 
 | Type            | Value                                       |
 | --------------- | ------------------------------------------- |
-| Time Taken      | 6.14s                                       | 
-| Throughput      | 1.465 Gb/s                                  |
-| Performance     | ~163 million logs/s                         |
-| File Size       | 9 GB (log file) + 32 bytes (index file)     |
+| Time Taken      | 4.1s                                        | 
+| Throughput      | 1.463 Gb/s                                  |
+| Performance     | ~244 million logs/s                         |
+| File Size       | ~6 GB (log file) + 32 bytes (index file)    |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/example/example
 
-real    0m6.144s
-user    0m4.172s
-sys     0m1.969s
+real    0m4.100s
+user    0m2.844s
+sys     0m1.250s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
--rw-r--r-- 1 pranav pranav         32 Dec  3 12:03 log.out.index
--rw-r--r-- 1 pranav pranav 9000000000 Dec  3 12:03 log.out
+-rw-r--r-- 1 pranav pranav         32 Dec  3 13:33 log.out.index
+-rw-r--r-- 1 pranav pranav 5999868672 Dec  3 13:33 log.out
 ```
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
