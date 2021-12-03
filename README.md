@@ -5,10 +5,7 @@
 ## Highlights
 
 * Logs messages in a compact binary format
-* Average Latency:
-  * ~7 ns for static data
-  * ~20 ns for random integers, floats, and doubles 
-  * ~130 ns for random 16-byte strings
+* 100-200 million logs per second!
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
 * Provides an [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
@@ -54,31 +51,18 @@ int main()
 ## Benchmarks
 
 ```console
-foo@bar:~/dev/binary_log$ ./build/benchmark/binary_log_benchmark
-2021-11-30T07:58:07-06:00
+foo@bar:~/dev/binary_log$  ./build/benchmark/binary_log_benchmark --benchmark_counters_tabular=true
+2021-12-02T23:02:36-06:00
 Running ./build/benchmark/binary_log_benchmark
-Run on (16 X 3504 MHz CPU s)
+Run on (8 X 2611 MHz CPU s)
 Load Average: 0.52, 0.58, 0.59
----------------------------------------------------------------------------------------------
-Benchmark                                                   Time             CPU   Iterations
----------------------------------------------------------------------------------------------
-BM_binary_log_latency_static_string                      7.53 ns         7.50 ns     89600000
-BM_binary_log_latency_one_static_integer                 7.52 ns         7.67 ns     89600000
-BM_binary_log_latency_two_static_integers                7.89 ns         7.85 ns     89600000
-BM_binary_log_latency_one_static_float                   7.63 ns         7.53 ns    112000000
-BM_binary_log_latency_one_static_double                  7.79 ns         7.67 ns     89600000
-BM_binary_log_latency_static_ints_and_doubles            7.78 ns         7.67 ns     89600000
-BM_binary_log_latency_static_cstring                     7.70 ns         7.67 ns     89600000
-BM_binary_log_latency_static_std_string                  8.64 ns         8.54 ns     89600000
-BM_binary_log_latency_static_std_string_view             7.52 ns         7.50 ns     89600000
-BM_binary_log_latency_random_integer                     24.3 ns         24.6 ns     28000000
-BM_binary_log_latency_random_float                       18.7 ns         18.8 ns     37333333
-BM_binary_log_latency_random_double                      26.4 ns         26.8 ns     28000000
-BM_binary_log_latency_random_std_string_of_size/4        50.7 ns         51.6 ns     10000000
-BM_binary_log_latency_random_std_string_of_size/8        74.6 ns         75.3 ns     11200000
-BM_binary_log_latency_random_std_string_of_size/16        131 ns          132 ns      4977778
-BM_binary_log_latency_random_std_string_of_size/32        235 ns          235 ns      2986667
-BM_binary_log_latency_random_std_string_of_size/64        421 ns          420 ns      1600000
+-------------------------------------------------------------------------------------------------------
+Benchmark                            Time             CPU   Iterations    Bytes/s    Latency     Logs/s
+-------------------------------------------------------------------------------------------------------
+BM_binary_log_static_string      0.858 ns        0.858 ns    746666667 1.16553G/s   857.98ps 1.16553G/s
+BM_binary_log_integer             4.62 ns         4.59 ns    160000000 1089.36M/s  4.58984ns 217.872M/s
+BM_binary_log_double              7.81 ns         7.67 ns     89600000 1.17295G/s  7.67299ns 130.327M/s
+BM_binary_log_string              11.3 ns         11.2 ns     64000000 1.15757G/s  11.2305ns 89.0435M/s
 ```
 
 # Building and installing
