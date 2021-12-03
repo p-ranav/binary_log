@@ -16,7 +16,7 @@
 
 ## Performance
 
-On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.xpg.com/us/xpg/583?tab=specification), the following code 
+On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the following code 
 * Runs in ~4 ms
 * ~333 million logs per second
 * Throughput of ~1.67 GB/s
@@ -50,6 +50,12 @@ int main()
   - All formatting will happen offline using an unpacker that deflates the binary logs
 
 ## Benchmarks
+
+| Type            | Value                                                                                                     |
+| --------------- | --------------------------------------------------------------------------------------------------------- |
+| Processor       | 11th Gen Intel(R) Core(TM) i9-11900KF @ 3.50GHz   3.50 GHz                                                |
+| Installed RAM   | 32.0 GB (31.9 GB usable)                                                                                  |
+| SSD             | [ADATA SX8200PNP](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf) |
 
 ```console
 foo@bar:~/dev/binary_log$  ./build/benchmark/binary_log_benchmark --benchmark_counters_tabular=true
