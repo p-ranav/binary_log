@@ -90,7 +90,7 @@ public:
   inline void write_arg_value_to_log_file(bool input)
   {
     buffer_or_write(&input, sizeof(bool));
-  }  
+  }
 
   inline void write_arg_value_to_log_file(uint8_t input)
   {
@@ -110,7 +110,7 @@ public:
       buffer_or_write(&input, sizeof(uint16_t));
     }
   }
-  
+
   inline void write_arg_value_to_log_file(uint32_t input)
   {
     if (input <= std::numeric_limits<uint16_t>::max()) {
@@ -144,8 +144,9 @@ public:
 
   inline void write_arg_value_to_log_file(int16_t input)
   {
-    if (input <= std::numeric_limits<int8_t>::max() &&
-        input >= std::numeric_limits<int8_t>::min()) {
+    if (input <= std::numeric_limits<int8_t>::max()
+        && input >= std::numeric_limits<int8_t>::min())
+    {
       int8_t value = static_cast<int8_t>(input);
       write_arg_value_to_log_file(value);
     } else {
@@ -157,8 +158,9 @@ public:
 
   inline void write_arg_value_to_log_file(int32_t input)
   {
-    if (input <= std::numeric_limits<int16_t>::max() &&
-        input >= std::numeric_limits<int16_t>::min()) {
+    if (input <= std::numeric_limits<int16_t>::max()
+        && input >= std::numeric_limits<int16_t>::min())
+    {
       int16_t value = static_cast<int16_t>(input);
       write_arg_value_to_log_file(value);
     } else {
@@ -170,26 +172,27 @@ public:
 
   inline void write_arg_value_to_log_file(int64_t input)
   {
-    if (input <= std::numeric_limits<int32_t>::max() &&
-        input >= std::numeric_limits<int32_t>::min()) {
+    if (input <= std::numeric_limits<int32_t>::max()
+        && input >= std::numeric_limits<int32_t>::min())
+    {
       int32_t value = static_cast<int32_t>(input);
       write_arg_value_to_log_file(value);
     } else {
       constexpr uint8_t bytes = 8;
-      buffer_or_write(&bytes, sizeof(uint8_t));      
+      buffer_or_write(&bytes, sizeof(uint8_t));
       buffer_or_write(&input, sizeof(int64_t));
     }
-  }    
+  }
 
   inline void write_arg_value_to_log_file(float input)
   {
     buffer_or_write(&input, sizeof(float));
-  }  
+  }
 
   inline void write_arg_value_to_log_file(double input)
   {
     buffer_or_write(&input, sizeof(double));
-  }        
+  }
 
   template<typename T>
   requires is_string_type<T> inline void write_arg_value_to_log_file(T&& input)

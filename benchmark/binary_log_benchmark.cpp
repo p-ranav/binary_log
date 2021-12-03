@@ -34,11 +34,12 @@ static void BM_binary_log_constants(benchmark::State& state)
 
   for (auto _ : state) {
     // Code to be benchmarked
-    BINARY_LOG(log, "Integer: {}, Float: {}, Double: {}, String: {}",
-	       binary_log::constant(42),
-	       binary_log::constant(3.14f),
-	       binary_log::constant(2.718),
-	       binary_log::constant("Hello"));
+    BINARY_LOG(log,
+               "Integer: {}, Float: {}, Double: {}, String: {}",
+               binary_log::constant(42),
+               binary_log::constant(3.14f),
+               binary_log::constant(2.718),
+               binary_log::constant("Hello"));
   }
 
   state.counters["Logs/s"] =

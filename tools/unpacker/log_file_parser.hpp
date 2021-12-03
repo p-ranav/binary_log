@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <string_view>
 #include <vector>
 
@@ -18,6 +19,7 @@ class log_file_parser
   struct arg
   {
     fmt_arg_type type;
+    std::size_t size;
     std::string_view value;
   };
 
@@ -62,15 +64,28 @@ class log_file_parser
         // then parse the argument
 
         std::size_t size = 0;
-        if (arg_info.type == fmt_arg_type::type_string) {
-          // string
-          // first byte is the length
+        if (arg_info.type == fmt_arg_type::type_string
+            || arg_info.type == fmt_arg_type::type_uint8
+            || arg_info.type == fmt_arg_type::type_uint16
+            || arg_info.type == fmt_arg_type::type_uint32
+            || arg_info.type == fmt_arg_type::type_uint64
+            || arg_info.type == fmt_arg_type::type_int8
+            || arg_info.type == fmt_arg_type::type_int16
+            || arg_info.type == fmt_arg_type::type_int32
+            || arg_info.type == fmt_arg_type::type_int64)
+        {
+          // Next byte is the size
+          // For strings, this is the string length
+          // For integers, this is the real size of the integer
+          // - binary_log likes to shrink integers to smaller sizes when
+          // possible
           size = next_byte();
         } else {
           // size if the size of the type
           size = sizeof_arg_type(arg_info.type);
         }
         // the next bytes will be the data
+        new_arg.size = size;
         new_arg.value = std::string_view(
             reinterpret_cast<const char*>(&m_buffer[m_index]), size);
         m_index += size;

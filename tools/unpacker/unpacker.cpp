@@ -53,26 +53,86 @@ int main(int argc, char* argv[])
         uint8_t value = *(uint8_t*)&arg.value.data()[0];
         store.push_back(value);
       } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
+        if (arg.size == 1) {
+          // actually a uint8_t
+          uint8_t value = *(uint8_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else {
+          uint16_t value = *(uint16_t*)&arg.value.data()[0];
+          store.push_back(value);
+        }
       } else if (arg.type == binary_log::fmt_arg_type::type_uint32) {
-        uint32_t value = *(uint32_t*)&arg.value.data()[0];
-        store.push_back(value);
+        if (arg.size == 1) {
+          // actually a uint8_t
+          uint8_t value = *(uint8_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else if (arg.size == 2) {
+          // actually a uint16_t
+          uint16_t value = *(uint16_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else {
+          uint32_t value = *(uint32_t*)&arg.value.data()[0];
+          store.push_back(value);
+        }
       } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
-        uint64_t value = *(uint64_t*)&arg.value.data()[0];
-        store.push_back(value);
+        if (arg.size == 1) {
+          // actually a uint8_t
+          uint8_t value = *(uint8_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else if (arg.size == 2) {
+          // actually a uint16_t
+          uint16_t value = *(uint16_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else if (arg.size == 4) {
+          // actually a uint32_t
+          uint32_t value = *(uint32_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else {
+          uint64_t value = *(uint64_t*)&arg.value.data()[0];
+          store.push_back(value);
+        }
       } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
         int8_t value = *(int8_t*)&arg.value.data()[0];
         store.push_back(value);
       } else if (arg.type == binary_log::fmt_arg_type::type_int16) {
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
+        if (arg.size == 1) {
+          // actually a int8_t
+          int8_t value = *(int8_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else {
+          int16_t value = *(int16_t*)&arg.value.data()[0];
+          store.push_back(value);
+        }
       } else if (arg.type == binary_log::fmt_arg_type::type_int32) {
-        int32_t value = *(int32_t*)&arg.value.data()[0];
-        store.push_back(value);
+        if (arg.size == 1) {
+          // actually a int8_t
+          int8_t value = *(int8_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else if (arg.size == 2) {
+          // actually a int16_t
+          int16_t value = *(int16_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else {
+          int32_t value = *(int32_t*)&arg.value.data()[0];
+          store.push_back(value);
+        }
       } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
-        int64_t value = *(int64_t*)&arg.value.data()[0];
-        store.push_back(value);
+        if (arg.size == 1) {
+          // actually a int8_t
+          int8_t value = *(int8_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else if (arg.size == 2) {
+          // actually a int16_t
+          int16_t value = *(int16_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else if (arg.size == 4) {
+          // actually a int32_t
+          int32_t value = *(int32_t*)&arg.value.data()[0];
+          store.push_back(value);
+        } else {
+          int64_t value = *(int64_t*)&arg.value.data()[0];
+          store.push_back(value);
+        }
       } else if (arg.type == binary_log::fmt_arg_type::type_float) {
         float value = *(float*)&arg.value.data()[0];
         store.push_back(value);
