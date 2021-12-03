@@ -30,7 +30,7 @@ int main()
 }
 ```
 
-On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in ~6.14s and writes 2 files: a log file and an index file.
+On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in `~6.14s` and writes 2 files: a log file and an index file.
 
 | Type            | Value                                       |
 | --------------- | ------------------------------------------- |
