@@ -80,7 +80,8 @@ int main(int argc, char* argv[])
         double value = *(double*)&arg.value.data()[0];
         store.push_back(value);
       } else if (arg.type == binary_log::fmt_arg_type::type_string) {
-        char* value = (char*)&arg.value.data()[0];
+        std::string value =
+            std::string((char*)&arg.value.data()[0], arg.value.size());
         store.push_back(value);
       }
     }

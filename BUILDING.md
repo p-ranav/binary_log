@@ -17,7 +17,7 @@ Here are the steps for building in release mode with a multi-configuration
 generator, like the Visual Studio ones:
 
 ```sh
-cmake -S . -B build
+cmake -S . -B build -D BUILD_EXAMPLES=ON -D BUILD_BENCHMARKS=ON -D BUILD_UNPACKER=ON
 cmake --build build --config Release
 ```
 
