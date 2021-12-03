@@ -34,11 +34,12 @@ static void BM_binary_log_constants(benchmark::State& state)
 
   for (auto _ : state) {
     // Code to be benchmarked
-    BINARY_LOG(log, "Integer: {}, Float: {}, Double: {}, String: {}",
-	       binary_log::constant(42),
-	       binary_log::constant(3.14f),
-	       binary_log::constant(2.718),
-	       binary_log::constant("Hello"));
+    BINARY_LOG(log,
+               "Integer: {}, Float: {}, Double: {}, String: {}",
+               binary_log::constant(42),
+               binary_log::constant(3.14f),
+               binary_log::constant(2.718),
+               binary_log::constant("Hello"));
   }
 
   state.counters["Logs/s"] =
@@ -69,7 +70,8 @@ static void BM_binary_log_integer(benchmark::State& state)
   state.counters["Logs/s"] =
       benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
 
-  const auto size_of_each_log_entry = (1 + sizeof(int));
+  // 42 can be stored as a uint8_t, so binary_log will just write 1 byte
+  const auto size_of_each_log_entry = (1 + 1 + sizeof(uint8_t));
   state.counters["Bytes/s"] = benchmark::Counter(
       state.iterations() * size_of_each_log_entry, benchmark::Counter::kIsRate);
 

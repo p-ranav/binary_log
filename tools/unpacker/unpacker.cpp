@@ -34,58 +34,5 @@ int main(int argc, char* argv[])
 
   // Parse log file
   auto log_file_parser = binary_log::log_file_parser(log_file_path.c_str());
-  auto log_entries = log_file_parser.parse(index_entries);
-
-  // Print log entries
-  for (auto& entry : log_entries) {
-    const auto& format_string =
-        index_entries[entry.format_string_index].format_string;
-    fmt::dynamic_format_arg_store<fmt::format_context> store;
-
-    for (auto& arg : entry.args) {
-      if (arg.type == binary_log::fmt_arg_type::type_bool) {
-        bool value = *(bool*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_char) {
-        char value = *(char*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_uint8) {
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_uint32) {
-        uint32_t value = *(uint32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
-        uint64_t value = *(uint64_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_int16) {
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_int32) {
-        int32_t value = *(int32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
-        int64_t value = *(int64_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_float) {
-        float value = *(float*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_double) {
-        double value = *(double*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.type == binary_log::fmt_arg_type::type_string) {
-        std::string value =
-            std::string((char*)&arg.value.data()[0], arg.value.size());
-        store.push_back(value);
-      }
-    }
-
-    fmt::print("{}\n", fmt::vformat(format_string, store));
-  }
+  log_file_parser.parse_and_print(index_entries);
 }
