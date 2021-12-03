@@ -65,6 +65,9 @@ public:
       m_buffer_index = 0;
     }
 
+    fflush(m_log_file);
+    fflush(m_index_file);
+
     fclose(m_log_file);
     fclose(m_index_file);
   }
