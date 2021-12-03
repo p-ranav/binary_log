@@ -2,7 +2,7 @@
   <img height="70" src="images/logo.png"/>  
 </p>
 
-## Highlights
+# Highlights
 
 * Logs messages in a compact binary format
   * ***Hundreds of millions*** of logs per second!
@@ -14,7 +14,7 @@
 * Requires C++20
 * MIT License
 
-## Usage and Performance
+# Usage and Performance
 
 The following code logs 1 billion `uint64_t` integers to file.
 
@@ -53,7 +53,7 @@ foo@bar:~/dev/binary_log$ ls -lart log.out*
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
 
-## Design Goals & Decisions
+# Design Goals & Decisions
 
 * Implement a single-threaded, synchronous logger - Do not provide thread safety
   - If the user wants multi-threaded behavior, the user can choose and implement their own queueing solution
@@ -68,7 +68,7 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
   - No formatting of any kind
   - All formatting will happen offline using an unpacker that deflates the binary logs
 
-## Benchmarks
+# Benchmarks
 
 | Type            | Value                                                                                                     |
 | --------------- | --------------------------------------------------------------------------------------------------------- |
