@@ -20,6 +20,7 @@ On a Surface Laptop 4, the following code
 * Runs in ~5 ms
 * ~200 million logs per second
 * Throughput of ~1 GB/s
+* Average latency of ~4.5 ns
 
 ```cpp
 #include <binary_log/binary_log.hpp>
