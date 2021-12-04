@@ -17,6 +17,7 @@ class packer
 {
   std::FILE* m_log_file;
   std::FILE* m_index_file;
+  std::FILE* m_runlength_file;
 
   // This buffer is buffering fwrite calls
   // to the log file.
@@ -26,6 +27,12 @@ class packer
   // multiple fwrite calls.
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
+
+  // Members for run-length encoding
+  // of the log file.
+  bool m_first_call = true;
+  std::size_t m_runlength_index = 0;
+  std::size_t m_current_runlength = 0;
 
   template<typename T>
   void buffer_or_write(T* input, std::size_t size)
@@ -56,6 +63,13 @@ public:
     if (m_index_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
+
+    // Create the runlength file
+    std::string runlength_file_path = std::string {path} + ".runlength";
+    m_runlength_file = fopen(runlength_file_path.data(), "wb");
+    if (m_runlength_file == nullptr) {
+      throw std::invalid_argument("fopen failed");
+    }
   }
 
   ~packer()
@@ -63,6 +77,7 @@ public:
     flush();
     fclose(m_log_file);
     fclose(m_index_file);
+    fclose(m_runlength_file);
   }
 
   void flush_log_file()
@@ -79,10 +94,17 @@ public:
     fflush(m_index_file);
   }
 
+  void flush_runlength_file()
+  {
+    write_current_runlength_to_runlength_file();
+    fflush(m_runlength_file);
+  }
+
   void flush()
   {
     flush_index_file();
     flush_log_file();
+    flush_runlength_file();
   }
 
   template<typename T>
@@ -223,10 +245,44 @@ public:
     }
   }
 
+  constexpr inline void write_current_runlength_to_runlength_file()
+  {
+    if (m_current_runlength != 0) {
+      const format_string_index_type index =
+          static_cast<format_string_index_type>(m_runlength_index);
+      fwrite(&index, sizeof(format_string_index_type), 1, m_runlength_file);
+      fwrite(&m_current_runlength, sizeof(std::size_t), 1, m_runlength_file);
+      m_current_runlength = 0;
+    }
+  }
+
   constexpr inline void pack_format_string_index(
       format_string_index_type& index)
   {
-    buffer_or_write(&index, sizeof(format_string_index_type));
+    // Evaluate this index
+    //
+    // If index is the same as the m_runlength_index
+    // but m_current_runlength is 0, write it and increment m_current_runlength
+    // else, no need to write it, just update the runlength
+    //
+    // If the index is different from m_runlength_index
+    // then, write (m_runlength_index + m_current_runlength)
+    // to the m_runlength_file and write the new index
+    // to the logfile
+
+    if (index == m_runlength_index) {
+      if (m_current_runlength == 0) {
+        // This is the first index of the runlength
+        // write it to the logfile
+        buffer_or_write(&index, sizeof(format_string_index_type));
+      }
+      ++m_current_runlength;
+    } else {
+      if (m_current_runlength != 0) {
+        write_current_runlength_to_runlength_file();
+      }
+      buffer_or_write(&index, sizeof(format_string_index_type));
+    }
   }
 
   template<class... Args>
@@ -307,6 +363,14 @@ public:
     const uint8_t length = format_string.size();
     fwrite(&length, sizeof(uint8_t), 1, m_index_file);
     fwrite(format_string.data(), sizeof(char), length, m_index_file);
+
+    // Initialize the runlength member variables
+    // This might be the first log call on this logger
+    if (m_first_call) {
+      m_runlength_index = 0;
+      m_current_runlength = 0;
+      m_first_call = false;
+    }
   }
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
