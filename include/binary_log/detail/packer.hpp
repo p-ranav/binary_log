@@ -226,6 +226,7 @@ public:
   {
     constexpr uint8_t type_byte = static_cast<uint8_t>(T);
     fwrite(&type_byte, sizeof(uint8_t), 1, m_index_file);
+    fflush(m_index_file);
   }
 
   template<typename T>
@@ -249,6 +250,7 @@ public:
   {
     write_arg_value_to_index_file(static_cast<uint8_t>(std::strlen(input)));
     fwrite(input, sizeof(char), std::strlen(input), m_index_file);
+    fflush(m_index_file);
   }
 
   template<typename T>
@@ -256,6 +258,7 @@ public:
       T&& input)
   {
     fwrite(&input, sizeof(T), 1, m_index_file);
+    fflush(m_index_file);
   }
 
   template<typename T>
@@ -265,6 +268,7 @@ public:
     const uint8_t size = static_cast<uint8_t>(input.size());
     fwrite(&size, sizeof(uint8_t), 1, m_index_file);
     fwrite(input.data(), sizeof(char), input.size(), m_index_file);
+    fflush(m_index_file);
   }
 
   template<typename T>
@@ -278,6 +282,7 @@ public:
       fwrite(&is_constant, sizeof(bool), 1, m_index_file);
       write_arg_value_to_index_file(input.value);
     }
+    fflush(m_index_file);
   }
 
   template<class... Args>
@@ -293,11 +298,13 @@ public:
     const uint8_t length = format_string.size();
     fwrite(&length, sizeof(uint8_t), 1, m_index_file);
     fwrite(format_string.data(), sizeof(char), length, m_index_file);
+    fflush(m_index_file);
   }
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
   {
     fwrite(&num_args, sizeof(uint8_t), 1, m_index_file);
+    fflush(m_index_file);
   }
 };
 
