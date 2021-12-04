@@ -93,6 +93,7 @@ foo@bar:~/dev/binary_log$ ls -lart log.deflated
 | Type                | Value     |
 | ------------------- | --------- |
 | Time Taken          | 2m 33s    | 
+| Throughput          | 234 MB/s  |
 | Deflated File Size  | ~35 GB    |
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
