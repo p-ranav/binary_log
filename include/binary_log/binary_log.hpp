@@ -8,10 +8,11 @@
 
 namespace binary_log
 {
-template<typename format_string_index_type = uint8_t>
+template<std::size_t buffer_size = 1024 * 1024,
+         typename format_string_index_type = uint8_t>
 class binary_log
 {
-  packer<1024 * 1024> m_packer;
+  packer<buffer_size> m_packer;
   format_string_index_type m_format_string_index {0};
 
 public:
