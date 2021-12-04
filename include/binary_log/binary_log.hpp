@@ -12,7 +12,7 @@ template<std::size_t buffer_size = 1024 * 1024,
          typename format_string_index_type = uint8_t>
 class binary_log
 {
-  packer<buffer_size> m_packer;
+  packer<buffer_size, format_string_index_type> m_packer;
   format_string_index_type m_format_string_index {0};
 
 public:
@@ -56,7 +56,7 @@ public:
   }
 
   template<class... Args>
-  inline void log(uint8_t pos, Args&&... args)
+  inline void log(std::size_t pos, Args&&... args)
   {
     const uint8_t num_args = sizeof...(Args);
 
@@ -67,7 +67,9 @@ public:
     //   <format-string-index> is the index of the format string in the index
     //   file <arg1> <arg2> ... <argN> are the arguments to the format string
     //     Each <arg> is a pair: <type, value>
-    m_packer.pack_format_string_index(pos);
+    format_string_index_type current_index =
+        static_cast<format_string_index_type>(pos);
+    m_packer.pack_format_string_index(current_index);
 
     // Write the args
     if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
@@ -83,7 +85,7 @@ public:
 
 #define BINARY_LOG(logger, format_string, ...) \
   { \
-    static uint8_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
+    static std::size_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
         logger.log_index(format_string, ##__VA_ARGS__); \
     logger.log(CONCAT(__binary_log_format_string_id_pos, __LINE__), \
                ##__VA_ARGS__); \

@@ -12,7 +12,7 @@
 
 namespace binary_log
 {
-template<std::size_t buffer_size>
+template<std::size_t buffer_size, typename format_string_index_type = uint8_t>
 class packer
 {
   std::FILE* m_log_file;
@@ -223,9 +223,10 @@ public:
     }
   }
 
-  constexpr inline void pack_format_string_index(uint8_t& index)
+  constexpr inline void pack_format_string_index(
+      format_string_index_type& index)
   {
-    buffer_or_write(&index, sizeof(uint8_t));
+    buffer_or_write(&index, sizeof(format_string_index_type));
   }
 
   template<class... Args>
