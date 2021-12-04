@@ -52,6 +52,8 @@ foo@bar:~/dev/binary_log$ ls -lart log.out*
 -rw-r--r-- 1 pranav pranav 5999868672 Dec  3 13:33 log.out
 ```
 
+## Deflate the logs
+
 These binary log files can be deflated using the provided [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) app:
 
 ```console
