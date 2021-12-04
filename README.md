@@ -153,6 +153,34 @@ Thus `binary_log` breaks the logging into 2 files:
 
 The first byte in the log file is an index into the table in the index file, mapping to a unique chunk of meta information. This is used during the unpacking process to deflate the logs. 
 
+## Constants
+
+One can specify a log format argument as a constant by wrapping the value with `binary_log::constant(...)`. When this is detected, the value is stored in the index file instead of the log file as it is now considered "static information" and does not change between calls. 
+
+```cpp
+for (auto i = 0; i < 1E9; ++i) {
+  BINARY_LOG(log, "Joystick {}: x_min={}, x_max={}, y_min={}, y_max={}",
+             binary_log::constant("Nintendo Joycon"),
+             binary_log::constant(-0.6),
+             binary_log::constant(+0.65),
+             binary_log::constant(-0.54),
+             binary_log::constant(+0.71));
+}
+```
+
+The above loop runs in under a second (!!) and writes: (1) 1 GB log file, and (2) 81 byte index file. All of the static information is in the index file. The log file will only contain a 1-byte index (per call) that maps to the meta information in the index file.
+
+```console
+foo@bar:~/dev/binary_log$ hexdump -C log.out.index
+00000000  1f 4a 6f 79 73 74 69 63  6b 20 7b 7d 3a 20 78 3d  |.Joystick {}: x=|
+00000010  7b 7d 2c 20 79 3d 7b 7d  2c 20 7a 3d 7b 7d 2c 20  |{}, y={}, z={}, |
+00000020  04 0c 0b 0b 0b 01 0f 4e  69 6e 74 65 6e 64 6f 20  |.......Nintendo |
+00000030  4a 6f 79 63 6f 6e 01 9a  99 99 99 99 99 f1 3f 01  |Joycon........?.|
+00000040  9a 99 99 99 99 99 01 40  01 66 66 66 66 66 66 0a  |.......@.ffffff.|
+00000050  40                                                |@|
+00000051
+```
+
 # Benchmarks
 
 | Type            | Value                                                                                                     |
