@@ -145,7 +145,7 @@ Thus, `binary_log` breaks the logging into 2 files:
 * index file
 ```
 <format_string_length> <format_string> <num_args> <arg1_type> ... <argn_type>
-<arg1_is_constant> <arg1_value>? ... <argn_is_constant> <argn_value>? ...
+<arg1_is_constant> (<arg1_value>)? ... <argn_is_constant> (<argn_value>)? ...
 ```
 
 * log file
