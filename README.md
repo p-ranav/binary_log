@@ -136,7 +136,7 @@ The above call can be deconstructed as follows:
 
 If this call is made a million times, there are some pieces of information that do not change: format string, the number of arguments, and the type of each argument. These pieces need not be written to a log file again and again, for each call. 
 
-Thus `binary_log` breaks the logging into 2 files:
+Thus, `binary_log` breaks the logging into 2 files:
 * An index file which stores all the static information
 * A log file that only stores the dynamic information. 
 
