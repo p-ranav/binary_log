@@ -8,6 +8,7 @@
 * Fast
   * ***Hundreds of millions*** of logs per second
   * 2-6 ns average latency on basic data types
+  * See [benchmarks](https://github.com/p-ranav/binary_log#benchmarks)
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
 * Provides an [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
