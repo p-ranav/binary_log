@@ -114,6 +114,45 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
   - No formatting of any kind
   - All formatting will happen offline using an unpacker that deflates the binary logs
 
+# Binary Format
+
+Consider the following log:
+
+```cpp
+BINARY_LOG(log, "[Thread {}] [{}] Motors enabled, velocity = {}", 
+           thread_id,
+           component_name,
+           velocity_rpm);
+```
+
+The above call can be deconstructed as follows:
+* A format string `"[Thread {}] [{}] Motors enabled, velocity = {}"` 
+* 3 arguments
+  * 1 integer - `thread_id`, e.g., `15`
+  * 1 string - `component_name`, e.g., `"Motor Controller"`
+  * 1 double - `velocity_rpm`, e.g., `0.01`
+
+If this call is made a million times, there are some pieces of information that do not change: format string, the number of arguments, and the type of each argument. These pieces need not be written to a log file again and again, for each call. 
+
+Thus `binary_log` breaks the logging into 2 files:
+* An index file which stores all the static information
+* A log file that only stores the dynamic information. 
+
+`binary_log` will thus pack the data in the following format:
+
+* index file
+```
+<format_string_length> <format_string> <num_args> <arg1_type> ... <argn_type>
+<arg1_is_constant> <arg1_value>? ... <argn_is_constant> <argn_value>? ...
+```
+
+* log file
+```
+<format_string_index> <arg1_value> ... <argn_value>
+```
+
+The first byte in the log file is an index into the table in the index file, mapping to a unique chunk of meta information. This is used during the unpacking process to deflate the logs. 
+
 # Benchmarks
 
 | Type            | Value                                                                                                     |
