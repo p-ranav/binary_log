@@ -9,7 +9,7 @@
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
 * Provides an [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
-* Uses [fmtlib](https://github.com/fmtlib/fmt) for formatting the logs
+* Uses [fmtlib](https://github.com/fmtlib/fmt) to format the logs
 * Synchronous logging - not thread safe
 * Header-only library
 * Requires C++20
