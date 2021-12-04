@@ -15,6 +15,15 @@
 * Requires C++20
 * MIT License
 
+## Table of Contents
+
+*   [Usage and Performance](#usage-and-performance)
+*   [Binary Format](#binary-format)
+*   [Benchmarks](#benchmarks)
+*   [Building and Installing](#building-and-installing)
+*   [Contributing](#contributing)
+*   [Licensing](#licensing)
+
 # Usage and Performance
 
 The following code logs 1 billion `uint64_t` integers to file.
