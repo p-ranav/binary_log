@@ -209,7 +209,7 @@ for (auto i = 0; i < 1E9; ++i) {
 }
 ```
 
-The above loop runs in under a second (!!) and writes: (1) 1 GB log file, and (2) 81 byte index file. All of the static information is in the index file. The log file will only contain a 1-byte index (per call) that maps to the meta information in the index file.
+The above loop runs in under a second. All of the static information is in the index file (81 bytes). The log file (1 GB) will only contain a 1-byte index (per call) that maps to the meta information in the index file.
 
 ```console
 foo@bar:~/dev/binary_log$ hexdump -C log.out.index
