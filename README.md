@@ -52,6 +52,47 @@ foo@bar:~/dev/binary_log$ ls -lart log.out*
 -rw-r--r-- 1 pranav pranav 5999868672 Dec  3 13:33 log.out
 ```
 
+These binary log files can be deflated using the provided [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) app:
+
+```console
+foo@bar:~/dev/binary_log$ ./build/tools/unpacker/unpacker -i log.out.index -l log.out > log.deflated
+
+foo@bar:~/dev/binary_log$ wc -l log.deflated
+1000000000 log.deflated
+
+foo@bar:~/dev/binary_log$ $ head log.deflated
+Hello logger, msg number: 0
+Hello logger, msg number: 1
+Hello logger, msg number: 2
+Hello logger, msg number: 3
+Hello logger, msg number: 4
+Hello logger, msg number: 5
+Hello logger, msg number: 6
+Hello logger, msg number: 7
+Hello logger, msg number: 8
+Hello logger, msg number: 9
+
+foo@bar:~/dev/binary_log$ tail log.deflated
+Hello logger, msg number: 999999990
+Hello logger, msg number: 999999991
+Hello logger, msg number: 999999992
+Hello logger, msg number: 999999993
+Hello logger, msg number: 999999994
+Hello logger, msg number: 999999995
+Hello logger, msg number: 999999996
+Hello logger, msg number: 999999997
+Hello logger, msg number: 999999998
+Hello logger, msg number: 999999999
+
+foo@bar:~/dev/binary_log$ ls -lart log.deflated
+-rw-r--r-- 1 pranav pranav 35888888890 Dec  3 18:09 log.deflated
+```
+
+| Type                | Value     |
+| ------------------- | --------- |
+| Time Taken          | 2m 33s    | 
+| Deflated File Size  | ~35 GB    |
+
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
 
 # Design Goals & Decisions
