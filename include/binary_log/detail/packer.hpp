@@ -60,16 +60,26 @@ public:
 
   ~packer()
   {
+    flush();
+    fclose(m_log_file);
+    fclose(m_index_file);
+  }
+
+  void flush_log_file() {
     if (m_buffer_index) {
       fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
-    }
-
+    }    
     fflush(m_log_file);
-    fflush(m_index_file);
+  }  
 
-    fclose(m_log_file);
-    fclose(m_index_file);
+  void flush_index_file() {
+    fflush(m_index_file);
+  }
+
+  void flush() {
+    flush_index_file();
+    flush_log_file();
   }
 
   template<typename T>
@@ -226,7 +236,6 @@ public:
   {
     constexpr uint8_t type_byte = static_cast<uint8_t>(T);
     fwrite(&type_byte, sizeof(uint8_t), 1, m_index_file);
-    fflush(m_index_file);
   }
 
   template<typename T>
@@ -250,7 +259,6 @@ public:
   {
     write_arg_value_to_index_file(static_cast<uint8_t>(std::strlen(input)));
     fwrite(input, sizeof(char), std::strlen(input), m_index_file);
-    fflush(m_index_file);
   }
 
   template<typename T>
@@ -258,7 +266,6 @@ public:
       T&& input)
   {
     fwrite(&input, sizeof(T), 1, m_index_file);
-    fflush(m_index_file);
   }
 
   template<typename T>
@@ -268,7 +275,6 @@ public:
     const uint8_t size = static_cast<uint8_t>(input.size());
     fwrite(&size, sizeof(uint8_t), 1, m_index_file);
     fwrite(input.data(), sizeof(char), input.size(), m_index_file);
-    fflush(m_index_file);
   }
 
   template<typename T>
@@ -282,7 +288,6 @@ public:
       fwrite(&is_constant, sizeof(bool), 1, m_index_file);
       write_arg_value_to_index_file(input.value);
     }
-    fflush(m_index_file);
   }
 
   template<class... Args>
@@ -298,13 +303,11 @@ public:
     const uint8_t length = format_string.size();
     fwrite(&length, sizeof(uint8_t), 1, m_index_file);
     fwrite(format_string.data(), sizeof(char), length, m_index_file);
-    fflush(m_index_file);
   }
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
   {
     fwrite(&num_args, sizeof(uint8_t), 1, m_index_file);
-    fflush(m_index_file);
   }
 };
 
