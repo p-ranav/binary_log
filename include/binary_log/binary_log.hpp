@@ -20,6 +20,11 @@ public:
   {
   }
 
+  void flush()
+  {
+    m_packer.flush();
+  }
+
   template<class... Args>
   inline uint8_t log_index(std::string_view f, Args&&... args)
   {

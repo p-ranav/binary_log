@@ -65,19 +65,22 @@ public:
     fclose(m_index_file);
   }
 
-  void flush_log_file() {
+  void flush_log_file()
+  {
     if (m_buffer_index) {
       fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
-    }    
+    }
     fflush(m_log_file);
-  }  
+  }
 
-  void flush_index_file() {
+  void flush_index_file()
+  {
     fflush(m_index_file);
   }
 
-  void flush() {
+  void flush()
+  {
     flush_index_file();
     flush_log_file();
   }
