@@ -6,7 +6,6 @@
 
 * Logs messages in a compact binary format
 * Fast
-  * Gigabytes of logging per second
   * ***Hundreds of millions*** of logs per second
   * 2-6 ns average latency on basic data types
 * Extracts static information at compile-time
