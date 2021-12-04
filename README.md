@@ -153,6 +153,45 @@ Thus `binary_log` breaks the logging into 2 files:
 
 The first byte in the log file is an index into the table in the index file, mapping to a unique chunk of meta information. This is used during the unpacking process to deflate the logs. 
 
+## Packing Integers
+
+`binary_log` packs integers based on value. An argument of type `uint64_t` with a value of `19` will be packed as a `uint8_t`, saving 7 bytes of space (actually 6, one byte is required to store the number of bytes consumed by the integer)
+
+Consider the example:
+
+```cpp
+  uint64_t value = 19;
+  BINARY_LOG(log, "{}", value);
+```
+
+Here is the index file:
+
+```console
+foo@bar:~/dev/binary_log$ hexdump -C log.out.index
+00000000  02 7b 7d 01 05 00                                 |.{}...|
+00000006
+```
+
+This index file has 6 bytes of information:
+* `0x02` - Length of the format string
+* `0x7b 0x7d` - This is the format string `"{}"`
+* `0x01` - This is the number of arguments required
+* `0x05` - This is the type of the argument `uint64_t` (according to [this](https://github.com/p-ranav/binary_log/blob/master/include/binary_log/detail/args.hpp#L17) enum class)
+* `0x00` - To indicate that this value is not a "constant"
+
+Here is the log file
+
+```console
+foo@bar:~/dev/binary_log$ hexdump -C log.out
+00000000  00 01 13                                          |...|
+00000003
+```
+
+The log file has 3 bytes: 
+* `0x00` indicates that the first format string in the table (in the index file) is being used
+* `0x01` indicates that the integer argument takes up 1 byte
+* `0x13` is the value - the decimal `19`
+
 ## Constants
 
 One can specify a log format argument as a constant by wrapping the value with `binary_log::constant(...)`. When this is detected, the value is stored in the index file instead of the log file as it is now considered "static information" and does not change between calls. 
