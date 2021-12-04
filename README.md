@@ -22,7 +22,7 @@
 *   [Benchmarks](#benchmarks)
 *   [Building and Installing](#building-and-installing)
 *   [Contributing](#contributing)
-*   [Licensing](#licensing)
+*   [License](#license)
 
 # Usage and Performance
 
@@ -261,9 +261,6 @@ See the [BUILDING](BUILDING.md) document.
 
 See the [CONTRIBUTING](CONTRIBUTING.md) document.
 
-# Licensing
+# License
 
-<!--
-Please go to https://choosealicense.com/ and choose a license that fits your
-needs. GNU GPLv3 is a pretty nice option ;-)
--->
+The project is available under the [MIT](https://opensource.org/licenses/MIT) license.
