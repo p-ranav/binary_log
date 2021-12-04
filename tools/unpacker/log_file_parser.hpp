@@ -50,6 +50,7 @@ class log_file_parser
 
       if (arg_info.is_constant) {
         // The argument value is in the index table
+        new_arg.size = sizeof_arg_type(arg_info.type);
         new_arg.value = arg_info.arg_data;
       } else {
         // argument is not constant
@@ -84,8 +85,8 @@ class log_file_parser
         new_arg.value = std::string_view(
             reinterpret_cast<const char*>(&m_buffer[m_index]), size);
         m_index += size;
-        update_store(store, new_arg);
       }
+      update_store(store, new_arg);
     }
     fmt::print("{}\n", fmt::vformat(index_entry.format_string, store));
   }
