@@ -227,6 +227,7 @@ foo@bar:~/dev/binary_log$ hexdump -C log.out.index
 | Processor       | 11th Gen Intel(R) Core(TM) i9-11900KF @ 3.50GHz   3.50 GHz                                                |
 | Installed RAM   | 32.0 GB (31.9 GB usable)                                                                                  |
 | SSD             | [ADATA SX8200PNP](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf) |
+| OS              | Ubuntu 20.04 LTS running on WSL in Windows 11                                                             |
 
 ```console
 foo@bar:~/dev/binary_log$  ./build/benchmark/binary_log_benchmark --benchmark_counters_tabular=true
