@@ -12,7 +12,7 @@
 
 namespace binary_log
 {
-template<std::size_t buffer_size, typename format_string_index_type = uint8_t>
+template<std::size_t buffer_size>
 class packer
 {
   std::FILE* m_log_file;
@@ -248,9 +248,8 @@ public:
   constexpr inline void write_current_runlength_to_runlength_file()
   {
     if (m_current_runlength > 1) {
-      const format_string_index_type index =
-          static_cast<format_string_index_type>(m_runlength_index);
-      fwrite(&index, sizeof(format_string_index_type), 1, m_runlength_file);
+      const uint8_t index = static_cast<uint8_t>(m_runlength_index);
+      fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
 
       // Write runlength to file
       // Perform integer compression
@@ -279,8 +278,7 @@ public:
     }
   }
 
-  constexpr inline void pack_format_string_index(
-      format_string_index_type& index)
+  constexpr inline void pack_format_string_index(uint8_t& index)
   {
     // Evaluate this index
     //
@@ -298,7 +296,7 @@ public:
       if (m_current_runlength == 0) {
         // First call
         // Write index to log file
-        buffer_or_write(&index, sizeof(format_string_index_type));
+        buffer_or_write(&index, sizeof(uint8_t));
         m_current_runlength++;
       } else if (m_current_runlength >= 1) {
         m_current_runlength++;
@@ -313,7 +311,7 @@ public:
         write_current_runlength_to_runlength_file();
 
         // Write index to log file
-        buffer_or_write(&index, sizeof(format_string_index_type));
+        buffer_or_write(&index, sizeof(uint8_t));
         m_current_runlength = 1;
         m_runlength_index = index;
       }
