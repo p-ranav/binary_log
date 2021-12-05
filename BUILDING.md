@@ -9,7 +9,7 @@ Here are the steps for building in release mode with a single-configuration
 generator, like the Unix Makefiles one:
 
 ```sh
-cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D BUILD_EXAMPLES=ON -D BUILD_BENCHMARKS=ON -D BUILD_UNPACKER=ON
+cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D BINARY_LOG_DEVELOPER_MODE=ON
 cmake --build build
 ```
 
@@ -17,7 +17,7 @@ Here are the steps for building in release mode with a multi-configuration
 generator, like the Visual Studio ones:
 
 ```sh
-cmake -S . -B build -D BUILD_EXAMPLES=ON -D BUILD_BENCHMARKS=ON -D BUILD_UNPACKER=ON
+cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D BINARY_LOG_DEVELOPER_MODE=ON
 cmake --build build --config Release
 ```
 
