@@ -60,7 +60,7 @@ foo@bar:~/dev/binary_log$ ls -lart log.out*
 These binary log files can be deflated using the provided [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) app:
 
 ```console
-foo@bar:~/dev/binary_log$ ./build/tools/unpacker/unpacker -i log.out.index -l log.out > log.deflated
+foo@bar:~/dev/binary_log$ ./build/tools/unpacker/unpacker log.out > log.deflated
 
 foo@bar:~/dev/binary_log$ wc -l log.deflated
 1000000000 log.deflated
