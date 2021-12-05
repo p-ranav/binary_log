@@ -113,7 +113,7 @@ public:
   inline void write_arg_value_to_log_file(const char* input)
   {
     const uint8_t size = static_cast<uint8_t>(std::strlen(input));
-    write_arg_value_to_log_file(size);
+    buffer_or_write(&size, sizeof(uint8_t));
     buffer_or_write(input, size);
   }
 
@@ -352,7 +352,8 @@ public:
 
   inline void write_arg_value_to_index_file(const char* input)
   {
-    write_arg_value_to_index_file(static_cast<uint8_t>(std::strlen(input)));
+    const uint8_t size = static_cast<uint8_t>(std::strlen(input));
+    fwrite(&size, sizeof(uint8_t), 1, m_index_file);
     fwrite(input, sizeof(char), std::strlen(input), m_index_file);
   }
 
