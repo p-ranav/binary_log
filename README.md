@@ -116,6 +116,17 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
   - No formatting of any kind
   - All formatting will happen offline using an unpacker that deflates the binary logs
 
+# How it Works
+
+`binary_log` splits the logging into three files:
+* An index file
+* The log file
+* A runlengths file
+
+<p align="center">
+  <img src="images/how_it_works.png"/>  
+</p>
+
 # Binary Format
 
 Consider the following log:
