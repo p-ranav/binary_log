@@ -4,103 +4,6 @@
 #include <benchmark/benchmark.h>
 #include <binary_log/binary_log.hpp>
 
-static void BM_binary_log_constant_bool(benchmark::State& state)
-{
-  constexpr static bool value = true;
-  {
-    binary_log::binary_log log("log.out");
-
-    for (auto _ : state) {
-      // This code gets timed
-      BINARY_LOG(log, "{}", binary_log::constant(value));
-    }
-  }
-
-  state.counters["Logs/s"] =
-      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
-
-  state.counters["Latency"] = benchmark::Counter(
-      state.iterations(),
-      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
-
-  remove("log.out");
-  remove("log.out.index");
-  remove("log.out.runlength");
-}
-
-template<typename T, T value>
-static void BM_binary_log_constant_integer(benchmark::State& state)
-{
-  {
-    binary_log::binary_log log("log.out");
-
-    for (auto _ : state) {
-      // This code gets timed
-      BINARY_LOG(log, "{}", binary_log::constant(value));
-    }
-  }
-
-  state.counters["Logs/s"] =
-      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
-
-  state.counters["Latency"] = benchmark::Counter(
-      state.iterations(),
-      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
-
-  remove("log.out");
-  remove("log.out.index");
-  remove("log.out.runlength");
-}
-
-template<typename T>
-static void BM_binary_log_constant_real(benchmark::State& state)
-{
-  T value = 3.14159265358979323846f;
-  {
-    binary_log::binary_log log("log.out");
-
-    for (auto _ : state) {
-      // This code gets timed
-      BINARY_LOG(log, "{}", binary_log::constant(value));
-    }
-  }
-
-  state.counters["Logs/s"] =
-      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
-
-  state.counters["Latency"] = benchmark::Counter(
-      state.iterations(),
-      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
-
-  remove("log.out");
-  remove("log.out.index");
-  remove("log.out.runlength");
-}
-
-static void BM_binary_log_constant_string(benchmark::State& state)
-{
-  constexpr static std::string_view str = "World!";
-  {
-    binary_log::binary_log log("log.out");
-
-    for (auto _ : state) {
-      // Code to be benchmarked
-      BINARY_LOG(log, "Hello {}", binary_log::constant(str));
-    }
-  }
-
-  state.counters["Logs/s"] =
-      benchmark::Counter(state.iterations(), benchmark::Counter::kIsRate);
-
-  state.counters["Latency"] = benchmark::Counter(
-      state.iterations(),
-      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
-
-  remove("log.out");
-  remove("log.out.index");
-  remove("log.out.runlength");
-}
-
 static void BM_binary_log_random_bool(benchmark::State& state)
 {
   std::random_device dev;
@@ -233,18 +136,6 @@ static void BM_binary_log_random_string(benchmark::State& state)
   remove("log.out.runlength");
 }
 
-BENCHMARK(BM_binary_log_constant_bool);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, uint8_t, 42);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, uint16_t, 390);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, uint32_t, 423451);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, uint64_t, 14294967295);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, int8_t, -42);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, int16_t, -390);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, int32_t, -423451);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_integer, int64_t, -14294967295);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_real, float);
-BENCHMARK_TEMPLATE(BM_binary_log_constant_real, double);
-BENCHMARK(BM_binary_log_constant_string);
 BENCHMARK(BM_binary_log_random_bool);
 BENCHMARK_TEMPLATE(BM_binary_log_random_integer, uint8_t);
 BENCHMARK_TEMPLATE(BM_binary_log_random_integer, uint16_t);
