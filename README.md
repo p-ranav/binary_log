@@ -239,6 +239,16 @@ BM_binary_log_double              6.14 ns         6.14 ns    112000000 1.46618G/
 BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/s   12.207ns   81.92M/s
 ```
 
+# Limitations
+
+There are some known limitations:
+
+## Cannot change the format argument type
+
+`binary_log` assumes that the argument type of each format arg in a call to `BINARY_LOG(...)`
+
+TODO: Finish this section
+
 # Building and installing
 
 See the [BUILDING](BUILDING.md) document.
