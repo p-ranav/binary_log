@@ -13,8 +13,7 @@
 int main(int argc, char* argv[])
 {
   argparse::ArgumentParser program("unpacker");
-  program.add_argument("-i", "--index-file").help("Index file").required();
-  program.add_argument("-l", "--log-file").help("Log file").required();
+  program.add_argument("log file").help("binary_log log file to deflate");
 
   try {
     program.parse_args(argc, argv);
@@ -24,8 +23,9 @@ int main(int argc, char* argv[])
     std::exit(1);
   }
 
-  auto index_file_path = program.get<std::string>("-i");
-  auto log_file_path = program.get<std::string>("-l");
+  auto log_file_path = program.get<std::string>("log file");
+  auto index_file_path = log_file_path + ".index";
+  auto runlength_file_path = log_file_path + ".runlength";
 
   // Parse index file
   auto index_file_parser =
@@ -33,6 +33,7 @@ int main(int argc, char* argv[])
   auto index_entries = index_file_parser.parse();
 
   // Parse log file
-  auto log_file_parser = binary_log::log_file_parser(log_file_path.c_str());
+  auto log_file_parser = binary_log::log_file_parser(
+      log_file_path.c_str(), runlength_file_path.c_str());
   log_file_parser.parse_and_print(index_entries);
 }

@@ -32,7 +32,7 @@ class packer
   // of the log file.
   bool m_first_call = true;
   std::size_t m_runlength_index = 0;
-  std::size_t m_current_runlength = 0;
+  uint64_t m_current_runlength = 0;
 
   template<typename T>
   void buffer_or_write(T* input, std::size_t size)
@@ -251,7 +251,30 @@ public:
       const format_string_index_type index =
           static_cast<format_string_index_type>(m_runlength_index);
       fwrite(&index, sizeof(format_string_index_type), 1, m_runlength_file);
-      fwrite(&m_current_runlength, sizeof(std::size_t), 1, m_runlength_file);
+
+      // TODO(pranav): Perform integer compression here, no need to write 8
+      // bytes if the runlength is small
+      if (m_current_runlength <= std::numeric_limits<uint8_t>::max()) {
+        uint8_t value = static_cast<uint8_t>(m_current_runlength);
+        constexpr uint8_t bytes = 1;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint8_t), 1, m_runlength_file);
+      } else if (m_current_runlength <= std::numeric_limits<uint16_t>::max()) {
+        uint16_t value = static_cast<uint16_t>(m_current_runlength);
+        constexpr uint8_t bytes = 2;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint16_t), 1, m_runlength_file);
+      } else if (m_current_runlength <= std::numeric_limits<uint32_t>::max()) {
+        uint32_t value = static_cast<uint32_t>(m_current_runlength);
+        constexpr uint8_t bytes = 4;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint32_t), 1, m_runlength_file);
+      } else {
+        uint64_t value = static_cast<uint64_t>(m_current_runlength);
+        constexpr uint8_t bytes = 8;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint64_t), 1, m_runlength_file);
+      }
       m_current_runlength = 0;
     }
   }
