@@ -239,46 +239,6 @@ BM_binary_log_double              6.14 ns         6.14 ns    112000000 1.46618G/
 BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/s   12.207ns   81.92M/s
 ```
 
-# Implementation Notes
-
-## Limitation 1: Cannot change the type of format args - Do not use in function template
-
-`binary_log` save meta information for each unique line of code that uses `BINARY_LOG(...)` to the index file. That means, that each line of code that uses this macro is marked as having a particular format string, requiring a particular number of args, and requiring a particular type for each arg. This information is stored in the index file the very first time that line of code is executed.
-
-Due to this, the type of format arguments should not change between invocations for that line of code.
-
-Here's an example to illustrate this:
-
-```cpp
-1 int foo = 5;
-2 BINARY_LOG(log, "{}", foo);
-```
-
-For the above line of code, `binary_log` updates the index table with static information: The format string is `"{}"` and the line of log requires 1 argument and it is expected to be an integer. The index file is updated once, the first time line #2 executes. Later, the unpacker will use this type information to correctly parse and deflate the log file (which is expected to have one argument of type `int32_t`)
-
-Now, consider this second example that uses `BINARY_LOG` in a function template:
-
-```cpp
-1 template <typename T>
-2 void save_data(binary_log::binary_log& log, T&& value) {
-3   BINARY_LOG(log, "{}", std::forward<T>(value));
-4 }
-.
-.
-.
-10 save_data(5);
-11 save_data(3.14);
-12 save_data(true);
-```
-
-When the above code runs, `binary_log` will update the index file once, the first time the line of code (line #3) is executed. This first time, the index file is updated with the information: format string `"{}"`, requires 1 argument, that argument is an `int32_t`. 
-
-Unfortunately, this does not hold true here. The second time the log call is made, the argument is actually a `double`, which takes up 8 bytes in the log file (instead of the expected 4). 
-
-Thus, in this case, the `unpacker` will fail to correctly parse the log file.
-
-This design choice was made intentionally in order to keep the output of the log file as compact as possible. To fix this problem, the logger would have to store the type of the argument in the log file for each invocation, instead of once in the index file at the first invocation. Such a change would result in a large amount of redundant information and I have chosen to avoid it. Instead, this limitation is simply documented here.
-
 # Building and installing
 
 See the [BUILDING](BUILDING.md) document.
