@@ -1,0 +1,55 @@
+os: linux # Use linux unless specified otherwise.
+dist: bionic
+sudo: required
+
+language: cpp
+
+matrix:
+  include:
+    - os: linux
+      compiler: g++
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-10
+      env:
+        - CXX_COMPILER=g++-10 CC_COMPILER=gcc-10
+
+    - os: linux
+      compiler: clang++
+      addons:
+        apt:
+          sources:
+            - sourceline: 'deb https://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - clang-10
+      env:
+        - CXX_COMPILER=clang++-10 CC_COMPILER=clang-10
+
+    - os: osx
+      compiler: clang++
+      osx_image: xcode11.6
+      env:
+        - CXX_COMPILER=clang++ CC_COMPILER=clang
+
+    - os: osx
+      compiler: clang++
+      osx_image: xcode12
+      env:
+        - CXX_COMPILER=clang++ CC_COMPILER=clang
+
+install:
+  - export CC=${CC_COMPILER}
+  - export CXX=${CXX_COMPILER}
+  - JOBS=2 # Travis machines with 2 cores
+
+before_script:
+  - rm -rf build
+
+script:
+  - cmake -S . -B build -D CMAKE_BUILD_TYPE=Release -D BINARY_LOG_DEVELOPER_MODE=ON
+  - cmake --build build
+  - ./build/test/binary_log_test
