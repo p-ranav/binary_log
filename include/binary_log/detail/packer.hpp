@@ -303,6 +303,8 @@ public:
     } else {
       if (m_current_runlength != 0) {
         write_current_runlength_to_runlength_file();
+        m_runlength_index = index;
+        m_current_runlength = 1;
       }
       buffer_or_write(&index, sizeof(format_string_index_type));
     }

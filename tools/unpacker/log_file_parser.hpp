@@ -65,7 +65,6 @@ class log_file_parser
     // If the runlength is > 0, then the index is in the runlength file
     // If the runlength is 0, then the index is in the log file
     // Check runlength first
-
     std::size_t index;
     std::size_t runlength = 1;
 
@@ -95,7 +94,7 @@ class log_file_parser
           runlength_bytes.push_back(next_byte_in_runlength_file());
         }
         memcpy(&runlength, runlength_bytes.data(), integer_width);
-        m_runlengthfile_index += integer_width;
+        m_runlengthfile_index += integer_width - 1;
       } else {
         // The current index in the log file
         // has a runlength of one
