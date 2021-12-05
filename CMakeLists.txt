@@ -44,7 +44,7 @@ endif()
 # ---- Unpacker ----
 
 if(PROJECT_IS_TOP_LEVEL)
-  option(BUILD_UNPACKER "Build unpacker tree." "${binary_log_DEVELOPER_MODE}")
+  option(BUILD_UNPACKER "Build unpacker tree.")
   if(BUILD_UNPACKER)
     add_subdirectory(tools)
   endif()
@@ -53,7 +53,7 @@ endif()
 # ---- Benchmarks ----
 
 if(PROJECT_IS_TOP_LEVEL)
-  option(BUILD_BENCHMARKS "Build benchmarks tree." "${binary_log_DEVELOPER_MODE}")
+  option(BUILD_BENCHMARKS "Build benchmarks tree.")
   if(BUILD_BENCHMARKS)
     add_subdirectory(benchmark)
   endif()
@@ -62,9 +62,9 @@ endif()
 # ---- Examples ----
 
 if(PROJECT_IS_TOP_LEVEL)
-  option(BUILD_EXAMPLES "Build examples tree." "${binary_log_DEVELOPER_MODE}")
+  option(BUILD_EXAMPLES "Build examples tree.")
   if(BUILD_EXAMPLES)
-    add_subdirectory(example)
+    add_subdirectory(examples)
   endif()
 endif()
 

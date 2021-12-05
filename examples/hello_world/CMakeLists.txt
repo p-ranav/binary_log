@@ -2,14 +2,12 @@ cmake_minimum_required(VERSION 3.14)
 
 project(binary_logExamples CXX)
 
-include(../cmake/project-is-top-level.cmake)
-include(../cmake/folders.cmake)
+include(../../cmake/project-is-top-level.cmake)
+include(../../cmake/folders.cmake)
 
 if(PROJECT_IS_TOP_LEVEL)
   find_package(binary_log REQUIRED)
 endif()
-
-add_custom_target(run-examples)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -28,6 +26,6 @@ function(add_example NAME)
   add_dependencies(run-examples "run_${NAME}")  
 endfunction()
 
-add_example(example)
+add_example(hello_world)
 
 add_folders(Example)

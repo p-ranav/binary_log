@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.14)
 project(binary_logBenchmark CXX)
 
 include(../cmake/project-is-top-level.cmake)
-include(../cmake/folders.cmake)
 
 if(PROJECT_IS_TOP_LEVEL)
   find_package(binary_log REQUIRED)
@@ -26,8 +25,6 @@ if(NOT benchmark_FOUND)
     endif()
 endif()
 
-add_custom_target(run-benchmarks)
-
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -42,9 +39,6 @@ function(add_benchmark NAME)
   target_compile_features("${NAME}" PRIVATE cxx_std_20)
   add_custom_target("run_${NAME}" COMMAND "${NAME}" VERBATIM)
   add_dependencies("run_${NAME}" "${NAME}")
-  add_dependencies(run-benchmarks "run_${NAME}")  
 endfunction()
 
 add_benchmark(binary_log_benchmark)
-
-add_folders(Benchmark)

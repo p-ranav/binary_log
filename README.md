@@ -20,7 +20,7 @@
 
 # Usage and Performance
 
-The following code logs 1 billion `uint64_t` integers to file.
+The following code logs 1 billion integers to file.
 
 ```cpp
 #include <binary_log/binary_log.hpp>
@@ -29,12 +29,12 @@ int main()
 {
   binary_log::binary_log log("log.out");
 
-  for (uint64_t i = 0; i < 1E9; ++i)
+  for (int i = 0; i < 1E9; ++i)
     BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
 ```
 
-On a modern workstation desktop with an [ADATA SX8200PNP NVMe PCIe SSD](https://www.adata.com/upload/downloadfile/Datasheet_XPG%20SX8200%20Pro_EN_20181017.pdf), the above code executes in `~4.1s` and writes 2 files: a log file and an index file.
+On a [modern workstation desktop](#hardware-details), the above code executes in `~4.1s`.
 
 | Type            | Value                                       |
 | --------------- | ------------------------------------------- |
@@ -61,7 +61,7 @@ foo@bar:~/dev/binary_log$ ls -lart log.out*
 These binary log files can be deflated using the provided [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) app:
 
 ```console
-foo@bar:~/dev/binary_log$ ./build/tools/unpacker/unpacker -i log.out.index -l log.out > log.deflated
+foo@bar:~/dev/binary_log$ ./build/tools/unpacker/unpacker log.out > log.deflated
 
 foo@bar:~/dev/binary_log$ wc -l log.deflated
 1000000000 log.deflated
@@ -117,44 +117,22 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
   - No formatting of any kind
   - All formatting will happen offline using an unpacker that deflates the binary logs
 
-# Binary Format
+# How it Works
 
-Consider the following log:
+`binary_log` splits the logging into three files:
 
-```cpp
-BINARY_LOG(log, "[Thread {}] [{}] Motors enabled, velocity = {}", 
-           thread_id,
-           component_name,
-           velocity_rpm);
-```
+<p>
+  <img height="600" src="images/how_it_works.png"/>  
+</p>
 
-The above call can be deconstructed as follows:
-* A format string `"[Thread {}] [{}] Motors enabled, velocity = {}"` 
-* 3 arguments
-  * 1 integer - `thread_id`, e.g., `15`
-  * 1 string - `component_name`, e.g., `"Motor Controller"`
-  * 1 double - `velocity_rpm`, e.g., `0.01`
-
-If this call is made a million times, there are some pieces of information that do not change: format string, the number of arguments, and the type of each argument. These pieces need not be written to a log file again and again, for each call. 
-
-Thus, `binary_log` breaks the logging into 2 files:
-* An index file which stores all the static information
-* A log file that only stores the dynamic information. 
-
-`binary_log` will thus pack the data in the following format:
-
-* index file
-```
-<format_string_length> <format_string> <num_args> <arg1_type> ... <argn_type>
-<arg1_is_constant> (<arg1_value>)? ... <argn_is_constant> (<argn_value>)? ...
-```
-
-* log file
-```
-<format_string_index> <arg1_value> ... <argn_value>
-```
-
-The first byte in the log file is an index into the table in the index file, mapping to a unique chunk of meta information. This is used during the unpacking process to deflate the logs. 
+1. ***Index file*** contains all the static information from the logs, e.g., format string, number of args, type of each arg etc.
+   - If a format argument is marked as constant using `binary_log::constant`, the value of the arg is also stored in the index file
+2. ***Log file*** contains two pieces of information per log call:
+   1. An index into the index table (in the index file) to know which format string was used
+      - If runlength encoding is working, this index might not be written, instead the final runlength will be written to the runlengths file
+   3. The value of each argument
+3. ***Runlength file*** contains runlengths - If a log call is made 5 times, this information is stored here (instead of storing the index 5 times in the log file)
+   - NOTE: Runlengths are only stored if the runlength > 1 (to avoid the inflation case with RLE)
 
 ## Packing Integers
 
@@ -210,20 +188,34 @@ for (auto i = 0; i < 1E9; ++i) {
 }
 ```
 
-The above loop runs in under a second. All of the static information is in the index file (81 bytes). The log file (1 GB) will only contain a 1-byte index (per call) that maps to the meta information in the index file.
+The above loop runs in under `500 ms`. The final output is compact at just `118 bytes` and contains all the information needed to deflate the log (if needed). 
+
+| File               | Size      |
+| ------------------ | --------- |
+| log.out            | 1 byte    | 
+| log.out.index      | 6 bytes   |
+| log.out.runlength  | 111 bytes |
 
 ```console
+foo@bar:~/dev/binary_log$ ls -lart log.out*
+-rw-r--r-- 1 pranav pranav   6 Dec  5 08:41 log.out.runlength
+-rw-r--r-- 1 pranav pranav 111 Dec  5 08:41 log.out.index
+-rw-r--r-- 1 pranav pranav   1 Dec  5 08:41 log.out
+
 foo@bar:~/dev/binary_log$ hexdump -C log.out.index
-00000000  1f 4a 6f 79 73 74 69 63  6b 20 7b 7d 3a 20 78 3d  |.Joystick {}: x=|
-00000010  7b 7d 2c 20 79 3d 7b 7d  2c 20 7a 3d 7b 7d 2c 20  |{}, y={}, z={}, |
-00000020  04 0c 0b 0b 0b 01 0f 4e  69 6e 74 65 6e 64 6f 20  |.......Nintendo |
-00000030  4a 6f 79 63 6f 6e 01 9a  99 99 99 99 99 f1 3f 01  |Joycon........?.|
-00000040  9a 99 99 99 99 99 01 40  01 66 66 66 66 66 66 0a  |.......@.ffffff.|
-00000050  40                                                |@|
-00000051
+00000000  33 4a 6f 79 73 74 69 63  6b 20 7b 7d 3a 20 78 5f  |3Joystick {}: x_|
+00000010  6d 69 6e 3d 7b 7d 2c 20  78 5f 6d 61 78 3d 7b 7d  |min={}, x_max={}|
+00000020  2c 20 79 5f 6d 69 6e 3d  7b 7d 2c 20 79 5f 6d 61  |, y_min={}, y_ma|
+00000030  78 3d 7b 7d 05 0c 0b 0b  0b 0b 01 0f 4e 69 6e 74  |x={}........Nint|
+00000040  65 6e 64 6f 20 4a 6f 79  63 6f 6e 01 33 33 33 33  |endo Joycon.3333|
+00000050  33 33 e3 bf 01 cd cc cc  cc cc cc e4 3f 01 48 e1  |33..........?.H.|
+00000060  7a 14 ae 47 e1 bf 01 b8  1e 85 eb 51 b8 e6 3f     |z..G.......Q..?|
+0000006f
 ```
 
 # Benchmarks
+
+### Hardware Details
 
 | Type            | Value                                                                                                     |
 | --------------- | --------------------------------------------------------------------------------------------------------- |
@@ -247,6 +239,17 @@ BM_binary_log_integer             2.05 ns         2.04 ns    344615385  2.4506G/
 BM_binary_log_double              6.14 ns         6.14 ns    112000000 1.46618G/s  6.13839ns 162.909M/s
 BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/s   12.207ns   81.92M/s
 ```
+
+# Implementation Notes
+
+## Assumptions in the code
+
+* The index file contains a table of metadata - an index table. Each entry in the log file _might_ use an index to refer to row in the index table. The type of this index is `uint8_t`, a choice made to keep the output compact. This data type choice has one major implication: The max size of the index table is 256 (since the max index is 255) - this means that a user can call `BINARY_LOG(...)` in at most 256 lines of code with a specific `binary_log` object. This should be sufficient for small to medium size applications but may not be adequate for larger applications where one logger is used with `BINARY_LOG(...)` throughput the application in more than 256 places.
+  - One could expose this data type as a template parameter but the unpacker will need to be updated to correctly parse, e.g., a `uint16_t` for the index instead of a `uint8_t`
+  - Note that switching to `uint16_t` here means that every log call _might_ store an extra byte to be able to refer to an entry in the index table - an extra byte per call could be an extra 1GB over billion log calls. 
+* The size of the format string is saved as a `uint8_t` - this means that the format string cannot be more than 256 characters, which, I think, is a reasonable assumption to make for a logging library. Often in reality, the lines of a log file are no more than 120 characters - this way the log remains human readable. 
+* The size of any string argument is also stored as a `uint8_t` - this again means that any string argument must be no more than 256 bytes in size.
+  - In both the index file and the log file, strings are stored like this: `<string-length (1 byte)> <string-byte1> ... <string-byten>`
 
 # Building and installing
 

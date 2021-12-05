@@ -8,12 +8,10 @@
 
 namespace binary_log
 {
-template<std::size_t buffer_size = 1024 * 1024,
-         typename format_string_index_type = uint8_t>
 class binary_log
 {
-  packer<buffer_size, format_string_index_type> m_packer;
-  format_string_index_type m_format_string_index {0};
+  packer m_packer;
+  uint8_t m_format_string_index {0};
 
 public:
   binary_log(const char* path)
@@ -67,8 +65,7 @@ public:
     //   <format-string-index> is the index of the format string in the index
     //   file <arg1> <arg2> ... <argN> are the arguments to the format string
     //     Each <arg> is a pair: <type, value>
-    format_string_index_type current_index =
-        static_cast<format_string_index_type>(pos);
+    uint8_t current_index = static_cast<uint8_t>(pos);
     m_packer.pack_format_string_index(current_index);
 
     // Write the args

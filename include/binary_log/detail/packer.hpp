@@ -12,11 +12,11 @@
 
 namespace binary_log
 {
-template<std::size_t buffer_size, typename format_string_index_type = uint8_t>
 class packer
 {
   std::FILE* m_log_file;
   std::FILE* m_index_file;
+  std::FILE* m_runlength_file;
 
   // This buffer is buffering fwrite calls
   // to the log file.
@@ -24,8 +24,15 @@ class packer
   // fwrite already has an internal buffer
   // but this buffer is used to avoid
   // multiple fwrite calls.
+  constexpr static inline std::size_t buffer_size = 1024 * 1024;
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
+
+  // Members for run-length encoding
+  // of the log file.
+  bool m_first_call = true;
+  std::size_t m_runlength_index = 0;
+  uint64_t m_current_runlength = 0;
 
   template<typename T>
   void buffer_or_write(T* input, std::size_t size)
@@ -56,6 +63,13 @@ public:
     if (m_index_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
+
+    // Create the runlength file
+    std::string runlength_file_path = std::string {path} + ".runlength";
+    m_runlength_file = fopen(runlength_file_path.data(), "wb");
+    if (m_runlength_file == nullptr) {
+      throw std::invalid_argument("fopen failed");
+    }
   }
 
   ~packer()
@@ -63,6 +77,7 @@ public:
     flush();
     fclose(m_log_file);
     fclose(m_index_file);
+    fclose(m_runlength_file);
   }
 
   void flush_log_file()
@@ -79,10 +94,17 @@ public:
     fflush(m_index_file);
   }
 
+  void flush_runlength_file()
+  {
+    write_current_runlength_to_runlength_file();
+    fflush(m_runlength_file);
+  }
+
   void flush()
   {
     flush_index_file();
     flush_log_file();
+    flush_runlength_file();
   }
 
   template<typename T>
@@ -91,7 +113,7 @@ public:
   inline void write_arg_value_to_log_file(const char* input)
   {
     const uint8_t size = static_cast<uint8_t>(std::strlen(input));
-    write_arg_value_to_log_file(size);
+    buffer_or_write(&size, sizeof(uint8_t));
     buffer_or_write(input, size);
   }
 
@@ -211,7 +233,7 @@ public:
   requires is_string_type<T> inline void write_arg_value_to_log_file(T&& input)
   {
     const uint8_t size = static_cast<uint8_t>(input.size());
-    write_arg_value_to_log_file(size);
+    buffer_or_write(&size, sizeof(uint8_t));
     buffer_or_write(input.data(), size);
   }
 
@@ -223,10 +245,77 @@ public:
     }
   }
 
-  constexpr inline void pack_format_string_index(
-      format_string_index_type& index)
+  constexpr inline void write_current_runlength_to_runlength_file()
   {
-    buffer_or_write(&index, sizeof(format_string_index_type));
+    if (m_current_runlength > 1) {
+      const uint8_t index = static_cast<uint8_t>(m_runlength_index);
+      fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
+
+      // Write runlength to file
+      // Perform integer compression
+      if (m_current_runlength <= std::numeric_limits<uint8_t>::max()) {
+        uint8_t value = static_cast<uint8_t>(m_current_runlength);
+        constexpr uint8_t bytes = 1;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint8_t), 1, m_runlength_file);
+      } else if (m_current_runlength <= std::numeric_limits<uint16_t>::max()) {
+        uint16_t value = static_cast<uint16_t>(m_current_runlength);
+        constexpr uint8_t bytes = 2;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint16_t), 1, m_runlength_file);
+      } else if (m_current_runlength <= std::numeric_limits<uint32_t>::max()) {
+        uint32_t value = static_cast<uint32_t>(m_current_runlength);
+        constexpr uint8_t bytes = 4;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint32_t), 1, m_runlength_file);
+      } else {
+        uint64_t value = static_cast<uint64_t>(m_current_runlength);
+        constexpr uint8_t bytes = 8;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint64_t), 1, m_runlength_file);
+      }
+      m_current_runlength = 0;
+    }
+  }
+
+  constexpr inline void pack_format_string_index(uint8_t& index)
+  {
+    // Evaluate this index
+    //
+    // If index is the same as the m_runlength_index
+    // but m_current_runlength is 0, write it and increment m_current_runlength
+    // else, no need to write it, just update the runlength
+    //
+    // If the index is different from m_runlength_index
+    // then, write (m_runlength_index + m_current_runlength)
+    // to the m_runlength_file and write the new index
+    // to the logfile
+
+    if (m_runlength_index == 0 && index == 0) {
+      // First index
+      if (m_current_runlength == 0) {
+        // First call
+        // Write index to log file
+        buffer_or_write(&index, sizeof(uint8_t));
+        m_current_runlength++;
+      } else if (m_current_runlength >= 1) {
+        m_current_runlength++;
+      }
+    } else {
+      // Not first index
+      if (m_runlength_index == index) {
+        // No change to index
+        m_current_runlength++;
+      } else {
+        // Write current runlength to file
+        write_current_runlength_to_runlength_file();
+
+        // Write index to log file
+        buffer_or_write(&index, sizeof(uint8_t));
+        m_current_runlength = 1;
+        m_runlength_index = index;
+      }
+    }
   }
 
   template<class... Args>
@@ -261,7 +350,8 @@ public:
 
   inline void write_arg_value_to_index_file(const char* input)
   {
-    write_arg_value_to_index_file(static_cast<uint8_t>(std::strlen(input)));
+    const uint8_t size = static_cast<uint8_t>(std::strlen(input));
+    fwrite(&size, sizeof(uint8_t), 1, m_index_file);
     fwrite(input, sizeof(char), std::strlen(input), m_index_file);
   }
 
@@ -307,6 +397,14 @@ public:
     const uint8_t length = format_string.size();
     fwrite(&length, sizeof(uint8_t), 1, m_index_file);
     fwrite(format_string.data(), sizeof(char), length, m_index_file);
+
+    // Initialize the runlength member variables
+    // This might be the first log call on this logger
+    if (m_first_call) {
+      m_runlength_index = 0;
+      m_current_runlength = 0;
+      m_first_call = false;
+    }
   }
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
