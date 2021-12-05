@@ -4,5 +4,6 @@ clang-format-11 -i benchmark/*.cpp \
                 examples/billion_integers/*.cpp \
                 examples/hello_world/*.cpp \
                 examples/run_length_encoding/*.cpp \
+                examples/constants/*.cpp \
                 tools/unpacker/*.cpp \
                 tools/unpacker/*.hpp
