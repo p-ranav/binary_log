@@ -7,4 +7,5 @@ clang-format-11 -i benchmark/*.cpp \
                 examples/constants/*.cpp \
                 examples/function_template/*.cpp \
                 tools/unpacker/*.cpp \
-                tools/unpacker/*.hpp
+                tools/unpacker/*.hpp \
+                test/source/*.cpp
