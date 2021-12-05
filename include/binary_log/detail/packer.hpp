@@ -12,7 +12,6 @@
 
 namespace binary_log
 {
-template<std::size_t buffer_size>
 class packer
 {
   std::FILE* m_log_file;
@@ -25,6 +24,7 @@ class packer
   // fwrite already has an internal buffer
   // but this buffer is used to avoid
   // multiple fwrite calls.
+  constexpr static inline std::size_t buffer_size = 1024 * 1024;
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
 

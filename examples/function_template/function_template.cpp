@@ -1,7 +1,7 @@
 #include <binary_log/binary_log.hpp>
 
 template<typename T>
-void save_data(binary_log::binary_log<>& log, T&& value)
+void save_data(binary_log::binary_log& log, T&& value)
 {
   BINARY_LOG(log, "{}", std::forward<T>(value));
 }
