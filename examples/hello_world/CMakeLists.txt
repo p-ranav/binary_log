@@ -26,6 +26,6 @@ function(add_example NAME)
   add_dependencies(run-examples "run_${NAME}")  
 endfunction()
 
-add_example(billion_integers)
+add_example(hello_world)
 
 add_folders(Example)
