@@ -119,52 +119,19 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
 # How it Works
 
 `binary_log` splits the logging into three files:
-* An index file
-* The log file
-* A runlengths file
 
 <p>
   <img height="600" src="images/how_it_works.png"/>  
 </p>
 
-# Binary Format
-
-Consider the following log:
-
-```cpp
-BINARY_LOG(log, "[Thread {}] [{}] Motors enabled, velocity = {}", 
-           thread_id,
-           component_name,
-           velocity_rpm);
-```
-
-The above call can be deconstructed as follows:
-* A format string `"[Thread {}] [{}] Motors enabled, velocity = {}"` 
-* 3 arguments
-  * 1 integer - `thread_id`, e.g., `15`
-  * 1 string - `component_name`, e.g., `"Motor Controller"`
-  * 1 double - `velocity_rpm`, e.g., `0.01`
-
-If this call is made a million times, there are some pieces of information that do not change: format string, the number of arguments, and the type of each argument. These pieces need not be written to a log file again and again, for each call. 
-
-Thus `binary_log` breaks the logging into 2 files:
-* An index file which stores all the static information
-* A log file that only stores the dynamic information. 
-
-`binary_log` will thus pack the data in the following format:
-
-* index file
-```
-<format_string_length> <format_string> <num_args> <arg1_type> ... <argn_type>
-<arg1_is_constant> <arg1_value>? ... <argn_is_constant> <argn_value>? ...
-```
-
-* log file
-```
-<format_string_index> <arg1_value> ... <argn_value>
-```
-
-The first byte in the log file is an index into the table in the index file, mapping to a unique chunk of meta information. This is used during the unpacking process to deflate the logs. 
+1. ***Index file*** contains all the static information from the logs, e.g., format string, number of args, type of each arg etc.
+   - If a format argument is marked as constant using `binary_log::constant`, the value of the arg is also stored in the index file
+2. ***Log file*** contains two pieces of information per log call:
+   1. An index into the index table (in the index file) to know which format string was used
+      - If runlength encoding is working, this index might not be written, instead the final runlength will be written to the runlengths file
+   3. The value of each argument
+3. ***Runlength file*** contains runlengths - If a log call is made 5 times, this information is stored here (instead of storing the index 5 times in the log file)
+   - NOTE: Runlengths are only stored if the runlength > 1 (to avoid the inflation case with RLE)
 
 ## Packing Integers
 
