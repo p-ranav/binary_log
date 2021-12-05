@@ -252,8 +252,8 @@ public:
           static_cast<format_string_index_type>(m_runlength_index);
       fwrite(&index, sizeof(format_string_index_type), 1, m_runlength_file);
 
-      // TODO(pranav): Perform integer compression here, no need to write 8
-      // bytes if the runlength is small
+      // Write runlength to file
+      // Perform integer compression
       if (m_current_runlength <= std::numeric_limits<uint8_t>::max()) {
         uint8_t value = static_cast<uint8_t>(m_current_runlength);
         constexpr uint8_t bytes = 1;
