@@ -19,7 +19,7 @@
 
 # Usage and Performance
 
-The following code logs 1 billion `uint64_t` integers to file.
+The following code logs 1 billion integers to file.
 
 ```cpp
 #include <binary_log/binary_log.hpp>
@@ -28,7 +28,7 @@ int main()
 {
   binary_log::binary_log log("log.out");
 
-  for (uint64_t i = 0; i < 1E9; ++i)
+  for (int i = 0; i < 1E9; ++i)
     BINARY_LOG(log, "Hello logger, msg number: {}", i);
 }
 ```
