@@ -250,6 +250,7 @@ BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/
 * The size of the format string is saved as a `uint8_t` - this means that the format string cannot be more than 256 characters, which, I think, is a reasonable assumption to make for a logging library. Often in reality, the lines of a log file are no more than 120 characters - this way the log remains human readable. 
 * The size of any string argument is also stored as a `uint8_t` - this again means that any string argument must be no more than 256 bytes in size.
   - In both the index file and the log file, strings are stored like this: `<string-length (1 byte)> <string-byte1> ... <string-byten>`
+* The [unit tests](https://github.com/p-ranav/binary_log/blob/master/test/source/test_packer.cpp) assume little endian for multi-byte data, e.g., int, float etc.
 
 # Building and installing
 
