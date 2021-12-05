@@ -187,17 +187,29 @@ for (auto i = 0; i < 1E9; ++i) {
 }
 ```
 
-The above loop runs in under a second (!!) and writes: (1) 1 GB log file, and (2) 81 byte index file. All of the static information is in the index file. The log file will only contain a 1-byte index (per call) that maps to the meta information in the index file.
+The above loop runs in under `500 ms`. The final output is compact at just `118 bytes` and contains all the information needed to deflate the log (if needed). 
+
+| File               | Size      |
+| ------------------ | --------- |
+| log.out            | 1 byte    | 
+| log.out.index      | 6 bytes   |
+| log.out.runlength  | 111 bytes |
 
 ```console
+foo@bar:~/dev/binary_log$ ls -lart log.out*
+-rw-r--r-- 1 pranav pranav   6 Dec  5 08:41 log.out.runlength
+-rw-r--r-- 1 pranav pranav 111 Dec  5 08:41 log.out.index
+-rw-r--r-- 1 pranav pranav   1 Dec  5 08:41 log.out
+
 foo@bar:~/dev/binary_log$ hexdump -C log.out.index
-00000000  1f 4a 6f 79 73 74 69 63  6b 20 7b 7d 3a 20 78 3d  |.Joystick {}: x=|
-00000010  7b 7d 2c 20 79 3d 7b 7d  2c 20 7a 3d 7b 7d 2c 20  |{}, y={}, z={}, |
-00000020  04 0c 0b 0b 0b 01 0f 4e  69 6e 74 65 6e 64 6f 20  |.......Nintendo |
-00000030  4a 6f 79 63 6f 6e 01 9a  99 99 99 99 99 f1 3f 01  |Joycon........?.|
-00000040  9a 99 99 99 99 99 01 40  01 66 66 66 66 66 66 0a  |.......@.ffffff.|
-00000050  40                                                |@|
-00000051
+00000000  33 4a 6f 79 73 74 69 63  6b 20 7b 7d 3a 20 78 5f  |3Joystick {}: x_|
+00000010  6d 69 6e 3d 7b 7d 2c 20  78 5f 6d 61 78 3d 7b 7d  |min={}, x_max={}|
+00000020  2c 20 79 5f 6d 69 6e 3d  7b 7d 2c 20 79 5f 6d 61  |, y_min={}, y_ma|
+00000030  78 3d 7b 7d 05 0c 0b 0b  0b 0b 01 0f 4e 69 6e 74  |x={}........Nint|
+00000040  65 6e 64 6f 20 4a 6f 79  63 6f 6e 01 33 33 33 33  |endo Joycon.3333|
+00000050  33 33 e3 bf 01 cd cc cc  cc cc cc e4 3f 01 48 e1  |33..........?.H.|
+00000060  7a 14 ae 47 e1 bf 01 b8  1e 85 eb 51 b8 e6 3f     |z..G.......Q..?|
+0000006f
 ```
 
 # Benchmarks
