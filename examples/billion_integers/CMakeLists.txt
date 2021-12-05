@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 
 project(binary_logExamples CXX)
 
-include(../cmake/project-is-top-level.cmake)
-include(../cmake/folders.cmake)
+include(../../cmake/project-is-top-level.cmake)
+include(../../cmake/folders.cmake)
 
 if(PROJECT_IS_TOP_LEVEL)
   find_package(binary_log REQUIRED)
@@ -28,6 +28,6 @@ function(add_example NAME)
   add_dependencies(run-examples "run_${NAME}")  
 endfunction()
 
-add_example(example)
+add_example(billion_integers)
 
 add_folders(Example)
