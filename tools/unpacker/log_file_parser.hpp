@@ -70,7 +70,9 @@ class log_file_parser
 
     index = current_byte_in_log_file();
 
-    if (m_runlengthfile_index >= m_runlengthfile_buffer_size) {
+    if (m_runlengthfile_buffer_size == 0 /* empty runlength file */
+        || m_runlengthfile_index >= m_runlengthfile_buffer_size)
+    {
       // No more runlengths in the runlength file
       index = next_byte_in_log_file();
     } else {
@@ -102,11 +104,16 @@ class log_file_parser
       }
     }
 
-    if (runlength == 1) {
-      index = next_byte_in_log_file();
-    }
-
     auto index_entry = index_table[index];
+
+    // std::cout << "Index: " << index << " "
+    //           << "Runlength: " << runlength << " "
+    //           << "m_logfile_index: " << m_logfile_index << " "
+    //           << "m_runlengthfile_index: " << m_runlengthfile_index << " "
+    //           << "format string: " << index_entry.format_string << " "
+    //           << "Current byte in log file: " <<
+    //           (int)current_byte_in_log_file()
+    //           << std::endl;
 
     // Now we know the format string and the number of arguments
     // along with the type of each argument to be parsed
@@ -174,7 +181,6 @@ class log_file_parser
     } else if (arg.type == binary_log::fmt_arg_type::type_uint8) {
       uint8_t value = *(uint8_t*)&arg.value.data()[0];
       store.push_back(value);
-      std::cout << "Parsing uint8 " << value << std::endl;
     } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
       if (arg.size == 1) {
         // actually a uint8_t
@@ -280,13 +286,20 @@ public:
     m_logfile_buffer = m_logfile_mmap.data();
     m_logfile_buffer_size = m_logfile_mmap.mapped_length();
 
-    m_runlengthfile_mmap = mio::mmap_source(runlength_file_path);
-    if (!m_runlengthfile_mmap.is_open() || !m_runlengthfile_mmap.is_mapped()) {
-      throw std::runtime_error("Could not open runlength file");
+    try {
+      m_runlengthfile_mmap = mio::mmap_source(runlength_file_path);
+      if (!m_runlengthfile_mmap.is_open() || !m_runlengthfile_mmap.is_mapped())
+      {
+        throw std::runtime_error("Could not open runlength file");
+      }
+      m_runlengthfile_buffer = m_runlengthfile_mmap.data();
+      m_runlengthfile_buffer_size = m_runlengthfile_mmap.mapped_length();
+    } catch (const std::exception& e) {
+      // Assume that the runlength file is empty
+      // This means that there is no runlength information
+      m_runlengthfile_buffer = nullptr;
+      m_runlengthfile_buffer_size = 0;
     }
-
-    m_runlengthfile_buffer = m_runlengthfile_mmap.data();
-    m_runlengthfile_buffer_size = m_runlengthfile_mmap.mapped_length();
   }
 
   void parse_and_print(

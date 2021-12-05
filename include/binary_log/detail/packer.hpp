@@ -233,7 +233,7 @@ public:
   requires is_string_type<T> inline void write_arg_value_to_log_file(T&& input)
   {
     const uint8_t size = static_cast<uint8_t>(input.size());
-    write_arg_value_to_log_file(size);
+    buffer_or_write(&size, sizeof(uint8_t));
     buffer_or_write(input.data(), size);
   }
 
@@ -247,7 +247,7 @@ public:
 
   constexpr inline void write_current_runlength_to_runlength_file()
   {
-    if (m_current_runlength != 0) {
+    if (m_current_runlength > 1) {
       const format_string_index_type index =
           static_cast<format_string_index_type>(m_runlength_index);
       fwrite(&index, sizeof(format_string_index_type), 1, m_runlength_file);
@@ -293,20 +293,30 @@ public:
     // to the m_runlength_file and write the new index
     // to the logfile
 
-    if (index == m_runlength_index) {
+    if (m_runlength_index == 0 && index == 0) {
+      // First index
       if (m_current_runlength == 0) {
-        // This is the first index of the runlength
-        // write it to the logfile
+        // First call
+        // Write index to log file
         buffer_or_write(&index, sizeof(format_string_index_type));
+        m_current_runlength++;
+      } else if (m_current_runlength >= 1) {
+        m_current_runlength++;
       }
-      ++m_current_runlength;
     } else {
-      if (m_current_runlength != 0) {
+      // Not first index
+      if (m_runlength_index == index) {
+        // No change to index
+        m_current_runlength++;
+      } else {
+        // Write current runlength to file
         write_current_runlength_to_runlength_file();
-        m_runlength_index = index;
+
+        // Write index to log file
+        buffer_or_write(&index, sizeof(format_string_index_type));
         m_current_runlength = 1;
+        m_runlength_index = index;
       }
-      buffer_or_write(&index, sizeof(format_string_index_type));
     }
   }
 
