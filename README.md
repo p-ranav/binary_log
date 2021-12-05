@@ -248,6 +248,7 @@ BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/
   - Note that switching to `uint16_t` here means that every log call _might_ store an extra byte to be able to refer to an entry in the index table - an extra byte per call could be an extra 1GB over billion log calls. 
 * The size of the format string is saved as a `uint8_t` - this means that the format string cannot be more than 256 characters, which, I think, is a reasonable assumption to make for a logging library. Often in reality, the lines of a log file are no more than 120 characters - this way the log remains human readable. 
 * The size of any string argument is also stored as a `uint8_t` - this again means that any string argument must be no more than 256 bytes in size.
+  - In both the index file and the log file, strings are stored like this: `<string-length (1 byte)> <string-byte1> ... <string-byten>`
 
 # Building and installing
 
