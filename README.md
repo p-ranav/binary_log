@@ -123,8 +123,8 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
 * The log file
 * A runlengths file
 
-<p align="center">
-  <img src="images/how_it_works.png"/>  
+<p>
+  <img height="600" src="images/how_it_works.png"/>  
 </p>
 
 # Binary Format
