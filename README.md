@@ -276,6 +276,21 @@ BM_binary_log_random_real<double>                             12.7 ns         12
   - Note that switching to `uint16_t` here means that every log call _might_ store an extra byte to be able to refer to an entry in the index table - an extra byte per call could be an extra 1GB over billion log calls. 
 * The [unit tests](https://github.com/p-ranav/binary_log/blob/master/test/source/test_packer.cpp) assume little endian for multi-byte data, e.g., int, float etc.
 
+## Supported Format Argument Types
+
+`binary_log` supports a limited number of types of format arguments. They are:
+
+```
+bool,
+char, 
+uint8_t, uint16_t, uint32_t, uint64_t
+int8_t, int16_t, int32_t, int64_t,
+float, double,
+const char*,
+std::string,
+std::string_view
+```
+
 # Building and installing
 
 See the [BUILDING](BUILDING.md) document.
