@@ -35,26 +35,27 @@ int main()
 }
 ```
 
-On a [modern workstation desktop](#hardware-details), the above code executes in `~4.1s`.
+On a [modern workstation desktop](#hardware-details), the above code executes in `~3.5s`.
 
-| Type            | Value                                       |
-| --------------- | ------------------------------------------- |
-| Time Taken      | 4.1 s                                       | 
-| Throughput      | 1.465 Gb/s                                  |
-| Performance     | 244 million logs/s                          |
-| Average Latency | 4.1 ns                                      |
-| File Size       | ~6 GB (log file) + 32 bytes (index file)    |
+| Type            | Value               |
+| --------------- | --------------------|
+| Time Taken      | 3.5 s               | 
+| Throughput      | 1.4   Gb/s          |
+| Performance     | 286 million logs/s  |
+| Average Latency | 3.5 ns              |
+| File Size       | ~5 GB               |
 
 ```console
-foo@bar:~/dev/binary_log$ time ./build/example/example
+foo@bar:~/dev/binary_log$ time ./build/examples/billion_integers/billion_integers
 
-real    0m4.093s
-user    0m2.672s
-sys     0m1.422s
+real    0m3.561s
+user    0m2.422s
+sys     0m1.141s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
--rw-r--r-- 1 pranav pranav         32 Dec  3 13:33 log.out.index
--rw-r--r-- 1 pranav pranav 5999868672 Dec  3 13:33 log.out
+-rw-r--r-- 1 pranav pranav          6 Dec  6 07:52 log.out.runlength
+-rw-r--r-- 1 pranav pranav         32 Dec  6 07:52 log.out.index
+-rw-r--r-- 1 pranav pranav 4999934337 Dec  6 07:52 log.out
 ```
 
 ## Deflate the logs
