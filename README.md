@@ -116,9 +116,10 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
   - If the user wants multi-threaded behavior, the user can choose and implement their own queueing solution
   - There are numerous well-known lock-free queues available for this purpose ([moody::concurrentqueue](https://github.com/cameron314/concurrentqueue), [atomic_queue](https://github.com/max0x7ba/atomic_queue) etc.) - let the user choose the technology they want to use.
   - The latency of enqueuing into a lock-free queue is large enough to matter
-    - Users who do not care about multi-threaded scenarios should NOT suffer the cost
+    - Users who do not care about multi-threaded scenarios should not suffer the cost
     - Looking at the [atomic_queue benchmarks](https://max0x7ba.github.io/atomic_queue/html/benchmarks.html), the average latency across many state-of-the-art multi-producer, multi-consumer queues is around 150-250 ns
-* Avoid writing static information (format string, and constants) more than once
+* Avoid writing static information more than once
+  - Examples of static information: the format string, the number of format args, and type of each format arg
   - Store the static information in an "index" file 
   - Store the dynamic information in the log file (refer to the index file where possible)
 * Do as little work as possible in the runtime hot path
