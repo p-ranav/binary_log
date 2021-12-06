@@ -244,12 +244,12 @@ BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/
 
 ## Assumptions in the code
 
+* The size of the format string is saved as a `uint8_t` - this means that the format string cannot be more than 256 characters, which I think is a reasonable assumption to make for a logging library. Often, in reality, the lines of a log file are around 80-120 characters in length. 
+* The size of any string argument is also stored as a `uint8_t` - this again means that any string argument must be no more than 256 bytes in size.
+  - In both the index file and the log file, strings are stored like this: `<string-length (1 byte)> <string-byte1> ... <string-byten>`
 * The index file contains a table of metadata - an index table. Each entry in the log file _might_ use an index to refer to row in the index table. The type of this index is `uint8_t`, a choice made to keep the output compact. This data type choice has one major implication: The max size of the index table is 256 (since the max index is 255) - this means that a user can call `BINARY_LOG(...)` in at most 256 lines of code with a specific `binary_log` object. This should be sufficient for small to medium size applications but may not be adequate for larger applications where one logger is used with `BINARY_LOG(...)` throughput the application in more than 256 places.
   - One could expose this data type as a template parameter but the unpacker will need to be updated to correctly parse, e.g., a `uint16_t` for the index instead of a `uint8_t`
   - Note that switching to `uint16_t` here means that every log call _might_ store an extra byte to be able to refer to an entry in the index table - an extra byte per call could be an extra 1GB over billion log calls. 
-* The size of the format string is saved as a `uint8_t` - this means that the format string cannot be more than 256 characters, which, I think, is a reasonable assumption to make for a logging library. Often in reality, the lines of a log file are no more than 120 characters - this way the log remains human readable. 
-* The size of any string argument is also stored as a `uint8_t` - this again means that any string argument must be no more than 256 bytes in size.
-  - In both the index file and the log file, strings are stored like this: `<string-length (1 byte)> <string-byte1> ... <string-byten>`
 * The [unit tests](https://github.com/p-ranav/binary_log/blob/master/test/source/test_packer.cpp) assume little endian for multi-byte data, e.g., int, float etc.
 
 # Building and installing
