@@ -200,8 +200,8 @@ The above loop runs in under `500 ms`. The final output is compact at just `118 
 | File               | Size      |
 | ------------------ | --------- |
 | log.out            | 1 byte    | 
-| log.out.index      | 6 bytes   |
-| log.out.runlength  | 111 bytes |
+| log.out.runlength  | 6 bytes   |
+| log.out.index      | 111 bytes |
 
 ```console
 foo@bar:~/dev/binary_log$ ls -lart log.out*
