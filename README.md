@@ -100,11 +100,12 @@ Hello logger, msg number: 999999998
 Hello logger, msg number: 999999999
 ```
 
-| Type                | Value     |
-| ------------------- | --------- |
-| Time Taken          | 2m 19s    | 
-| Throughput          | 258 MB/s  |
-| Deflated File Size  | ~35 GB    |
+| Type                | Value      |
+| ------------------- | ---------- |
+| Time Taken          | 2m 19s     | 
+| Throughput          | 258 MB/s   |
+| Deflated File Size  | ~35 GB     |
+| Log Compression     | ***7x***   |
 
 See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#benchmarks) section for more performance metrics.
 
