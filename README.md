@@ -7,7 +7,7 @@
 * Logs messages in a compact binary format
 * Fast
   * ***Hundreds of millions*** of logs per second
-  * 2-6 ns average latency on basic data types
+  * Average latency of ***2-7 ns*** for basic data types
   * See [benchmarks](https://github.com/p-ranav/binary_log#benchmarks)
 * Extracts static information at compile-time
 * Only logs the dynamic parts of the messages at runtime in the hot path
