@@ -479,3 +479,234 @@ TEST_CASE("binary_log can run-length encode repeated log calls with args"
   remove(test_file_index);
   remove(test_file_runlength);
 }
+
+TEST_CASE(
+    "binary_log can run-length encode repeated log calls with args and handle "
+    "other single calls"
+    * test_suite("packer"))
+{
+  {
+    binary_log::binary_log log(test_file);
+    BINARY_LOG(log, "New iteration");
+
+    for (std::size_t j = 0; j < 2; ++j) {
+      BINARY_LOG(log, "Integer: {}", j);
+    }
+
+    BINARY_LOG(log, "Flushing files");
+
+    for (std::size_t j = 0; j < 3; ++j) {
+      auto filename = std::string {"some_file_"} + std::to_string(j);
+      BINARY_LOG(log, "Flushed file: {}", filename);
+    }
+
+    BINARY_LOG(log, "End of iteration");
+  }
+  // The file should be flushed and closed.
+  REQUIRE(std::filesystem::exists(test_file));
+  REQUIRE(std::filesystem::exists(test_file_index));
+  REQUIRE(std::filesystem::exists(test_file_runlength));
+
+  auto log_file = read_file(test_file);
+  auto index_file = read_file(test_file_index);
+  auto runlength_file = read_file(test_file_runlength);
+
+  REQUIRE(log_file.size() == 45);
+
+  auto expected_bytes_in_log_file =
+      std::vector<uint8_t> {// Index for "New iteration"
+                            0x00,
+                            // Index for "Integer: {}"
+                            0x01,
+                            // Arg_1 width is 1
+                            0x01,
+                            // Arg_1 value is 0
+                            0x00,
+                            // Arg_1 width is 1
+                            0x01,
+                            // Arg_1 value is 1
+                            0x01,
+                            // Index for "Flushing files"
+                            0x02,
+                            // Index for "Flushed file: {}"
+                            0x03,
+                            // Arg_1 string length
+                            0x0b,
+                            // Arg_1 string value: some_file_0
+                            0x73,
+                            0x6f,
+                            0x6d,
+                            0x65,
+                            0x5f,
+                            0x66,
+                            0x69,
+                            0x6c,
+                            0x65,
+                            0x5f,
+                            0x30,
+                            // Arg_1 string length
+                            0x0b,
+                            // Arg_1 string value: some_file_1
+                            0x73,
+                            0x6f,
+                            0x6d,
+                            0x65,
+                            0x5f,
+                            0x66,
+                            0x69,
+                            0x6c,
+                            0x65,
+                            0x5f,
+                            0x31,
+                            // Arg_1 string length
+                            0x0b,
+                            // Arg_1 string value: some_file_2
+                            0x73,
+                            0x6f,
+                            0x6d,
+                            0x65,
+                            0x5f,
+                            0x66,
+                            0x69,
+                            0x6c,
+                            0x65,
+                            0x5f,
+                            0x32,
+                            // Index for "End of iteration"
+                            0x04};
+
+  for (std::size_t i = 0; i < expected_bytes_in_log_file.size(); ++i) {
+    REQUIRE(log_file[i] == expected_bytes_in_log_file[i]);
+  }
+
+  REQUIRE(index_file.size() == 84);
+
+  auto expected_bytes_in_index_file =
+      std::vector<uint8_t> {// Format string length for "New iteration"
+                            0x0d,
+                            // Format string value for "New iteration"
+                            0x4e,
+                            0x65,
+                            0x77,
+                            0x20,
+                            0x69,
+                            0x74,
+                            0x65,
+                            0x72,
+                            0x61,
+                            0x74,
+                            0x69,
+                            0x6f,
+                            0x6e,
+                            // Num args
+                            0x00,
+                            // Format string length for "Integer: {}"
+                            0x0b,
+                            // Format string value for "Integer: {}"
+                            0x49,
+                            0x6e,
+                            0x74,
+                            0x65,
+                            0x67,
+                            0x65,
+                            0x72,
+                            0x3a,
+                            0x20,
+                            0x7b,
+                            0x7d,
+                            // Num args
+                            0x01,
+                            // Arg type: uint64_t
+                            0x05,
+                            // Arg is constant?
+                            0x00,
+                            // Format string length for "Flushing files"
+                            0x0e,
+                            // Format string value for "Flushing files"
+                            0x46,
+                            0x6c,
+                            0x75,
+                            0x73,
+                            0x68,
+                            0x69,
+                            0x6e,
+                            0x67,
+                            0x20,
+                            0x66,
+                            0x69,
+                            0x6c,
+                            0x65,
+                            0x73,
+                            // Num args
+                            0x00,
+                            // Format string length for "Flushed file: {}"
+                            0x10,
+                            // Format string value for "Flushed file: {}"
+                            0x46,
+                            0x6c,
+                            0x75,
+                            0x73,
+                            0x68,
+                            0x65,
+                            0x64,
+                            0x20,
+                            0x66,
+                            0x69,
+                            0x6c,
+                            0x65,
+                            0x3a,
+                            0x20,
+                            0x7b,
+                            0x7d,
+                            // Num args
+                            0x01,
+                            // Arg type: string
+                            0x0c,
+                            // Arg is constant?
+                            0x00,
+                            // Format string length for "End of iteration"
+                            0x10,
+                            // Format string value for "End of iteration"
+                            0x45,
+                            0x6e,
+                            0x64,
+                            0x20,
+                            0x6f,
+                            0x66,
+                            0x20,
+                            0x69,
+                            0x74,
+                            0x65,
+                            0x72,
+                            0x61,
+                            0x74,
+                            0x69,
+                            0x6f,
+                            0x6e,
+                            // Num args
+                            0x00};
+
+  for (std::size_t i = 0; i < expected_bytes_in_index_file.size(); ++i) {
+    REQUIRE(index_file[i] == expected_bytes_in_index_file[i]);
+  }
+
+  REQUIRE(runlength_file.size() == 6);
+
+  auto expected_bytes_in_runlength_file =
+      std::vector<uint8_t> {// Index with runlength
+                            0x01,
+                            // Integer width for value
+                            0x01,
+                            // Run length value
+                            0x02,
+                            // Index with runlength
+                            0x03,
+                            // Integer width for value
+                            0x01,
+                            // Run length value
+                            0x03};
+
+  for (std::size_t i = 0; i < expected_bytes_in_runlength_file.size(); ++i) {
+    REQUIRE(runlength_file[i] == expected_bytes_in_runlength_file[i]);
+  }
+}
