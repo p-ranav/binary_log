@@ -104,6 +104,7 @@ Hello logger, msg number: 999999999
 | ------------------- | ---------- |
 | Time Taken          | 2m 19s     | 
 | Throughput          | 258 MB/s   |
+| Original File Size  | ~5 GB      |
 | Deflated File Size  | ~35 GB     |
 | Log Compression     | ***7x***   |
 
