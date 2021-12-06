@@ -15,6 +15,7 @@
 * Uses [fmtlib](https://github.com/fmtlib/fmt) to format the logs
 * Synchronous logging - not thread safe
 * Header-only library
+  - Single header file version available [here](https://github.com/p-ranav/binary_log/blob/master/single_include/binary_log/binary_log.hpp)
 * Requires C++20
 * MIT License
 
