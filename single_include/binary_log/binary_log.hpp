@@ -640,6 +640,7 @@ public:
 
 }  // namespace binary_log
 
+
 #pragma once
 #include <iostream>
 #include <string>
@@ -730,3 +731,5 @@ public:
     logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
                ##__VA_ARGS__); \
   }
+
+
