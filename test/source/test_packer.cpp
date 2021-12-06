@@ -709,4 +709,244 @@ TEST_CASE(
   for (std::size_t i = 0; i < expected_bytes_in_runlength_file.size(); ++i) {
     REQUIRE(runlength_file[i] == expected_bytes_in_runlength_file[i]);
   }
+
+  remove(test_file);
+  remove(test_file_index);
+  remove(test_file_runlength);
+}
+
+template<typename T>
+void save_data(binary_log::binary_log& log, T&& value)
+{
+  BINARY_LOG(log, "{}", std::forward<T>(value));
+}
+
+TEST_CASE("binary_log can run-length encode calls to function template"
+          * test_suite("packer"))
+{
+  {
+    binary_log::binary_log log(test_file);
+    save_data(log, 5);
+    save_data(log, 3.14);
+    save_data(log, "Hello, world!");
+    save_data(log, std::string("This is a string"));
+    save_data(log, true);
+    for (int i = 0; i < 3; ++i) {
+      // Should trigger RLE
+      save_data(log, i);
+    }
+    save_data(log, 2.7182818284590452353602874713527f);
+    save_data(log, 'a');
+  }
+
+  // The file should be flushed and closed.
+  REQUIRE(std::filesystem::exists(test_file));
+  REQUIRE(std::filesystem::exists(test_file_index));
+  REQUIRE(std::filesystem::exists(test_file_runlength));
+
+  auto log_file = read_file(test_file);
+  auto index_file = read_file(test_file_index);
+  auto runlength_file = read_file(test_file_runlength);
+
+  REQUIRE(log_file.size() == 61);
+
+  auto expected_bytes_in_log_file =
+      std::vector<uint8_t> {// Index for save_data(int)
+                            0x00,
+                            // Integer width for value
+                            0x01,
+                            // Integer value
+                            0x05,
+                            // Index for save_data(double)
+                            0x01,
+                            // Double value for 3.14
+                            0x1f,
+                            0x85,
+                            0xeb,
+                            0x51,
+                            0xb8,
+                            0x1e,
+                            0x09,
+                            0x40,
+                            // Index for save_data(const char*)
+                            0x02,
+                            // String length for "Hello, world!"
+                            0x0d,
+                            // String value for "Hello, world!"
+                            0x48,
+                            0x65,
+                            0x6c,
+                            0x6c,
+                            0x6f,
+                            0x2c,
+                            0x20,
+                            0x77,
+                            0x6f,
+                            0x72,
+                            0x6c,
+                            0x64,
+                            0x21,
+                            // Index for save_data(std::string)
+                            0x03,
+                            // String length for "This is a string"
+                            0x10,
+                            // String value for "This is a string"
+                            0x54,
+                            0x68,
+                            0x69,
+                            0x73,
+                            0x20,
+                            0x69,
+                            0x73,
+                            0x20,
+                            0x61,
+                            0x20,
+                            0x73,
+                            0x74,
+                            0x72,
+                            0x69,
+                            0x6e,
+                            0x67,
+                            // Index for save_data(bool)
+                            0x04,
+                            // Boolean value for true
+                            0x01,
+                            // Index for save_data(int)
+                            0x05,
+                            // Integer width for value
+                            0x01,
+                            // Integer value
+                            0x00,
+                            // Integer width for value
+                            0x01,
+                            // Integer value
+                            0x01,
+                            // Integer width for value
+                            0x01,
+                            // Integer value
+                            0x02,
+                            // Index for save_data(float)
+                            0x06,
+                            // Float value for 2.7182818284590452353602874713527
+                            0x54,
+                            0xf8,
+                            0x2d,
+                            0x40,
+                            // Index for save_data(char)
+                            0x07,
+                            // Char value for 'a'
+                            0x61};
+
+  for (std::size_t i = 0; i < expected_bytes_in_log_file.size(); ++i) {
+    REQUIRE(log_file[i] == expected_bytes_in_log_file[i]);
+  }
+
+  REQUIRE(index_file.size() == 48);
+
+  auto expected_bytes_in_index_file = std::vector<uint8_t> {
+      // Length of format string for save_data(int) "{}"
+      0x02,
+      // Format string value for save_data(int) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - int32
+      0x08,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(double) "{}"
+      0x02,
+      // Format string value for save_data(double) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - double
+      0x0b,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(const char*) "{}"
+      0x02,
+      // Format string value for save_data(const char*) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - const char*
+      0x0c,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(std::string) "{}"
+      0x02,
+      // Format string value for save_data(std::string) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - std::string
+      0x0c,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(bool) "{}"
+      0x02,
+      // Format string value for save_data(bool) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - bool
+      0x00,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(int) "{}"
+      0x02,
+      // Format string value for save_data(int) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - int32
+      0x08,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(float) "{}"
+      0x02,
+      // Format string value for save_data(float) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - float
+      0x0a,
+      // Is arg const?
+      0x00,
+      // Length of format string for save_data(char) "{}"
+      0x02,
+      // Format string value for save_data(char) "{}"
+      0x7b,
+      0x7d,
+      // Num args
+      0x01,
+      // Type of arg 0 - char
+      0x01,
+      // Is arg const?
+      0x00};
+
+  for (std::size_t i = 0; i < expected_bytes_in_index_file.size(); ++i) {
+    REQUIRE(index_file[i] == expected_bytes_in_index_file[i]);
+  }
+
+  REQUIRE(runlength_file.size() == 3);
+
+  auto expected_bytes_in_runlength_file =
+      std::vector<uint8_t> {0x05, 0x01, 0x03};
+
+  for (std::size_t i = 0; i < expected_bytes_in_runlength_file.size(); ++i) {
+    REQUIRE(runlength_file[i] == expected_bytes_in_runlength_file[i]);
+  }
+
+  remove(test_file);
+  remove(test_file_index);
+  remove(test_file_runlength);
 }
