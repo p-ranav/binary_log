@@ -8,4 +8,5 @@ clang-format-11 -i benchmark/*.cpp \
                 examples/function_template/*.cpp \
                 tools/unpacker/*.cpp \
                 tools/unpacker/*.hpp \
-                test/source/*.cpp
+                test/source/*.cpp \
+                single_include/binary_log/*.hpp

@@ -1,4 +1,230 @@
 #pragma once
+#include <cstdint>
+
+// #include <binary_log/constant.hpp>
+
+namespace binary_log
+{
+template<typename T>
+struct constant
+{
+  using type = T;
+  const T value;
+  constexpr constant(T v)
+      : value(v)
+  {
+  }
+};
+
+}  // namespace binary_log
+// #include <binary_log/detail/concepts.hpp>
+#include <concepts>
+#include <string>
+#include <string_view>
+
+namespace binary_log
+{
+template<typename T, typename... U>
+concept is_any_of = (std::same_as<T, U> || ...);
+
+template<typename T>
+concept is_numeric_type =
+    is_any_of<std::remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>,
+              bool,
+              char,
+              uint8_t,
+              int8_t,
+              uint16_t,
+              int16_t,
+              uint32_t,
+              int32_t,
+              uint64_t,
+              int64_t,
+              float,
+              double>;
+
+template<typename T>
+concept is_string_type =
+    is_any_of<std::remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>,
+              std::string,
+              std::string_view>;
+
+}  // namespace binary_log
+// #include <binary_log/detail/is_specialization.hpp>
+#include <type_traits>
+
+namespace binary_log
+{
+template<class T, template<class...> class Template>
+struct is_specialization : std::false_type
+{
+};
+
+template<template<class...> class Template, class... Args>
+struct is_specialization<Template<Args...>, Template> : std::true_type
+{
+};
+
+}  // namespace binary_log
+
+namespace binary_log
+{
+enum class fmt_arg_type
+{
+  type_bool,
+  type_char,
+  type_uint8,
+  type_uint16,
+  type_uint32,
+  type_uint64,
+  type_int8,
+  type_int16,
+  type_int32,
+  type_int64,
+  type_float,
+  type_double,
+  type_string,
+};
+
+static inline std::size_t sizeof_arg_type(fmt_arg_type type)
+{
+  switch (type) {
+    case fmt_arg_type::type_bool:
+      return sizeof(bool);
+    case fmt_arg_type::type_char:
+      return sizeof(char);
+    case fmt_arg_type::type_uint8:
+      return sizeof(uint8_t);
+    case fmt_arg_type::type_uint16:
+      return sizeof(uint16_t);
+    case fmt_arg_type::type_uint32:
+      return sizeof(uint32_t);
+    case fmt_arg_type::type_uint64:
+      return sizeof(uint64_t);
+    case fmt_arg_type::type_int8:
+      return sizeof(int8_t);
+    case fmt_arg_type::type_int16:
+      return sizeof(int16_t);
+    case fmt_arg_type::type_int32:
+      return sizeof(int32_t);
+    case fmt_arg_type::type_int64:
+      return sizeof(int64_t);
+    case fmt_arg_type::type_float:
+      return sizeof(float);
+    case fmt_arg_type::type_double:
+      return sizeof(double);
+    case fmt_arg_type::type_string:
+      return sizeof(char);
+    default:
+      return 0;
+  }
+}
+
+template<typename T>
+constexpr static inline fmt_arg_type get_arg_type() = delete;
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<bool>()
+{
+  return fmt_arg_type::type_bool;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<char>()
+{
+  return fmt_arg_type::type_char;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<uint8_t>()
+{
+  return fmt_arg_type::type_uint8;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<uint16_t>()
+{
+  return fmt_arg_type::type_uint16;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<uint32_t>()
+{
+  return fmt_arg_type::type_uint32;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<uint64_t>()
+{
+  return fmt_arg_type::type_uint64;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<int8_t>()
+{
+  return fmt_arg_type::type_int8;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<int16_t>()
+{
+  return fmt_arg_type::type_int16;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<int32_t>()
+{
+  return fmt_arg_type::type_int32;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<int64_t>()
+{
+  return fmt_arg_type::type_int64;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<float>()
+{
+  return fmt_arg_type::type_float;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<double>()
+{
+  return fmt_arg_type::type_double;
+}
+
+template<>
+constexpr inline fmt_arg_type get_arg_type<const char*>()
+{
+  return fmt_arg_type::type_string;
+}
+
+template<typename T>
+requires is_string_type<T> constexpr inline fmt_arg_type get_arg_type()
+{
+  return fmt_arg_type::type_string;
+}
+
+constexpr static inline bool all_args_are_constants()
+{
+  return true;
+}
+
+template<class T, class... Ts>
+constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
+{
+  if constexpr (is_specialization<T, constant> {}) {
+    return all_args_are_constants(std::forward<Ts>(rest)...);
+  } else {
+    return false;
+  }
+}
+
+}  // namespace binary_log
+
+#pragma once
 #include <array>
 #include <cstring>
 #include <iostream>
@@ -6,8 +232,8 @@
 #include <string>
 #include <string_view>
 
-#include <binary_log/constant.hpp>
-#include <binary_log/detail/args.hpp>
+// #include <binary_log/constant.hpp>
+// #include <binary_log/detail/args.hpp>
 
 namespace binary_log
 {
@@ -413,3 +639,94 @@ public:
 };
 
 }  // namespace binary_log
+
+#pragma once
+#include <iostream>
+#include <string>
+
+// #include <binary_log/constant.hpp>
+// #include <binary_log/detail/args.hpp>
+// #include <binary_log/detail/packer.hpp>
+
+namespace binary_log
+{
+class binary_log
+{
+  packer m_packer;
+  uint8_t m_format_string_index {0};
+
+public:
+  binary_log(const char* path)
+      : m_packer(path)
+  {
+  }
+
+  void flush()
+  {
+    m_packer.flush();
+  }
+
+  template<class... Args>
+  inline uint8_t log_index(std::string_view f, Args&&... args)
+  {
+    // SPEC:
+    // <format-string-length> <format-string>
+    // <number-of-arguments> <arg-type-1> <arg-type-2> ... <arg-type-N>
+    // <arg-1-is- const> <arg-1-value>? <arg-2-is- const> <arg-2-value>?
+    // ...
+    //
+    // If the arg is not an lvalue, it is stored in the index file
+    // and the value is not stored in the log file
+    const uint8_t num_args = sizeof...(Args);
+
+    m_format_string_index++;
+
+    // Write the length of the format string
+    m_packer.write_format_string_to_index_file(f);
+
+    // Write the number of args taken by the format string
+    m_packer.write_num_args_to_index_file(num_args);
+
+    // Write the type of each argument
+    if (num_args > 0) {
+      m_packer.update_index_file(std::forward<Args>(args)...);
+    }
+
+    return m_format_string_index - 1;
+  }
+
+  template<class... Args>
+  inline void log(std::size_t pos, Args&&... args)
+  {
+    const uint8_t num_args = sizeof...(Args);
+
+    // Write to the main log file
+    // SPEC:
+    // <format-string-index> <arg1> <arg2> ... <argN>
+    // where:
+    //   <format-string-index> is the index of the format string in the index
+    //   file <arg1> <arg2> ... <argN> are the arguments to the format string
+    //     Each <arg> is a pair: <type, value>
+    uint8_t current_index = static_cast<uint8_t>(pos);
+    m_packer.pack_format_string_index(current_index);
+
+    // Write the args
+    if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
+      m_packer.update_log_file(std::forward<Args>(args)...);
+    }
+  }
+};
+
+}  // namespace binary_log
+
+#define BINARY_LOG_CONCAT0(a, b) a##b
+#define BINARY_LOG_CONCAT(a, b) BINARY_LOG_CONCAT0(a, b)
+
+#define BINARY_LOG(logger, format_string, ...) \
+  { \
+    static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, \
+                                         __LINE__) = \
+        logger.log_index(format_string, ##__VA_ARGS__); \
+    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
+               ##__VA_ARGS__); \
+  }

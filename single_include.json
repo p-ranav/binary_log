@@ -1,0 +1,10 @@
+{
+    "project": "Fast binary logger C++20",
+    "target": "single_include/binary_log/binary_log.hpp",
+    "sources": [
+        "include/binary_log/detail/args.hpp",
+        "include/binary_log/detail/packer.hpp",
+        "include/binary_log/binary_log.hpp"
+    ],
+    "include_paths": ["include"]
+}

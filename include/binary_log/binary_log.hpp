@@ -77,13 +77,14 @@ public:
 
 }  // namespace binary_log
 
-#define CONCAT0(a, b) a##b
-#define CONCAT(a, b) CONCAT0(a, b)
+#define BINARY_LOG_CONCAT0(a, b) a##b
+#define BINARY_LOG_CONCAT(a, b) BINARY_LOG_CONCAT0(a, b)
 
 #define BINARY_LOG(logger, format_string, ...) \
   { \
-    static std::size_t CONCAT(__binary_log_format_string_id_pos, __LINE__) = \
+    static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, \
+                                         __LINE__) = \
         logger.log_index(format_string, ##__VA_ARGS__); \
-    logger.log(CONCAT(__binary_log_format_string_id_pos, __LINE__), \
+    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
                ##__VA_ARGS__); \
   }

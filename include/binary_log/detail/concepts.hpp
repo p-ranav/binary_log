@@ -1,5 +1,7 @@
 #pragma once
 #include <concepts>
+#include <string>
+#include <string_view>
 
 namespace binary_log
 {

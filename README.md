@@ -256,6 +256,12 @@ BM_binary_log_string              12.2 ns         12.2 ns     64000000 1.39264G/
 
 See the [BUILDING](BUILDING.md) document.
 
+## Generating Single Header
+
+```bash
+python3 utils/amalgamate/amalgamate.py -c single_include.json -s .
+```
+
 # Contributing
 
 See the [CONTRIBUTING](CONTRIBUTING.md) document.
