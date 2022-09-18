@@ -46,6 +46,95 @@ class packer
       m_buffer[m_buffer_index++] = byte_array[i];
   }
 
+  // Variable-length encoding functions
+  // for integers
+
+  template <typename T> bool CHECK_BIT(T &value, uint8_t pos) {
+    return ((value) & (1 << (pos)));
+  }
+
+  template <typename T> void SET_BIT(T &value, uint8_t pos) {
+    value = value | 1 << pos;
+  }
+
+  template <typename T> void RESET_BIT(T &value, uint8_t pos) {
+    value = value & ~(1 << pos);
+  }
+
+  template <typename int_t>
+  bool encode_varint_firstbyte_6(int_t &value) {
+    uint8_t octet = 0;
+    if (value < 0) {
+      value *= -1;
+      SET_BIT(octet, 7);
+    }
+    // While more than 7 bits of data are left, occupy the last output byte
+    // and set the next byte flag
+    if (value > 63) {
+      // Set the next byte flag
+      octet |= ((uint8_t)(value & 63)) | 64;
+      buffer_or_write(&octet, 1);
+      return true; // multibyte
+    } else {
+      octet |= ((uint8_t)(value & 63));
+      buffer_or_write(&octet, 1);
+      return false; // no more bytes needed
+    }
+  }
+
+  template <typename int_t>
+  void encode_varint_6(int_t value) {
+    // While more than 7 bits of data are left, occupy the last output byte
+    // and set the next byte flag
+    while (value > 63) {
+      // Set the next byte flag
+      uint8_t octet = ((uint8_t)(value & 63)) | 64;
+      buffer_or_write(&octet, 1);
+      // Remove the seven bits we just wrote
+      value >>= 6;
+    }
+    uint8_t octet = ((uint8_t)value) & 63;
+    buffer_or_write(&octet, 1);
+  }
+
+  template <typename int_t>
+  void encode_varint_7(int_t value) {
+    if (value < 0) {
+      value *= 1;
+    }
+    // While more than 7 bits of data are left, occupy the last output byte
+    // and set the next byte flag
+    while (value > 127) {
+      //|128: Set the next byte flag
+      uint8_t octet = ((uint8_t)(value & 127)) | 128;
+      buffer_or_write(&octet, 1);
+      // Remove the seven bits we just wrote
+      value >>= 7;
+    }
+    uint8_t octet = ((uint8_t)value) & 127;
+    buffer_or_write(&octet, 1);
+  }
+
+  // Unsigned integer variable-length encoding functions
+  template <typename int_t>
+  typename std::enable_if<std::is_integral_v<int_t> && !std::is_signed_v<int_t>,
+                          void>::type
+  encode_varint(int_t value) {
+    encode_varint_7<int_t>(value);
+  }
+
+  // Signed integer variable-length encoding functions
+  template <typename int_t>
+  typename std::enable_if<std::is_integral_v<int_t> && std::is_signed_v<int_t>,
+                          void>::type
+  encode_varint(int_t value) {
+    // first octet
+    if (encode_varint_firstbyte_6<int_t>(value)) {
+      // rest of the octets
+      encode_varint_7<int_t>(value);
+    }
+  }
+
 public:
   packer(const char* path)
   {
@@ -128,94 +217,42 @@ public:
 
   inline void write_arg_value_to_log_file(uint8_t input)
   {
-    constexpr uint8_t bytes = 1;
-    buffer_or_write(&bytes, sizeof(uint8_t));
     buffer_or_write(&input, sizeof(uint8_t));
   }
 
   inline void write_arg_value_to_log_file(uint16_t input)
   {
-    if (input <= std::numeric_limits<uint8_t>::max()) {
-      uint8_t value = static_cast<uint8_t>(input);
-      write_arg_value_to_log_file(value);
-    } else {
-      constexpr uint8_t bytes = 2;
-      buffer_or_write(&bytes, sizeof(uint8_t));
-      buffer_or_write(&input, sizeof(uint16_t));
-    }
+    buffer_or_write(&input, sizeof(uint16_t));
   }
 
   inline void write_arg_value_to_log_file(uint32_t input)
   {
-    if (input <= std::numeric_limits<uint16_t>::max()) {
-      uint16_t value = static_cast<uint16_t>(input);
-      write_arg_value_to_log_file(value);
-    } else {
-      constexpr uint8_t bytes = 4;
-      buffer_or_write(&bytes, sizeof(uint8_t));
-      buffer_or_write(&input, sizeof(uint32_t));
-    }
+    encode_varint(input);
   }
 
   inline void write_arg_value_to_log_file(uint64_t input)
   {
-    if (input <= std::numeric_limits<uint32_t>::max()) {
-      uint32_t value = static_cast<uint32_t>(input);
-      write_arg_value_to_log_file(value);
-    } else {
-      constexpr uint8_t bytes = 8;
-      buffer_or_write(&bytes, sizeof(uint8_t));
-      buffer_or_write(&input, sizeof(uint64_t));
-    }
+    encode_varint(input);
   }
 
   inline void write_arg_value_to_log_file(int8_t input)
   {
-    constexpr uint8_t bytes = 1;
-    buffer_or_write(&bytes, sizeof(uint8_t));
     buffer_or_write(&input, sizeof(int8_t));
   }
 
   inline void write_arg_value_to_log_file(int16_t input)
   {
-    if (input <= std::numeric_limits<int8_t>::max()
-        && input >= std::numeric_limits<int8_t>::min())
-    {
-      int8_t value = static_cast<int8_t>(input);
-      write_arg_value_to_log_file(value);
-    } else {
-      constexpr uint8_t bytes = 2;
-      buffer_or_write(&bytes, sizeof(uint8_t));
-      buffer_or_write(&input, sizeof(int16_t));
-    }
+    buffer_or_write(&input, sizeof(int16_t));
   }
 
   inline void write_arg_value_to_log_file(int32_t input)
   {
-    if (input <= std::numeric_limits<int16_t>::max()
-        && input >= std::numeric_limits<int16_t>::min())
-    {
-      int16_t value = static_cast<int16_t>(input);
-      write_arg_value_to_log_file(value);
-    } else {
-      constexpr uint8_t bytes = 4;
-      buffer_or_write(&bytes, sizeof(uint8_t));
-      buffer_or_write(&input, sizeof(int32_t));
-    }
+    encode_varint(input);
   }
 
   inline void write_arg_value_to_log_file(int64_t input)
   {
-    if (input <= std::numeric_limits<int32_t>::max()
-        && input >= std::numeric_limits<int32_t>::min())
-    {
-      int32_t value = static_cast<int32_t>(input);
-      write_arg_value_to_log_file(value);
-    } else {
-      constexpr uint8_t bytes = 8;
-      buffer_or_write(&bytes, sizeof(uint8_t));
-      buffer_or_write(&input, sizeof(int64_t));
-    }
+    encode_varint(input);
   }
 
   inline void write_arg_value_to_log_file(float input)
