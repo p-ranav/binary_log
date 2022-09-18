@@ -69,8 +69,10 @@ public:
     m_packer.pack_format_string_index(current_index);
 
     // Write the args
-    if constexpr (num_args > 0 && !all_args_are_constants<Args...>()) {
-      m_packer.update_log_file(std::forward<Args>(args)...);
+    if constexpr (num_args > 0) {
+      if constexpr (!all_args_are_constants<Args...>()) {
+        m_packer.update_log_file(std::forward<Args>(args)...);
+      }
     }
   }
 };

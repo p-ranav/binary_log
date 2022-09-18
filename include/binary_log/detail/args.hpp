@@ -145,11 +145,6 @@ requires is_string_type<T> constexpr inline fmt_arg_type get_arg_type()
   return fmt_arg_type::type_string;
 }
 
-constexpr static inline bool all_args_are_constants()
-{
-  return true;
-}
-
 template<class T, class... Ts>
 constexpr static inline bool all_args_are_constants()
 {
