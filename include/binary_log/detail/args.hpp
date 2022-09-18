@@ -154,7 +154,13 @@ template<class T, class... Ts>
 constexpr static inline bool all_args_are_constants()
 {
   if constexpr (is_specialization<T, constant> {}) {
-    return all_args_are_constants<Ts...>();
+    constexpr auto num_args = sizeof...(Ts);
+    if constexpr (num_args == 0) {
+      return true;
+    }
+    else {
+      return all_args_are_constants<Ts...>();
+    }
   } else {
     return false;
   }
