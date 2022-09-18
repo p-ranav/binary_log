@@ -61,8 +61,15 @@ class packer
     value = value & ~(1 << pos);
   }
 
-  template <typename int_t>
-  bool encode_varint_firstbyte_6(int_t &value) {
+  template <std::size_t N>
+  void append(const uint8_t &value, std::array<uint8_t, N> &container,
+              std::size_t &index) {
+    container[index++] = value;
+  }
+
+  template <typename int_t, typename Container>
+  bool encode_varint_firstbyte_6(int_t &value, Container &output,
+                                std::size_t &byte_index) {
     uint8_t octet = 0;
     if (value < 0) {
       value *= -1;
@@ -73,32 +80,30 @@ class packer
     if (value > 63) {
       // Set the next byte flag
       octet |= ((uint8_t)(value & 63)) | 64;
-      buffer_or_write(&octet, 1);
+      append(octet, output, byte_index);
       return true; // multibyte
     } else {
       octet |= ((uint8_t)(value & 63));
-      buffer_or_write(&octet, 1);
+      append(octet, output, byte_index);
       return false; // no more bytes needed
     }
   }
 
-  template <typename int_t>
-  void encode_varint_6(int_t value) {
+  template <typename int_t, typename Container>
+  void encode_varint_6(int_t value, Container &output, std::size_t &byte_index) {
     // While more than 7 bits of data are left, occupy the last output byte
     // and set the next byte flag
     while (value > 63) {
       // Set the next byte flag
-      uint8_t octet = ((uint8_t)(value & 63)) | 64;
-      buffer_or_write(&octet, 1);
+      append(((uint8_t)(value & 63)) | 64, output, byte_index);
       // Remove the seven bits we just wrote
       value >>= 6;
     }
-    uint8_t octet = ((uint8_t)value) & 63;
-    buffer_or_write(&octet, 1);
+    append(((uint8_t)value) & 63, output, byte_index);
   }
 
-  template <typename int_t>
-  void encode_varint_7(int_t value) {
+  template <typename int_t, typename Container>
+  void encode_varint_7(int_t value, Container &output, std::size_t &byte_index) {
     if (value < 0) {
       value *= 1;
     }
@@ -106,32 +111,30 @@ class packer
     // and set the next byte flag
     while (value > 127) {
       //|128: Set the next byte flag
-      uint8_t octet = ((uint8_t)(value & 127)) | 128;
-      buffer_or_write(&octet, 1);
+      append(((uint8_t)(value & 127)) | 128, output, byte_index);
       // Remove the seven bits we just wrote
       value >>= 7;
     }
-    uint8_t octet = ((uint8_t)value) & 127;
-    buffer_or_write(&octet, 1);
+    append(((uint8_t)value) & 127, output, byte_index);
   }
 
   // Unsigned integer variable-length encoding functions
-  template <typename int_t>
+  template <typename int_t, typename Container>
   typename std::enable_if<std::is_integral_v<int_t> && !std::is_signed_v<int_t>,
                           void>::type
-  encode_varint(int_t value) {
-    encode_varint_7<int_t>(value);
+  encode_varint(int_t value, Container &output, std::size_t &byte_index) {
+    encode_varint_7<int_t>(value, output, byte_index);
   }
 
   // Signed integer variable-length encoding functions
-  template <typename int_t>
+  template <typename int_t, typename Container>
   typename std::enable_if<std::is_integral_v<int_t> && std::is_signed_v<int_t>,
                           void>::type
-  encode_varint(int_t value) {
+  encode_varint(int_t value, Container &output, std::size_t &byte_index) {
     // first octet
-    if (encode_varint_firstbyte_6<int_t>(value)) {
+    if (encode_varint_firstbyte_6<int_t>(value, output, byte_index)) {
       // rest of the octets
-      encode_varint_7<int_t>(value);
+      encode_varint_7<int_t>(value, output, byte_index);
     }
   }
 
@@ -227,12 +230,18 @@ public:
 
   inline void write_arg_value_to_log_file(uint32_t input)
   {
-    encode_varint(input);
+    static std::array<uint8_t, 4> bytes;
+    std::size_t bytes_written = 0;
+    encode_varint(input, bytes, bytes_written);
+    buffer_or_write(bytes.data(), bytes_written);
   }
 
   inline void write_arg_value_to_log_file(uint64_t input)
   {
-    encode_varint(input);
+    static std::array<uint8_t, 8> bytes;
+    std::size_t bytes_written = 0;
+    encode_varint(input, bytes, bytes_written);
+    buffer_or_write(bytes.data(), bytes_written);
   }
 
   inline void write_arg_value_to_log_file(int8_t input)
@@ -247,12 +256,18 @@ public:
 
   inline void write_arg_value_to_log_file(int32_t input)
   {
-    encode_varint(input);
+    static std::array<uint8_t, 4> bytes;
+    std::size_t bytes_written = 0;
+    encode_varint(input, bytes, bytes_written);
+    buffer_or_write(bytes.data(), bytes_written);
   }
 
   inline void write_arg_value_to_log_file(int64_t input)
   {
-    encode_varint(input);
+    static std::array<uint8_t, 8> bytes;
+    std::size_t bytes_written = 0;
+    encode_varint(input, bytes, bytes_written);
+    buffer_or_write(bytes.data(), bytes_written);
   }
 
   inline void write_arg_value_to_log_file(float input)
@@ -361,7 +376,7 @@ public:
   }
 
   template<fmt_arg_type T>
-  inline void write_arg_type()
+  constexpr inline void write_arg_type()
   {
     constexpr uint8_t type_byte = static_cast<uint8_t>(T);
     fwrite(&type_byte, sizeof(uint8_t), 1, m_index_file);
@@ -428,7 +443,7 @@ public:
   }
 
   constexpr inline void write_format_string_to_index_file(
-      const std::string_view& format_string)
+      std::string_view format_string)
   {
     const uint8_t length = format_string.size();
     fwrite(&length, sizeof(uint8_t), 1, m_index_file);

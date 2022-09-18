@@ -151,10 +151,10 @@ constexpr static inline bool all_args_are_constants()
 }
 
 template<class T, class... Ts>
-constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
+constexpr static inline bool all_args_are_constants()
 {
   if constexpr (is_specialization<T, constant> {}) {
-    return all_args_are_constants(std::forward<Ts>(rest)...);
+    return all_args_are_constants<Ts...>();
   } else {
     return false;
   }

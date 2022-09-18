@@ -35,7 +35,7 @@ public:
     //
     // If the arg is not an lvalue, it is stored in the index file
     // and the value is not stored in the log file
-    const uint8_t num_args = sizeof...(Args);
+    constexpr uint8_t num_args = sizeof...(Args);
 
     m_format_string_index++;
 
@@ -46,7 +46,7 @@ public:
     m_packer.write_num_args_to_index_file(num_args);
 
     // Write the type of each argument
-    if (num_args > 0) {
+    if constexpr (num_args > 0) {
       m_packer.update_index_file(std::forward<Args>(args)...);
     }
 
@@ -56,7 +56,7 @@ public:
   template<class... Args>
   inline void log(std::size_t pos, Args&&... args)
   {
-    const uint8_t num_args = sizeof...(Args);
+    constexpr auto num_args = sizeof...(Args);
 
     // Write to the main log file
     // SPEC:
@@ -69,7 +69,7 @@ public:
     m_packer.pack_format_string_index(current_index);
 
     // Write the args
-    if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
+    if constexpr (num_args > 0 && !all_args_are_constants<Args...>()) {
       m_packer.update_log_file(std::forward<Args>(args)...);
     }
   }
