@@ -9,14 +9,12 @@
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/args.hpp>
 
-#include <unistd.h>
-#include <vector>
-
 namespace binary_log
 {
 class packer
 {
   std::FILE* m_log_file;
+  int m_fd;
   std::FILE* m_index_file;
   std::FILE* m_runlength_file;
 
@@ -30,7 +28,7 @@ class packer
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
 
-  constexpr static inline std::size_t index_buffer_size = 1024;
+  constexpr static inline std::size_t index_buffer_size = 32;
   std::array<uint8_t, index_buffer_size> m_index_buffer;
   std::size_t m_index_buffer_index = 0;
 
@@ -39,6 +37,19 @@ class packer
   bool m_first_call = true;
   std::size_t m_runlength_index = 0;
   uint64_t m_current_runlength = 0;
+
+  template<typename T, std::size_t size>
+  void buffer_or_write(T* input)
+  {
+    if (m_buffer_index + size >= buffer_size) {
+      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+      m_buffer_index = 0;
+    }
+
+    const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
+    std::copy_n(byte_array, size, &m_buffer[m_buffer_index]);
+    m_buffer_index += size;
+  }
 
   template<typename T>
   void buffer_or_write(T* input, std::size_t size)
@@ -110,19 +121,15 @@ public:
 
   void flush_log_file()
   {
-    if (m_buffer_index) {
-      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-      m_buffer_index = 0;
-    }
+    fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+    m_buffer_index = 0;
     fflush(m_log_file);
   }
 
   void flush_index_file()
   {
-    if (m_index_buffer_index) {
-      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
-      m_index_buffer_index = 0;
-    }
+    fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+    m_index_buffer_index = 0;
     fflush(m_index_file);
   }
 
@@ -144,76 +151,76 @@ public:
 
   inline void write_arg_value_to_log_file(const char* input)
   {
-    const uint8_t size = static_cast<uint8_t>(std::strlen(input));
-    buffer_or_write(&size, sizeof(uint8_t));
+    uint8_t size = static_cast<uint8_t>(std::strlen(input));
+    buffer_or_write<uint8_t, sizeof(uint8_t)>(&size);
     buffer_or_write(input, size);
   }
 
   inline void write_arg_value_to_log_file(char input)
   {
-    buffer_or_write(&input, sizeof(char));
+    buffer_or_write<char, sizeof(char)>(&input);
   }
 
   inline void write_arg_value_to_log_file(bool input)
   {
-    buffer_or_write(&input, sizeof(bool));
+    buffer_or_write<bool, sizeof(bool)>(&input);
   }
 
   inline void write_arg_value_to_log_file(uint8_t input)
   {
-    buffer_or_write(&input, sizeof(uint8_t));            
+    buffer_or_write<uint8_t, sizeof(uint8_t)>(&input);            
   }
 
   inline void write_arg_value_to_log_file(uint16_t input)
   {
-    buffer_or_write(&input, sizeof(uint16_t));        
+    buffer_or_write<uint16_t, sizeof(uint16_t)>(&input);        
   }
 
   inline void write_arg_value_to_log_file(uint32_t input)
   {
-    buffer_or_write(&input, sizeof(uint32_t));        
+    buffer_or_write<uint32_t, sizeof(uint32_t)>(&input);        
   }
 
   inline void write_arg_value_to_log_file(uint64_t input)
   {
-    buffer_or_write(&input, sizeof(uint64_t));        
+    buffer_or_write<uint64_t, sizeof(uint64_t)>(&input);        
   }
 
   inline void write_arg_value_to_log_file(int8_t input)
   {
-    buffer_or_write(&input, sizeof(int8_t));    
+    buffer_or_write<int8_t, sizeof(int8_t)>(&input);    
   }
 
   inline void write_arg_value_to_log_file(int16_t input)
   {
-    buffer_or_write(&input, sizeof(int16_t));    
+    buffer_or_write<int16_t, sizeof(int16_t)>(&input);    
   }
 
   inline void write_arg_value_to_log_file(int32_t input)
   {
-    buffer_or_write(&input, sizeof(int32_t));
+    buffer_or_write<int32_t, sizeof(int32_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(int64_t input)
   {
-    buffer_or_write(&input, sizeof(int64_t));    
+    buffer_or_write<int64_t, sizeof(int64_t)>(&input);    
   }
 
   inline void write_arg_value_to_log_file(float input)
   {
-    buffer_or_write(&input, sizeof(float));
+    buffer_or_write<float, sizeof(float)>(&input);
   }
 
   inline void write_arg_value_to_log_file(double input)
   {
-    buffer_or_write(&input, sizeof(double));
+    buffer_or_write<double, sizeof(double)>(&input);
   }
 
   template<typename T>
   requires is_string_type<T> inline void write_arg_value_to_log_file(T&& input)
   {
-    const uint8_t size = static_cast<uint8_t>(input.size());
-    buffer_or_write(&size, sizeof(uint8_t));
+    uint8_t size = static_cast<uint8_t>(input.size());
+    buffer_or_write<uint8_t, sizeof(uint8_t)>(&size);
     buffer_or_write(input.data(), size);
   }
 
@@ -230,10 +237,7 @@ public:
     if (m_current_runlength > 1) {
       const uint8_t index = static_cast<uint8_t>(m_runlength_index);
       fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
-
-      // Write runlength to file      
       fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
-
       m_current_runlength = 0;
     }
   }
@@ -256,7 +260,7 @@ public:
       if (m_current_runlength == 0) {
         // First call
         // Write index to log file
-        buffer_or_write(&index, sizeof(uint8_t));
+        buffer_or_write<uint8_t, sizeof(uint8_t)>(&index);
         m_current_runlength++;
       } else if (m_current_runlength >= 1) {
         m_current_runlength++;
@@ -271,7 +275,7 @@ public:
         write_current_runlength_to_runlength_file();
 
         // Write index to log file
-        buffer_or_write(&index, sizeof(uint8_t));
+        buffer_or_write<uint8_t, sizeof(uint8_t)>(&index);
         m_current_runlength = 1;
         m_runlength_index = index;
       }

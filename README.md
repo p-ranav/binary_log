@@ -33,22 +33,22 @@ int main()
 }
 ```
 
-On a [modern workstation desktop](#system-details), the above code executes in `~2.3s`.
+On a [modern workstation desktop](#system-details), the above code executes in `~2.2s`.
 
 | Type            | Value               |
 | --------------- | --------------------|
-| Time Taken      | 2.3 s               | 
-| Throughput      | 1.71 Gb/s           |
-| Performance     | 428 million logs/s  |
-| Average Latency | 2.3 ns              |
+| Time Taken      | 2.2 s               | 
+| Throughput      | 1.78 Gb/s           |
+| Performance     | 445 million logs/s  |
+| Average Latency | 2.2 ns              |
 | File Size       | ~4 GB               |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/examples/billion_integers/billion_integers
 
-real	0m2.336s
-user	0m1.005s
-sys	0m1.314s
+real	0m2.246s
+user	0m0.970s
+sys	0m1.248s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
 -rw-rw-r--  1 pranav pranav          9 Sep 19 10:13 log.out.runlength
