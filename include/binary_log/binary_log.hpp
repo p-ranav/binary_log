@@ -24,8 +24,8 @@ public:
     m_packer.flush();
   }
 
-  template<class... Args>
-  inline uint8_t log_index(std::string_view f, Args&&... args)
+  template<const char* format_string, class... Args>
+  inline uint8_t log_index(Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>
@@ -40,7 +40,7 @@ public:
     m_format_string_index++;
 
     // Write the length of the format string
-    m_packer.write_format_string_to_index_file(f);
+    m_packer.write_format_string_to_index_file<format_string>();
 
     // Write the number of args taken by the format string
     m_packer.write_num_args_to_index_file(num_args);
@@ -84,9 +84,11 @@ public:
 
 #define BINARY_LOG(logger, format_string, ...) \
   { \
-    static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, \
-                                         __LINE__) = \
-        logger.log_index(format_string, ##__VA_ARGS__); \
-    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
-               ##__VA_ARGS__); \
+    constexpr static char BINARY_LOG_CONCAT(__binary_log_format_string, __LINE__)[] =           \
+      format_string;                                                                            \
+    static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos,                     \
+                                         __LINE__) =                                            \
+        logger.log_index<BINARY_LOG_CONCAT(__binary_log_format_string, __LINE__)>(__VA_ARGS__); \
+    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__),                  \
+               ##__VA_ARGS__);                                                                  \
   }

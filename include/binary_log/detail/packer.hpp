@@ -27,6 +27,10 @@ class packer
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
 
+  constexpr static inline std::size_t index_buffer_size = 1024;
+  std::array<uint8_t, index_buffer_size> m_index_buffer;
+  std::size_t m_index_buffer_index = 0;
+
   // Members for run-length encoding
   // of the log file.
   bool m_first_call = true;
@@ -46,6 +50,19 @@ class packer
       m_buffer[m_buffer_index++] = byte_array[i];
   }
 
+  template<typename T>
+  constexpr void buffer_or_write_index_file(T* input, std::size_t size)
+  {
+    if (m_index_buffer_index + size >= index_buffer_size) {
+      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+      m_index_buffer_index = 0;
+    }
+
+    const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
+    for (std::size_t i = 0; i < size; ++i)
+      m_index_buffer[m_index_buffer_index++] = byte_array[i];
+  }
+
   // Variable-length encoding functions
   // for integers
 
@@ -62,7 +79,7 @@ class packer
   }
 
   template <std::size_t N>
-  void append(const uint8_t &value, std::array<uint8_t, N> &container,
+  void append(uint8_t value, std::array<uint8_t, N> &container,
               std::size_t &index) {
     container[index++] = value;
   }
@@ -80,11 +97,11 @@ class packer
     if (value > 63) {
       // Set the next byte flag
       octet |= ((uint8_t)(value & 63)) | 64;
-      append(octet, output, byte_index);
+      append(std::move(octet), output, byte_index);
       return true; // multibyte
     } else {
       octet |= ((uint8_t)(value & 63));
-      append(octet, output, byte_index);
+      append(std::move(octet), output, byte_index);
       return false; // no more bytes needed
     }
   }
@@ -182,6 +199,10 @@ public:
 
   void flush_index_file()
   {
+    if (m_index_buffer_index) {
+      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+      m_index_buffer_index = 0;
+    }
     fflush(m_index_file);
   }
 
@@ -220,54 +241,94 @@ public:
 
   inline void write_arg_value_to_log_file(uint8_t input)
   {
+    constexpr uint8_t bytes = 1;
+    buffer_or_write(&bytes, sizeof(uint8_t));
     buffer_or_write(&input, sizeof(uint8_t));
   }
 
   inline void write_arg_value_to_log_file(uint16_t input)
   {
-    buffer_or_write(&input, sizeof(uint16_t));
+    if (input <= std::numeric_limits<uint8_t>::max()) {
+      uint8_t value = static_cast<uint8_t>(input);
+      write_arg_value_to_log_file(value);
+    } else {
+      constexpr uint8_t bytes = 2;
+      buffer_or_write(&bytes, sizeof(uint8_t));
+      buffer_or_write(&input, sizeof(uint16_t));
+    }
   }
 
   inline void write_arg_value_to_log_file(uint32_t input)
   {
-    static std::array<uint8_t, 4> bytes;
-    std::size_t bytes_written = 0;
-    encode_varint(input, bytes, bytes_written);
-    buffer_or_write(bytes.data(), bytes_written);
+    if (input <= std::numeric_limits<uint16_t>::max()) {
+      uint16_t value = static_cast<uint16_t>(input);
+      write_arg_value_to_log_file(value);
+    } else {
+      constexpr uint8_t bytes = 4;
+      buffer_or_write(&bytes, sizeof(uint8_t));
+      buffer_or_write(&input, sizeof(uint32_t));
+    }
   }
 
   inline void write_arg_value_to_log_file(uint64_t input)
   {
-    static std::array<uint8_t, 8> bytes;
-    std::size_t bytes_written = 0;
-    encode_varint(input, bytes, bytes_written);
-    buffer_or_write(bytes.data(), bytes_written);
+    if (input <= std::numeric_limits<uint32_t>::max()) {
+      uint32_t value = static_cast<uint32_t>(input);
+      write_arg_value_to_log_file(value);
+    } else {
+      constexpr uint8_t bytes = 8;
+      buffer_or_write(&bytes, sizeof(uint8_t));
+      buffer_or_write(&input, sizeof(uint64_t));
+    }
   }
 
   inline void write_arg_value_to_log_file(int8_t input)
   {
+    constexpr uint8_t bytes = 1;
+    buffer_or_write(&bytes, sizeof(uint8_t));
     buffer_or_write(&input, sizeof(int8_t));
   }
 
   inline void write_arg_value_to_log_file(int16_t input)
   {
-    buffer_or_write(&input, sizeof(int16_t));
+    if (input <= std::numeric_limits<int8_t>::max()
+        && input >= std::numeric_limits<int8_t>::min())
+    {
+      int8_t value = static_cast<int8_t>(input);
+      write_arg_value_to_log_file(value);
+    } else {
+      constexpr uint8_t bytes = 2;
+      buffer_or_write(&bytes, sizeof(uint8_t));
+      buffer_or_write(&input, sizeof(int16_t));
+    }
   }
 
   inline void write_arg_value_to_log_file(int32_t input)
   {
-    static std::array<uint8_t, 4> bytes;
-    std::size_t bytes_written = 0;
-    encode_varint(input, bytes, bytes_written);
-    buffer_or_write(bytes.data(), bytes_written);
+    if (input <= std::numeric_limits<int16_t>::max()
+        && input >= std::numeric_limits<int16_t>::min())
+    {
+      int16_t value = static_cast<int16_t>(input);
+      write_arg_value_to_log_file(value);
+    } else {
+      constexpr uint8_t bytes = 4;
+      buffer_or_write(&bytes, sizeof(uint8_t));
+      buffer_or_write(&input, sizeof(int32_t));
+    }
   }
 
   inline void write_arg_value_to_log_file(int64_t input)
   {
-    static std::array<uint8_t, 8> bytes;
-    std::size_t bytes_written = 0;
-    encode_varint(input, bytes, bytes_written);
-    buffer_or_write(bytes.data(), bytes_written);
+    if (input <= std::numeric_limits<int32_t>::max()
+        && input >= std::numeric_limits<int32_t>::min())
+    {
+      int32_t value = static_cast<int32_t>(input);
+      write_arg_value_to_log_file(value);
+    } else {
+      constexpr uint8_t bytes = 8;
+      buffer_or_write(&bytes, sizeof(uint8_t));
+      buffer_or_write(&input, sizeof(int64_t));
+    }
   }
 
   inline void write_arg_value_to_log_file(float input)
@@ -302,10 +363,29 @@ public:
       const uint8_t index = static_cast<uint8_t>(m_runlength_index);
       fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
 
-      static std::array<uint8_t, 8> bytes;
-      std::size_t bytes_written = 0;
-      encode_varint(m_current_runlength, bytes, bytes_written);
-      fwrite(bytes.data(), 1, bytes_written, m_runlength_file);
+      // Write runlength to file
+      // Perform integer compression
+      if (m_current_runlength <= std::numeric_limits<uint8_t>::max()) {
+        uint8_t value = static_cast<uint8_t>(m_current_runlength);
+        constexpr uint8_t bytes = 1;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint8_t), 1, m_runlength_file);
+      } else if (m_current_runlength <= std::numeric_limits<uint16_t>::max()) {
+        uint16_t value = static_cast<uint16_t>(m_current_runlength);
+        constexpr uint8_t bytes = 2;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint16_t), 1, m_runlength_file);
+      } else if (m_current_runlength <= std::numeric_limits<uint32_t>::max()) {
+        uint32_t value = static_cast<uint32_t>(m_current_runlength);
+        constexpr uint8_t bytes = 4;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint32_t), 1, m_runlength_file);
+      } else {
+        uint64_t value = static_cast<uint64_t>(m_current_runlength);
+        constexpr uint8_t bytes = 8;
+        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
+        fwrite(&value, sizeof(uint64_t), 1, m_runlength_file);
+      }
 
       m_current_runlength = 0;
     }
@@ -361,7 +441,7 @@ public:
   constexpr inline void write_arg_type()
   {
     constexpr uint8_t type_byte = static_cast<uint8_t>(T);
-    fwrite(&type_byte, sizeof(uint8_t), 1, m_index_file);
+    buffer_or_write_index_file(&type_byte, sizeof(uint8_t));
   }
 
   template<typename T>
@@ -384,15 +464,15 @@ public:
   inline void write_arg_value_to_index_file(const char* input)
   {
     const uint8_t size = static_cast<uint8_t>(std::strlen(input));
-    fwrite(&size, sizeof(uint8_t), 1, m_index_file);
-    fwrite(input, sizeof(char), std::strlen(input), m_index_file);
+    buffer_or_write_index_file(&size, sizeof(uint8_t));
+    buffer_or_write_index_file(input, size);
   }
 
   template<typename T>
   requires is_numeric_type<T> inline void write_arg_value_to_index_file(
       T&& input)
   {
-    fwrite(&input, sizeof(T), 1, m_index_file);
+    buffer_or_write_index_file(&input, sizeof(T));
   }
 
   template<typename T>
@@ -400,8 +480,8 @@ public:
       T&& input)
   {
     const uint8_t size = static_cast<uint8_t>(input.size());
-    fwrite(&size, sizeof(uint8_t), 1, m_index_file);
-    fwrite(input.data(), sizeof(char), input.size(), m_index_file);
+    buffer_or_write_index_file(&size, sizeof(uint8_t));
+    buffer_or_write_index_file(input.data(), input.size());
   }
 
   template<typename T>
@@ -409,10 +489,10 @@ public:
   {
     if constexpr (!is_specialization<T, constant> {}) {
       constexpr bool is_constant = false;
-      fwrite(&is_constant, sizeof(bool), 1, m_index_file);
+      buffer_or_write_index_file(&is_constant, sizeof(bool));
     } else {
       constexpr bool is_constant = true;
-      fwrite(&is_constant, sizeof(bool), 1, m_index_file);
+      buffer_or_write_index_file(&is_constant, sizeof(bool));
       write_arg_value_to_index_file(input.value);
     }
   }
@@ -424,12 +504,12 @@ public:
     ((void)save_arg_constness(std::forward<Args>(args)), ...);
   }
 
-  constexpr inline void write_format_string_to_index_file(
-      std::string_view format_string)
+  template <const char* format_string>
+  constexpr inline void write_format_string_to_index_file()
   {
-    const uint8_t length = format_string.size();
-    fwrite(&length, sizeof(uint8_t), 1, m_index_file);
-    fwrite(format_string.data(), sizeof(char), length, m_index_file);
+    constexpr uint8_t length = strlen(format_string);
+    buffer_or_write_index_file(&length, sizeof(uint8_t));
+    buffer_or_write_index_file(format_string, length);
 
     // Initialize the runlength member variables
     // This might be the first log call on this logger
@@ -442,7 +522,7 @@ public:
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
   {
-    fwrite(&num_args, sizeof(uint8_t), 1, m_index_file);
+    buffer_or_write_index_file(&num_args, sizeof(uint8_t));
   }
 };
 

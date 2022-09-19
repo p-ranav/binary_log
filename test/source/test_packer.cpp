@@ -146,9 +146,10 @@ TEST_CASE("binary_log can pack int32 arguments" * test_suite("packer"))
               binary_log::fmt_arg_type::type_int32));  // arg type is int
   REQUIRE(index_file[13] == 0x00);  // not constant
 
-  REQUIRE(log_file.size() == 2);
+  REQUIRE(log_file.size() == 3);
   REQUIRE(log_file[0] == 0x00);  // index of 0, referring to row in index file
-  REQUIRE(log_file[1] == 0x2a);  // 42
+  REQUIRE(log_file[1] == 0x01);  // the integer is 1 byte long
+  REQUIRE(log_file[2] == 0x2a);  // 42
 
   remove(test_file);
   remove(test_file_index);
@@ -190,16 +191,17 @@ TEST_CASE("binary_log can pack int64 arguments" * test_suite("packer"))
           == static_cast<uint8_t>(binary_log::fmt_arg_type::type_int64));
   REQUIRE(index_file[13] == 0x00);  // not constant
 
-  REQUIRE(log_file.size() == 9);
+  REQUIRE(log_file.size() == 10);
   REQUIRE(log_file[0] == 0x00);  // index of 0, referring to row in index file
-  REQUIRE(log_file[1] == 0x55);  // 5432123456789
-  REQUIRE(log_file[2] == 0x95);
-  REQUIRE(log_file[3] == 0xfa);
-  REQUIRE(log_file[4] == 0xa7);
-  REQUIRE(log_file[5] == 0x9e);
-  REQUIRE(log_file[6] == 0x8c);
-  REQUIRE(log_file[7] == 0x9e);
-  REQUIRE(log_file[8] == 0x01);
+  REQUIRE(log_file[1] == 0x08);  // the integer is 8 bytes long
+  REQUIRE(log_file[2] == 0x15);  // 5432123456789
+  REQUIRE(log_file[3] == 0xfd);
+  REQUIRE(log_file[4] == 0xc9);
+  REQUIRE(log_file[5] == 0xc3);
+  REQUIRE(log_file[6] == 0xf0);
+  REQUIRE(log_file[7] == 0x04);
+  REQUIRE(log_file[8] == 0x00);
+  REQUIRE(log_file[9] == 0x00);
 
   remove(test_file);
   remove(test_file_index);
@@ -441,11 +443,14 @@ TEST_CASE("binary_log can run-length encode repeated log calls with args"
   REQUIRE(runlength_file[1] == 0x01);  // it's a uint8_t
   REQUIRE(runlength_file[2] == 0x03);  // the runlength is 3
 
-  REQUIRE(log_file.size() == 4);
+  REQUIRE(log_file.size() == 7);
   REQUIRE(log_file[0] == 0x00);  // index of 0, referring to row in index file
-  REQUIRE(log_file[1] == 0x00);  // arg_1 value
-  REQUIRE(log_file[2] == 0x01);  // arg_2 value
-  REQUIRE(log_file[3] == 0x02);  // arg_3 value
+  REQUIRE(log_file[1] == 0x01);  // arg_1 width is 1
+  REQUIRE(log_file[2] == 0x00);  // arg_1 value
+  REQUIRE(log_file[3] == 0x01);  // arg_2 width is 1
+  REQUIRE(log_file[4] == 0x01);  // arg_2 value
+  REQUIRE(log_file[5] == 0x01);  // arg_3 width is 1
+  REQUIRE(log_file[6] == 0x02);  // arg_3 value
 
   REQUIRE(index_file.size() == 21);
   REQUIRE(index_file[0] == 0x11);  // Length of the format string
@@ -506,15 +511,19 @@ TEST_CASE(
   auto index_file = read_file(test_file_index);
   auto runlength_file = read_file(test_file_runlength);
 
-  REQUIRE(log_file.size() == 43);
+  REQUIRE(log_file.size() == 45);
 
   auto expected_bytes_in_log_file =
       std::vector<uint8_t> {// Index for "New iteration"
                             0x00,
                             // Index for "Integer: {}"
                             0x01,
+                            // Arg_1 width is 1
+                            0x01,
                             // Arg_1 value is 0
                             0x00,
+                            // Arg_1 width is 1
+                            0x01,
                             // Arg_1 value is 1
                             0x01,
                             // Index for "Flushing files"
@@ -739,11 +748,13 @@ TEST_CASE("binary_log can run-length encode calls to function template"
   auto index_file = read_file(test_file_index);
   auto runlength_file = read_file(test_file_runlength);
 
-  REQUIRE(log_file.size() == 57);
+  REQUIRE(log_file.size() == 61);
 
   auto expected_bytes_in_log_file =
       std::vector<uint8_t> {// Index for save_data(int)
                             0x00,
+                            // Integer width for value
+                            0x01,
                             // Integer value
                             0x05,
                             // Index for save_data(double)
@@ -802,9 +813,15 @@ TEST_CASE("binary_log can run-length encode calls to function template"
                             0x01,
                             // Index for save_data(int)
                             0x05,
+                            // Integer width for value
+                            0x01,
                             // Integer value
                             0x00,
+                            // Integer width for value
+                            0x01,
                             // Integer value
+                            0x01,
+                            // Integer width for value
                             0x01,
                             // Integer value
                             0x02,
