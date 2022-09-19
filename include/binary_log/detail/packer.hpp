@@ -49,8 +49,8 @@ class packer
     }
 
     const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    for (std::size_t i = 0; i < size; ++i)
-      m_buffer[m_buffer_index++] = byte_array[i];
+    std::copy_n(byte_array, size, &m_buffer[m_buffer_index]);
+    m_buffer_index += size;
   }
 
   template<typename T>
@@ -62,8 +62,8 @@ class packer
     }
 
     const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    for (std::size_t i = 0; i < size; ++i)
-      m_index_buffer[m_index_buffer_index++] = byte_array[i];
+    std::copy_n(byte_array, size, &m_index_buffer[m_index_buffer_index]);
+    m_index_buffer_index += size;
   }
 
 public:

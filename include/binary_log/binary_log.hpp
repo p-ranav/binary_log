@@ -30,7 +30,7 @@ public:
   }
 
   template<const char* format_string, class... Args>
-  inline uint8_t log_index(Args&&... args)
+  constexpr inline uint8_t log_index(Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>

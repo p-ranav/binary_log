@@ -33,22 +33,22 @@ int main()
 }
 ```
 
-On a [modern workstation desktop](#system-details), the above code executes in `~3.5s`.
+On a [modern workstation desktop](#system-details), the above code executes in `~2.5s`.
 
 | Type            | Value               |
 | --------------- | --------------------|
-| Time Taken      | 3.4 s               | 
-| Throughput      | 1.17 Gb/s           |
-| Performance     | 294 million logs/s  |
-| Average Latency | 3.4 ns              |
+| Time Taken      | 2.5 s               | 
+| Throughput      | 1.6 Gb/s            |
+| Performance     | 400 million logs/s  |
+| Average Latency | 2.5 ns              |
 | File Size       | ~4 GB               |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/examples/billion_integers/billion_integers
 
-real	0m3.417s
-user	0m2.157s
-sys	0m1.248s
+real	0m2.494s
+user	0m1.139s
+sys	0m1.332s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
 -rw-rw-r--  1 pranav pranav          9 Sep 19 10:13 log.out.runlength
@@ -140,45 +140,6 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
    3. The value of each argument
 3. ***Runlength file*** contains runlengths - If a log call is made 5 times, this information is stored here (instead of storing the index 5 times in the log file)
    - NOTE: Runlengths are only stored if the runlength > 1 (to avoid the inflation case with RLE)
-
-## Packing Integers
-
-`binary_log` packs integers based on value. An argument of type `uint64_t` with a value of `19` will be packed as a `uint8_t`, saving 7 bytes of space (actually 6, one byte is required to store the number of bytes consumed by the integer)
-
-Consider the example:
-
-```cpp
-  uint64_t value = 19;
-  BINARY_LOG(log, "{}", value);
-```
-
-Here is the index file:
-
-```console
-foo@bar:~/dev/binary_log$ hexdump -C log.out.index
-00000000  02 7b 7d 01 05 00                                 |.{}...|
-00000006
-```
-
-This index file has 6 bytes of information:
-* `0x02` - Length of the format string
-* `0x7b 0x7d` - This is the format string `"{}"`
-* `0x01` - This is the number of arguments required
-* `0x05` - This is the type of the argument `uint64_t` (according to [this](https://github.com/p-ranav/binary_log/blob/master/include/binary_log/detail/args.hpp#L17) enum class)
-* `0x00` - To indicate that this value is not a "constant"
-
-Here is the log file
-
-```console
-foo@bar:~/dev/binary_log$ hexdump -C log.out
-00000000  00 01 13                                          |...|
-00000003
-```
-
-The log file has 3 bytes: 
-* `0x00` indicates that the first format string in the table (in the index file) is being used
-* `0x01` indicates that the integer argument takes up 1 byte
-* `0x13` is the value - the decimal `19`
 
 ## Constants
 
