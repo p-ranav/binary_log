@@ -296,13 +296,13 @@ public:
     }
   }
 
-  constexpr inline void write_current_runlength_to_runlength_file()
+  inline void write_current_runlength_to_runlength_file()
   {
     if (m_current_runlength > 1) {
       const uint8_t index = static_cast<uint8_t>(m_runlength_index);
       fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
 
-      std::array<uint8_t, 8> bytes;
+      static std::array<uint8_t, 8> bytes;
       std::size_t bytes_written = 0;
       encode_varint(m_current_runlength, bytes, bytes_written);
       fwrite(bytes.data(), 1, bytes_written, m_runlength_file);
