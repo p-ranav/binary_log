@@ -44,8 +44,7 @@ class packer
   void buffer_or_write(T* input, std::size_t size)
   {
     if (m_buffer_index + size >= buffer_size) {
-      [[maybe_unused]] auto bytes_written = write(fileno(m_log_file), (const void*)m_buffer.data(), m_buffer_index);
-      // fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
     }
 
@@ -58,105 +57,13 @@ class packer
   constexpr void buffer_or_write_index_file(T* input, std::size_t size)
   {
     if (m_index_buffer_index + size >= index_buffer_size) {
-      [[maybe_unused]] auto bytes_written = write(fileno(m_index_file), (const void*)m_index_buffer.data(), m_index_buffer_index);
+      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);      
       m_index_buffer_index = 0;
     }
 
     const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
     for (std::size_t i = 0; i < size; ++i)
       m_index_buffer[m_index_buffer_index++] = byte_array[i];
-  }
-
-  // Variable-length encoding functions
-  // for integers
-
-  template <typename T> bool CHECK_BIT(T &value, uint8_t pos) {
-    return ((value) & (1 << (pos)));
-  }
-
-  template <typename T> void SET_BIT(T &value, uint8_t pos) {
-    value = value | 1 << pos;
-  }
-
-  template <typename T> void RESET_BIT(T &value, uint8_t pos) {
-    value = value & ~(1 << pos);
-  }
-
-  template <std::size_t N>
-  void append(uint8_t value, std::array<uint8_t, N> &container,
-              std::size_t &index) {
-    container[index++] = value;
-  }
-
-  template <typename int_t, typename Container>
-  bool encode_varint_firstbyte_6(int_t &value, Container &output,
-                                std::size_t &byte_index) {
-    uint8_t octet = 0;
-    if (value < 0) {
-      value *= -1;
-      SET_BIT(octet, 7);
-    }
-    // While more than 7 bits of data are left, occupy the last output byte
-    // and set the next byte flag
-    if (value > 63) {
-      // Set the next byte flag
-      octet |= ((uint8_t)(value & 63)) | 64;
-      append(std::move(octet), output, byte_index);
-      return true; // multibyte
-    } else {
-      octet |= ((uint8_t)(value & 63));
-      append(std::move(octet), output, byte_index);
-      return false; // no more bytes needed
-    }
-  }
-
-  template <typename int_t, typename Container>
-  void encode_varint_6(int_t value, Container &output, std::size_t &byte_index) {
-    // While more than 7 bits of data are left, occupy the last output byte
-    // and set the next byte flag
-    while (value > 63) {
-      // Set the next byte flag
-      append(((uint8_t)(value & 63)) | 64, output, byte_index);
-      // Remove the seven bits we just wrote
-      value >>= 6;
-    }
-    append(((uint8_t)value) & 63, output, byte_index);
-  }
-
-  template <typename int_t, typename Container>
-  void encode_varint_7(int_t value, Container &output, std::size_t &byte_index) {
-    if (value < 0) {
-      value *= 1;
-    }
-    // While more than 7 bits of data are left, occupy the last output byte
-    // and set the next byte flag
-    while (value > 127) {
-      //|128: Set the next byte flag
-      append(((uint8_t)(value & 127)) | 128, output, byte_index);
-      // Remove the seven bits we just wrote
-      value >>= 7;
-    }
-    append(((uint8_t)value) & 127, output, byte_index);
-  }
-
-  // Unsigned integer variable-length encoding functions
-  template <typename int_t, typename Container>
-  typename std::enable_if<std::is_integral_v<int_t> && !std::is_signed_v<int_t>,
-                          void>::type
-  encode_varint(int_t value, Container &output, std::size_t &byte_index) {
-    encode_varint_7<int_t>(value, output, byte_index);
-  }
-
-  // Signed integer variable-length encoding functions
-  template <typename int_t, typename Container>
-  typename std::enable_if<std::is_integral_v<int_t> && std::is_signed_v<int_t>,
-                          void>::type
-  encode_varint(int_t value, Container &output, std::size_t &byte_index) {
-    // first octet
-    if (encode_varint_firstbyte_6<int_t>(value, output, byte_index)) {
-      // rest of the octets
-      encode_varint_7<int_t>(value, output, byte_index);
-    }
   }
 
 public:
@@ -204,8 +111,7 @@ public:
   void flush_log_file()
   {
     if (m_buffer_index) {
-      [[maybe_unused]] auto bytes_written = write(fileno(m_log_file), (const void*)m_buffer.data(), m_buffer_index);
-      // fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
     }
     fflush(m_log_file);
@@ -214,8 +120,7 @@ public:
   void flush_index_file()
   {
     if (m_index_buffer_index) {
-      [[maybe_unused]] auto bytes_written = write(fileno(m_index_file), (const void*)m_index_buffer.data(), m_index_buffer_index);
-      // fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
       m_index_buffer_index = 0;
     }
     fflush(m_index_file);
@@ -326,29 +231,8 @@ public:
       const uint8_t index = static_cast<uint8_t>(m_runlength_index);
       fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
 
-      // Write runlength to file
-      // Perform integer compression
-      if (m_current_runlength <= std::numeric_limits<uint8_t>::max()) {
-        uint8_t value = static_cast<uint8_t>(m_current_runlength);
-        constexpr uint8_t bytes = 1;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint8_t), 1, m_runlength_file);
-      } else if (m_current_runlength <= std::numeric_limits<uint16_t>::max()) {
-        uint16_t value = static_cast<uint16_t>(m_current_runlength);
-        constexpr uint8_t bytes = 2;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint16_t), 1, m_runlength_file);
-      } else if (m_current_runlength <= std::numeric_limits<uint32_t>::max()) {
-        uint32_t value = static_cast<uint32_t>(m_current_runlength);
-        constexpr uint8_t bytes = 4;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint32_t), 1, m_runlength_file);
-      } else {
-        uint64_t value = static_cast<uint64_t>(m_current_runlength);
-        constexpr uint8_t bytes = 8;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint64_t), 1, m_runlength_file);
-      }
+      // Write runlength to file      
+      fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
 
       m_current_runlength = 0;
     }
