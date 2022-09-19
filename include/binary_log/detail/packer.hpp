@@ -302,29 +302,11 @@ public:
       const uint8_t index = static_cast<uint8_t>(m_runlength_index);
       fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
 
-      // Write runlength to file
-      // Perform integer compression
-      if (m_current_runlength <= std::numeric_limits<uint8_t>::max()) {
-        uint8_t value = static_cast<uint8_t>(m_current_runlength);
-        constexpr uint8_t bytes = 1;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint8_t), 1, m_runlength_file);
-      } else if (m_current_runlength <= std::numeric_limits<uint16_t>::max()) {
-        uint16_t value = static_cast<uint16_t>(m_current_runlength);
-        constexpr uint8_t bytes = 2;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint16_t), 1, m_runlength_file);
-      } else if (m_current_runlength <= std::numeric_limits<uint32_t>::max()) {
-        uint32_t value = static_cast<uint32_t>(m_current_runlength);
-        constexpr uint8_t bytes = 4;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint32_t), 1, m_runlength_file);
-      } else {
-        uint64_t value = static_cast<uint64_t>(m_current_runlength);
-        constexpr uint8_t bytes = 8;
-        fwrite(&bytes, sizeof(uint8_t), 1, m_runlength_file);
-        fwrite(&value, sizeof(uint64_t), 1, m_runlength_file);
-      }
+      std::array<uint8_t, 8> bytes;
+      std::size_t bytes_written = 0;
+      encode_varint(m_current_runlength, bytes, bytes_written);
+      fwrite(bytes.data(), 1, bytes_written, m_runlength_file);
+
       m_current_runlength = 0;
     }
   }
