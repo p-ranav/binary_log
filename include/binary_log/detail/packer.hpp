@@ -165,12 +165,18 @@ public:
       throw std::invalid_argument("fopen failed");
     }
 
+    // No fwrite buffering
+    setvbuf(m_log_file, nullptr, _IONBF, 0);
+
     // Create the index file
     std::string index_file_path = std::string {path} + ".index";
     m_index_file = fopen(index_file_path.data(), "wb");
     if (m_index_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
+
+    // No fwrite buffering
+    setvbuf(m_index_file, nullptr, _IONBF, 0);
 
     // Create the runlength file
     std::string runlength_file_path = std::string {path} + ".runlength";

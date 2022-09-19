@@ -19,6 +19,11 @@ public:
   {
   }
 
+  ~binary_log()
+  {
+    m_packer.flush();
+  }
+
   void flush()
   {
     m_packer.flush();
