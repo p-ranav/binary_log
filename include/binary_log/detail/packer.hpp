@@ -26,7 +26,7 @@ class packer
   // fwrite already has an internal buffer
   // but this buffer is used to avoid
   // multiple fwrite calls.
-  constexpr static inline std::size_t buffer_size = 6 * 1024 * 1024;
+  constexpr static inline std::size_t buffer_size = 1 * 1024 * 1024;
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
 
