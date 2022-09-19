@@ -14,7 +14,6 @@ namespace binary_log
 class packer
 {
   std::FILE* m_log_file;
-  int m_fd;
   std::FILE* m_index_file;
   std::FILE* m_runlength_file;
 
