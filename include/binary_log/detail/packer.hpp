@@ -242,7 +242,7 @@ public:
     }
   }
 
-  constexpr inline void pack_format_string_index(uint8_t& index)
+  constexpr inline void pack_format_string_index(uint8_t index)
   {
     // Evaluate this index
     //
@@ -361,14 +361,6 @@ public:
     constexpr uint8_t length = strlen(format_string);
     buffer_or_write_index_file(&length, sizeof(uint8_t));
     buffer_or_write_index_file(format_string, length);
-
-    // // Initialize the runlength member variables
-    // // This might be the first log call on this logger
-    // if (m_first_call) {
-    //   m_runlength_index = 0;
-    //   m_current_runlength = 0;
-    //   m_first_call = false;
-    // }
   }
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
