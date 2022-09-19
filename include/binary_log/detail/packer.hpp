@@ -9,6 +9,8 @@
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/args.hpp>
 
+#include <unistd.h>
+
 namespace binary_log
 {
 class packer
@@ -41,7 +43,8 @@ class packer
   void buffer_or_write(T* input, std::size_t size)
   {
     if (m_buffer_index + size >= buffer_size) {
-      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+      write(fileno(m_log_file), (const void*)m_buffer.data(), m_buffer_index);
+      // fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
     }
 
@@ -184,6 +187,9 @@ public:
     if (m_runlength_file == nullptr) {
       throw std::invalid_argument("fopen failed");
     }
+
+    m_runlength_index = 0;
+    m_current_runlength = 0;
   }
 
   ~packer()
@@ -517,13 +523,13 @@ public:
     buffer_or_write_index_file(&length, sizeof(uint8_t));
     buffer_or_write_index_file(format_string, length);
 
-    // Initialize the runlength member variables
-    // This might be the first log call on this logger
-    if (m_first_call) {
-      m_runlength_index = 0;
-      m_current_runlength = 0;
-      m_first_call = false;
-    }
+    // // Initialize the runlength member variables
+    // // This might be the first log call on this logger
+    // if (m_first_call) {
+    //   m_runlength_index = 0;
+    //   m_current_runlength = 0;
+    //   m_first_call = false;
+    // }
   }
 
   constexpr inline void write_num_args_to_index_file(const uint8_t& num_args)
