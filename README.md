@@ -195,7 +195,7 @@ foo@bar:~/dev/binary_log$ hexdump -C log.out.index
 
 ```console
 pranav@ubuntu:~/dev/binary_log$ ./build/benchmark/binary_log_benchmark 
-2022-09-19T10:10:07-07:00
+2022-09-19T11:51:26-07:00
 Running ./build/benchmark/binary_log_benchmark
 Run on (8 X 3504 MHz CPU s)
 CPU Caches:
@@ -203,31 +203,31 @@ CPU Caches:
   L1 Instruction 32 KiB (x8)
   L2 Unified 512 KiB (x8)
   L3 Unified 16384 KiB (x8)
-Load Average: 1.03, 0.84, 0.50
+Load Average: 0.43, 0.90, 0.86
 ------------------------------------------------------------------------------------------------------------------
 Benchmark                                                        Time             CPU   Iterations UserCounters...
 ------------------------------------------------------------------------------------------------------------------
-BM_binary_log_static_integer<uint8_t>/42                      1.31 ns         1.31 ns    520356371 Latency=1.31331ns Logs/s=761.437M/s
-BM_binary_log_static_integer<uint16_t>/395                    1.78 ns         1.78 ns    386665893 Latency=1.7796ns Logs/s=561.925M/s
-BM_binary_log_static_integer<uint32_t>/3123456789             3.28 ns         3.28 ns    214508355 Latency=3.27628ns Logs/s=305.225M/s
-BM_binary_log_static_integer<uint64_t>/9876543123456789       6.26 ns         6.26 ns    103378237 Latency=6.25766ns Logs/s=159.804M/s
-BM_binary_log_static_integer<int8_t>/-42                      1.30 ns         1.30 ns    515635349 Latency=1.30014ns Logs/s=769.149M/s
-BM_binary_log_static_integer<int16_t>/-395                    1.80 ns         1.79 ns    380078956 Latency=1.79459ns Logs/s=557.23M/s
-BM_binary_log_static_integer<int32_t>/-123456789              3.48 ns         3.48 ns    212287978 Latency=3.47681ns Logs/s=287.62M/s
-BM_binary_log_static_integer<int64_t>/-9876543123456789       6.61 ns         6.61 ns    103711246 Latency=6.60529ns Logs/s=151.394M/s
-BM_binary_log_static_float                                    3.45 ns         3.45 ns    202272465 Latency=3.4518ns Logs/s=289.704M/s
-BM_binary_log_static_double                                   6.53 ns         6.53 ns    101897893 Latency=6.53001ns Logs/s=153.139M/s
-BM_binary_log_static_string                                   4.86 ns         4.85 ns    129388124 Latency=4.85389ns Logs/s=206.02M/s
-BM_binary_log_random_integer<uint8_t>                         6.89 ns         6.88 ns    102213177 Latency=6.88159ns Logs/s=145.315M/s
-BM_binary_log_random_integer<uint16_t>                        7.58 ns         7.58 ns     89643257 Latency=7.5802ns Logs/s=131.923M/s
-BM_binary_log_random_integer<uint32_t>                        8.77 ns         8.77 ns     76363769 Latency=8.77012ns Logs/s=114.024M/s
-BM_binary_log_random_integer<uint64_t>                        17.4 ns         17.4 ns     39618028 Latency=17.3707ns Logs/s=57.5681M/s
-BM_binary_log_random_integer<int8_t>                          6.95 ns         6.95 ns    101179627 Latency=6.95154ns Logs/s=143.853M/s
-BM_binary_log_random_integer<int16_t>                         7.69 ns         7.69 ns     90292514 Latency=7.68574ns Logs/s=130.111M/s
-BM_binary_log_random_integer<int32_t>                         8.89 ns         8.89 ns     74938845 Latency=8.88881ns Logs/s=112.501M/s
-BM_binary_log_random_integer<int64_t>                         17.4 ns         17.4 ns     39644920 Latency=17.3562ns Logs/s=57.6163M/s
-BM_binary_log_random_real<float>                              7.62 ns         7.61 ns     89773208 Latency=7.61305ns Logs/s=131.353M/s
-BM_binary_log_random_real<double>                             13.7 ns         13.7 ns     48459050 Latency=13.7166ns Logs/s=72.9044M/s
+BM_binary_log_static_integer<uint8_t>/42                      1.34 ns         1.34 ns    527206245 Latency=1.33967ns Logs/s=746.455M/s
+BM_binary_log_static_integer<uint16_t>/395                    1.71 ns         1.71 ns    413702620 Latency=1.71059ns Logs/s=584.594M/s
+BM_binary_log_static_integer<uint32_t>/3123456789             2.46 ns         2.46 ns    299291119 Latency=2.46283ns Logs/s=406.037M/s
+BM_binary_log_static_integer<uint64_t>/9876543123456789       4.09 ns         4.09 ns    165377089 Latency=4.08671ns Logs/s=244.695M/s
+BM_binary_log_static_integer<int8_t>/-42                      1.47 ns         1.47 ns    481423199 Latency=1.4701ns Logs/s=680.228M/s
+BM_binary_log_static_integer<int16_t>/-395                    1.80 ns         1.80 ns    382605769 Latency=1.8024ns Logs/s=554.816M/s
+BM_binary_log_static_integer<int32_t>/-123456789              2.42 ns         2.42 ns    294473710 Latency=2.41648ns Logs/s=413.825M/s
+BM_binary_log_static_integer<int64_t>/-9876543123456789       3.63 ns         3.63 ns    183912785 Latency=3.62727ns Logs/s=275.689M/s
+BM_binary_log_static_float                                    2.09 ns         2.09 ns    331658843 Latency=2.08858ns Logs/s=478.794M/s
+BM_binary_log_static_double                                   3.67 ns         3.66 ns    201516452 Latency=3.65982ns Logs/s=273.237M/s
+BM_binary_log_static_string                                   3.58 ns         3.57 ns    194470571 Latency=3.57142ns Logs/s=280.001M/s
+BM_binary_log_random_integer<uint8_t>                         7.05 ns         7.05 ns    101586744 Latency=7.04731ns Logs/s=141.898M/s
+BM_binary_log_random_integer<uint16_t>                        7.34 ns         7.34 ns     95683112 Latency=7.33743ns Logs/s=136.287M/s
+BM_binary_log_random_integer<uint32_t>                        8.30 ns         8.29 ns     83535982 Latency=8.2931ns Logs/s=120.582M/s
+BM_binary_log_random_integer<uint64_t>                        15.3 ns         15.3 ns     46139522 Latency=15.3029ns Logs/s=65.3471M/s
+BM_binary_log_random_integer<int8_t>                          6.82 ns         6.81 ns    104631694 Latency=6.81327ns Logs/s=146.773M/s
+BM_binary_log_random_integer<int16_t>                         7.46 ns         7.45 ns     96724414 Latency=7.45078ns Logs/s=134.214M/s
+BM_binary_log_random_integer<int32_t>                         8.52 ns         8.52 ns     81842321 Latency=8.5231ns Logs/s=117.328M/s
+BM_binary_log_random_integer<int64_t>                         16.5 ns         16.5 ns     41127564 Latency=16.4821ns Logs/s=60.672M/s
+BM_binary_log_random_real<float>                              7.08 ns         7.08 ns     99706592 Latency=7.08372ns Logs/s=141.169M/s
+BM_binary_log_random_real<double>                             13.1 ns         13.1 ns     52702143 Latency=13.0821ns Logs/s=76.4406M/s
 ```
 
 # Implementation Notes
