@@ -10,6 +10,7 @@
 #include <binary_log/detail/args.hpp>
 
 #include <unistd.h>
+#include <vector>
 
 namespace binary_log
 {
@@ -25,7 +26,7 @@ class packer
   // fwrite already has an internal buffer
   // but this buffer is used to avoid
   // multiple fwrite calls.
-  constexpr static inline std::size_t buffer_size = 1024 * 1024;
+  constexpr static inline std::size_t buffer_size = 6 * 1024 * 1024;
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
 
@@ -43,7 +44,7 @@ class packer
   void buffer_or_write(T* input, std::size_t size)
   {
     if (m_buffer_index + size >= buffer_size) {
-      write(fileno(m_log_file), (const void*)m_buffer.data(), m_buffer_index);
+      [[maybe_unused]] auto bytes_written = write(fileno(m_log_file), (const void*)m_buffer.data(), m_buffer_index);
       // fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
     }
@@ -57,7 +58,7 @@ class packer
   constexpr void buffer_or_write_index_file(T* input, std::size_t size)
   {
     if (m_index_buffer_index + size >= index_buffer_size) {
-      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+      [[maybe_unused]] auto bytes_written = write(fileno(m_index_file), (const void*)m_index_buffer.data(), m_index_buffer_index);
       m_index_buffer_index = 0;
     }
 
