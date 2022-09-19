@@ -204,7 +204,8 @@ public:
   void flush_log_file()
   {
     if (m_buffer_index) {
-      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+      [[maybe_unused]] auto bytes_written = write(fileno(m_log_file), (const void*)m_buffer.data(), m_buffer_index);
+      // fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
       m_buffer_index = 0;
     }
     fflush(m_log_file);
@@ -213,7 +214,8 @@ public:
   void flush_index_file()
   {
     if (m_index_buffer_index) {
-      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+      [[maybe_unused]] auto bytes_written = write(fileno(m_index_file), (const void*)m_index_buffer.data(), m_index_buffer_index);
+      // fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
       m_index_buffer_index = 0;
     }
     fflush(m_index_file);
