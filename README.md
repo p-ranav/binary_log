@@ -40,7 +40,7 @@ On a [modern workstation desktop](#system-details), the above code executes in `
 | Time Taken      | 1.935 s             | 
 | Throughput      | 2.06 Gb/s           |
 | Performance     | 516 million logs/s  |
-| Average Latency | ~2 ns               |
+| Average Latency | 1.73 ns             |
 | File Size       | ~4 GB               |
 
 ```console
