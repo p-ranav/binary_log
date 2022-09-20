@@ -223,6 +223,7 @@ BM_binary_log_random_integer<int32_t>                         7.89 ns         7.
 BM_binary_log_random_integer<int64_t>                         14.9 ns         15.0 ns     44800000 Latency=14.9972ns Logs/s=66.6791M/s
 BM_binary_log_random_real<float>                              6.29 ns         6.25 ns    100000000 Latency=6.25ns Logs/s=160M/s
 BM_binary_log_random_real<double>                             11.6 ns         11.7 ns     64000000 Latency=11.7188ns Logs/s=85.3333M/s
+BM_binary_log_billion_integers                          2320246800 ns   1765625000 ns            1 Latency=1.76562ns Logs/s=566.372M/s
 ```
 
 ## Supported Format Argument Types
