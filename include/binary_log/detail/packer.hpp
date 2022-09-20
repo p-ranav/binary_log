@@ -67,7 +67,10 @@ class packer
   constexpr void buffer_or_write_index_file(T* input, std::size_t size)
   {
     if (m_index_buffer_index + size >= index_buffer_size) {
-      fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);      
+      fwrite(m_index_buffer.data(),
+             sizeof(uint8_t),
+             m_index_buffer_index,
+             m_index_file);
       m_index_buffer_index = 0;
     }
 
@@ -127,7 +130,10 @@ public:
 
   void flush_index_file()
   {
-    fwrite(m_index_buffer.data(), sizeof(uint8_t), m_index_buffer_index, m_index_file);
+    fwrite(m_index_buffer.data(),
+           sizeof(uint8_t),
+           m_index_buffer_index,
+           m_index_file);
     m_index_buffer_index = 0;
     fflush(m_index_file);
   }
@@ -167,32 +173,32 @@ public:
 
   inline void write_arg_value_to_log_file(uint8_t input)
   {
-    buffer_or_write<uint8_t, sizeof(uint8_t)>(&input);            
+    buffer_or_write<uint8_t, sizeof(uint8_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(uint16_t input)
   {
-    buffer_or_write<uint16_t, sizeof(uint16_t)>(&input);        
+    buffer_or_write<uint16_t, sizeof(uint16_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(uint32_t input)
   {
-    buffer_or_write<uint32_t, sizeof(uint32_t)>(&input);        
+    buffer_or_write<uint32_t, sizeof(uint32_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(uint64_t input)
   {
-    buffer_or_write<uint64_t, sizeof(uint64_t)>(&input);        
+    buffer_or_write<uint64_t, sizeof(uint64_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(int8_t input)
   {
-    buffer_or_write<int8_t, sizeof(int8_t)>(&input);    
+    buffer_or_write<int8_t, sizeof(int8_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(int16_t input)
   {
-    buffer_or_write<int16_t, sizeof(int16_t)>(&input);    
+    buffer_or_write<int16_t, sizeof(int16_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(int32_t input)
@@ -202,7 +208,7 @@ public:
 
   inline void write_arg_value_to_log_file(int64_t input)
   {
-    buffer_or_write<int64_t, sizeof(int64_t)>(&input);    
+    buffer_or_write<int64_t, sizeof(int64_t)>(&input);
   }
 
   inline void write_arg_value_to_log_file(float input)
@@ -354,7 +360,7 @@ public:
     ((void)save_arg_constness(std::forward<Args>(args)), ...);
   }
 
-  template <const char* format_string>
+  template<const char* format_string>
   constexpr inline void write_format_string_to_index_file()
   {
     constexpr uint8_t length = strlen(format_string);

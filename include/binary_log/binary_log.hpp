@@ -89,11 +89,12 @@ public:
 
 #define BINARY_LOG(logger, format_string, ...) \
   { \
-    constexpr static char BINARY_LOG_CONCAT(__binary_log_format_string, __LINE__)[] =           \
-      format_string;                                                                            \
-    static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos,                     \
-                                         __LINE__) =                                            \
-        logger.log_index<BINARY_LOG_CONCAT(__binary_log_format_string, __LINE__)>(__VA_ARGS__); \
-    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__),                  \
-               ##__VA_ARGS__);                                                                  \
+    constexpr static char BINARY_LOG_CONCAT(__binary_log_format_string, \
+                                            __LINE__)[] = format_string; \
+    static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, \
+                                         __LINE__) = \
+        logger.log_index<BINARY_LOG_CONCAT(__binary_log_format_string, \
+                                           __LINE__)>(__VA_ARGS__); \
+    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
+               ##__VA_ARGS__); \
   }

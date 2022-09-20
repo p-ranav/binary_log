@@ -152,8 +152,7 @@ constexpr static inline bool all_args_are_constants()
     constexpr auto num_args = sizeof...(Ts);
     if constexpr (num_args == 0) {
       return true;
-    }
-    else {
+    } else {
       return all_args_are_constants<Ts...>();
     }
   } else {

@@ -89,14 +89,14 @@ class log_file_parser
 
         // the runlength is stored as an integer
         // Find out how many bytes the runlength is
-        std::size_t integer_width = next_byte_in_runlength_file();
+        constexpr std::size_t integer_width = sizeof(std::size_t);
 
         std::vector<uint8_t> runlength_bytes;
         for (std::size_t i = 0; i < integer_width; ++i) {
           runlength_bytes.push_back(next_byte_in_runlength_file());
         }
         memcpy(&runlength, runlength_bytes.data(), integer_width);
-        m_runlengthfile_index += integer_width - 1;
+        m_runlengthfile_index += integer_width;
       } else {
         // The current index in the log file
         // has a runlength of one
@@ -139,7 +139,7 @@ class log_file_parser
           if (arg_info.type == fmt_arg_type::type_string) {
             // Next byte is the size
             // For strings, this is the string length
-            size = next_byte_in_log_file();	    
+            size = next_byte_in_log_file();
           } else {
             // size if the size of the type
             size = sizeof_arg_type(arg_info.type);
