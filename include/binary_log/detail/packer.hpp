@@ -156,8 +156,8 @@ public:
 
   inline void write_arg_value_to_log_file(const char* input)
   {
-    uint8_t size = static_cast<uint8_t>(std::strlen(input));
-    buffer_or_write<uint8_t, sizeof(uint8_t)>(&size);
+    uint16_t size = static_cast<uint16_t>(std::strlen(input));
+    buffer_or_write<uint16_t, sizeof(uint16_t)>(&size);
     buffer_or_write(input, size);
   }
 
@@ -224,8 +224,8 @@ public:
   template<typename T>
   requires is_string_type<T> inline void write_arg_value_to_log_file(T&& input)
   {
-    uint8_t size = static_cast<uint8_t>(input.size());
-    buffer_or_write<uint8_t, sizeof(uint8_t)>(&size);
+    uint16_t size = static_cast<uint16_t>(input.size());
+    buffer_or_write<uint16_t, sizeof(uint16_t)>(&size);
     buffer_or_write(input.data(), size);
   }
 
@@ -240,14 +240,14 @@ public:
   inline void write_current_runlength_to_runlength_file()
   {
     if (m_current_runlength > 1) {
-      const uint8_t index = static_cast<uint8_t>(m_runlength_index);
-      fwrite(&index, sizeof(uint8_t), 1, m_runlength_file);
+      const uint16_t index = static_cast<uint16_t>(m_runlength_index);
+      fwrite(&index, sizeof(uint16_t), 1, m_runlength_file);
       fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
       m_current_runlength = 0;
     }
   }
 
-  constexpr inline void pack_format_string_index(uint8_t index)
+  constexpr inline void pack_format_string_index(uint16_t index)
   {
     // Evaluate this index
     //
@@ -265,7 +265,7 @@ public:
       if (m_current_runlength == 0) {
         // First call
         // Write index to log file
-        buffer_or_write<uint8_t, sizeof(uint8_t)>(&index);
+        buffer_or_write<uint16_t, sizeof(uint16_t)>(&index);
         m_current_runlength++;
       } else if (m_current_runlength >= 1) {
         m_current_runlength++;
@@ -280,7 +280,7 @@ public:
         write_current_runlength_to_runlength_file();
 
         // Write index to log file
-        buffer_or_write<uint8_t, sizeof(uint8_t)>(&index);
+        buffer_or_write<uint16_t, sizeof(uint16_t)>(&index);
         m_current_runlength = 1;
         m_runlength_index = index;
       }
@@ -319,8 +319,8 @@ public:
 
   inline void write_arg_value_to_index_file(const char* input)
   {
-    const uint8_t size = static_cast<uint8_t>(std::strlen(input));
-    buffer_or_write_index_file(&size, sizeof(uint8_t));
+    const uint16_t size = static_cast<uint16_t>(std::strlen(input));
+    buffer_or_write_index_file(&size, sizeof(uint16_t));
     buffer_or_write_index_file(input, size);
   }
 
@@ -335,8 +335,8 @@ public:
   requires is_string_type<T> inline void write_arg_value_to_index_file(
       T&& input)
   {
-    const uint8_t size = static_cast<uint8_t>(input.size());
-    buffer_or_write_index_file(&size, sizeof(uint8_t));
+    const uint16_t size = static_cast<uint16_t>(input.size());
+    buffer_or_write_index_file(&size, sizeof(uint16_t));
     buffer_or_write_index_file(input.data(), input.size());
   }
 
@@ -363,8 +363,8 @@ public:
   template<const char* format_string>
   constexpr inline void write_format_string_to_index_file()
   {
-    constexpr uint8_t length = strlen(format_string);
-    buffer_or_write_index_file(&length, sizeof(uint8_t));
+    constexpr uint16_t length = strlen(format_string);
+    buffer_or_write_index_file(&length, sizeof(uint16_t));
     buffer_or_write_index_file(format_string, length);
   }
 

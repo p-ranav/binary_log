@@ -70,7 +70,7 @@ public:
     //   <format-string-index> is the index of the format string in the index
     //   file <arg1> <arg2> ... <argN> are the arguments to the format string
     //     Each <arg> is a pair: <type, value>
-    uint8_t current_index = static_cast<uint8_t>(pos);
+    uint16_t current_index = static_cast<uint16_t>(pos);
     m_packer.pack_format_string_index(current_index);
 
     // Write the args

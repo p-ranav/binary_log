@@ -51,9 +51,9 @@ user    0m0.906s
 sys     0m1.000s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
--rw-rw-r--  1 pranav pranav          9 Sep 19 10:13 log.out.runlength
--rw-rw-r--  1 pranav pranav         32 Sep 19 10:13 log.out.index
--rw-rw-r--  1 pranav pranav 4000000001 Sep 19 10:13 log.out
+-rw-r--r-- 1 pranav pranav         10 Sep 20 11:46 log.out.runlength
+-rw-r--r-- 1 pranav pranav         33 Sep 20 11:46 log.out.index
+-rw-r--r-- 1 pranav pranav 4000000002 Sep 20 11:46 log.out
 ```
 
 ## Deflate the logs
