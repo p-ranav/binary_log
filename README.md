@@ -37,18 +37,18 @@ On a [modern workstation desktop](#system-details), the above code executes in `
 
 | Type            | Value               |
 | --------------- | --------------------|
-| Time Taken      | 2.036 s             | 
-| Throughput      | 1.96 Gb/s           |
-| Performance     | 491 million logs/s  |
-| Average Latency | 2.03 ns             |
+| Time Taken      | 1.935 s             | 
+| Throughput      | 2.06 Gb/s           |
+| Performance     | 516 million logs/s  |
+| Average Latency | ~2 ns               |
 | File Size       | ~4 GB               |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/examples/billion_integers/billion_integers
 
-real    0m2.036s
-user    0m1.047s
-sys     0m0.906s
+real    0m1.935s
+user    0m0.906s
+sys     0m1.000s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
 -rw-rw-r--  1 pranav pranav          9 Sep 19 10:13 log.out.runlength
