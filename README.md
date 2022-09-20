@@ -7,7 +7,7 @@
 * Logs messages in a compact binary format
 * Fast
   * ***Hundreds of millions*** of logs per second
-  * Average latency of ***2-7 ns*** for basic data types
+  * Average latency of ***1-3 ns*** for basic data types
   * See [benchmarks](https://github.com/p-ranav/binary_log#benchmarks)
 * Provides an [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
 * Uses [fmtlib](https://github.com/fmtlib/fmt) to format the logs
