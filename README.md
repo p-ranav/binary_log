@@ -33,14 +33,14 @@ int main()
 }
 ```
 
-On a [modern workstation desktop](#system-details), the above code executes in `~2.2s`.
+On a [modern workstation desktop](#system-details), the above code executes in `~2.3s`.
 
 | Type            | Value               |
 | --------------- | --------------------|
-| Time Taken      | 2.2 s               | 
+| Time Taken      | 2.3 s               | 
 | Throughput      | 1.78 Gb/s           |
 | Performance     | 445 million logs/s  |
-| Average Latency | 2.2 ns              |
+| Average Latency | 2.3 ns              |
 | File Size       | ~4 GB               |
 
 ```console
