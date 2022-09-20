@@ -136,22 +136,10 @@ class log_file_parser
           // then parse the argument
 
           std::size_t size = 0;
-          if (arg_info.type == fmt_arg_type::type_string
-              || arg_info.type == fmt_arg_type::type_uint8
-              || arg_info.type == fmt_arg_type::type_uint16
-              || arg_info.type == fmt_arg_type::type_uint32
-              || arg_info.type == fmt_arg_type::type_uint64
-              || arg_info.type == fmt_arg_type::type_int8
-              || arg_info.type == fmt_arg_type::type_int16
-              || arg_info.type == fmt_arg_type::type_int32
-              || arg_info.type == fmt_arg_type::type_int64)
-          {
+          if (arg_info.type == fmt_arg_type::type_string) {
             // Next byte is the size
             // For strings, this is the string length
-            // For integers, this is the real size of the integer
-            // - binary_log likes to shrink integers to smaller sizes when
-            // possible
-            size = next_byte_in_log_file();
+            size = next_byte_in_log_file();	    
           } else {
             // size if the size of the type
             size = sizeof_arg_type(arg_info.type);
@@ -182,86 +170,26 @@ class log_file_parser
       uint8_t value = *(uint8_t*)&arg.value.data()[0];
       store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
-      if (arg.size == 1) {
-        // actually a uint8_t
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      uint16_t value = *(uint16_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_uint32) {
-      if (arg.size == 1) {
-        // actually a uint8_t
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a uint16_t
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        uint32_t value = *(uint32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      uint32_t value = *(uint32_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
-      if (arg.size == 1) {
-        // actually a uint8_t
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a uint16_t
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 4) {
-        // actually a uint32_t
-        uint32_t value = *(uint32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        uint64_t value = *(uint64_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      uint64_t value = *(uint64_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
       int8_t value = *(int8_t*)&arg.value.data()[0];
       store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int16) {
-      if (arg.size == 1) {
-        // actually a int8_t
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      int16_t value = *(int16_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int32) {
-      if (arg.size == 1) {
-        // actually a int8_t
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a int16_t
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        int32_t value = *(int32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      int32_t value = *(int32_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
-      if (arg.size == 1) {
-        // actually a int8_t
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a int16_t
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 4) {
-        // actually a int32_t
-        int32_t value = *(int32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        int64_t value = *(int64_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      int64_t value = *(int64_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_float) {
       float value = *(float*)&arg.value.data()[0];
       store.push_back(value);
