@@ -154,6 +154,30 @@ static void BM_binary_log_random_real(benchmark::State& state)
   remove("log.out.runlength");
 }
 
+static void BM_binary_log_billion_integers(benchmark::State& state)
+{
+  {
+    binary_log::binary_log log("log.out");
+
+    for (auto _ : state) {
+      // This code gets timed
+      for (int i = 0; i < 1E9; ++i)
+	BINARY_LOG(log, "Hello logger, msg number: {}", i);
+    }
+  }
+
+  state.counters["Logs/s"] =
+      benchmark::Counter(state.iterations() * 1E9, benchmark::Counter::kIsRate);
+
+  state.counters["Latency"] = benchmark::Counter(
+      state.iterations() * 1E9,
+      benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+
+  remove("log.out");
+  remove("log.out.index");
+  remove("log.out.runlength");
+}
+
 BENCHMARK_TEMPLATE(BM_binary_log_static_integer, uint8_t)->Arg(42);
 BENCHMARK_TEMPLATE(BM_binary_log_static_integer, uint16_t)->Arg(395);
 BENCHMARK_TEMPLATE(BM_binary_log_static_integer, uint32_t)->Arg(3123456789);
@@ -177,6 +201,7 @@ BENCHMARK_TEMPLATE(BM_binary_log_random_integer, int32_t);
 BENCHMARK_TEMPLATE(BM_binary_log_random_integer, int64_t);
 BENCHMARK_TEMPLATE(BM_binary_log_random_real, float);
 BENCHMARK_TEMPLATE(BM_binary_log_random_real, double);
+BENCHMARK(BM_binary_log_billion_integers);
 
 // Run the benchmark
 BENCHMARK_MAIN();
