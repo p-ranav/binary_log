@@ -145,16 +145,16 @@ requires is_string_type<T> constexpr inline fmt_arg_type get_arg_type()
   return fmt_arg_type::type_string;
 }
 
+template<class T, class... Ts>
 constexpr static inline bool all_args_are_constants()
 {
-  return true;
-}
-
-template<class T, class... Ts>
-constexpr static inline bool all_args_are_constants(T&&, Ts&&... rest)
-{
   if constexpr (is_specialization<T, constant> {}) {
-    return all_args_are_constants(std::forward<Ts>(rest)...);
+    constexpr auto num_args = sizeof...(Ts);
+    if constexpr (num_args == 0) {
+      return true;
+    } else {
+      return all_args_are_constants<Ts...>();
+    }
   } else {
     return false;
   }

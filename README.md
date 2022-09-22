@@ -7,7 +7,7 @@
 * Logs messages in a compact binary format
 * Fast
   * ***Hundreds of millions*** of logs per second
-  * Average latency of ***2-7 ns*** for basic data types
+  * Average latency of ***1-3 ns*** for basic data types
   * See [benchmarks](https://github.com/p-ranav/binary_log#benchmarks)
 * Provides an [unpacker](https://github.com/p-ranav/binary_log/tree/master/tools/unpacker) to deflate the log messages
 * Uses [fmtlib](https://github.com/fmtlib/fmt) to format the logs
@@ -33,27 +33,27 @@ int main()
 }
 ```
 
-On a [modern workstation desktop](#system-details), the above code executes in `~3.5s`.
+On a [modern workstation desktop](#system-details), the above code executes in `~2s`.
 
 | Type            | Value               |
 | --------------- | --------------------|
-| Time Taken      | 3.5 s               | 
-| Throughput      | 1.4   Gb/s          |
-| Performance     | 286 million logs/s  |
-| Average Latency | 3.5 ns              |
-| File Size       | ~5 GB               |
+| Time Taken      | 1.935 s             | 
+| Throughput      | 2.06 Gb/s           |
+| Performance     | 516 million logs/s  |
+| Average Latency | 1.73 ns             |
+| File Size       | ~4 GB               |
 
 ```console
 foo@bar:~/dev/binary_log$ time ./build/examples/billion_integers/billion_integers
 
-real    0m3.561s
-user    0m2.422s
-sys     0m1.141s
+real    0m1.935s
+user    0m0.906s
+sys     0m1.000s
 
 foo@bar:~/dev/binary_log$ ls -lart log.out*
--rw-r--r-- 1 pranav pranav          6 Dec  6 07:52 log.out.runlength
--rw-r--r-- 1 pranav pranav         32 Dec  6 07:52 log.out.index
--rw-r--r-- 1 pranav pranav 4999934337 Dec  6 07:52 log.out
+-rw-r--r-- 1 pranav pranav         10 Sep 20 11:46 log.out.runlength
+-rw-r--r-- 1 pranav pranav         33 Sep 20 11:46 log.out.index
+-rw-r--r-- 1 pranav pranav 4000000002 Sep 20 11:46 log.out
 ```
 
 ## Deflate the logs
@@ -141,45 +141,6 @@ See [benchmarks](https://github.com/p-ranav/binary_log/blob/master/README.md#ben
 3. ***Runlength file*** contains runlengths - If a log call is made 5 times, this information is stored here (instead of storing the index 5 times in the log file)
    - NOTE: Runlengths are only stored if the runlength > 1 (to avoid the inflation case with RLE)
 
-## Packing Integers
-
-`binary_log` packs integers based on value. An argument of type `uint64_t` with a value of `19` will be packed as a `uint8_t`, saving 7 bytes of space (actually 6, one byte is required to store the number of bytes consumed by the integer)
-
-Consider the example:
-
-```cpp
-  uint64_t value = 19;
-  BINARY_LOG(log, "{}", value);
-```
-
-Here is the index file:
-
-```console
-foo@bar:~/dev/binary_log$ hexdump -C log.out.index
-00000000  02 7b 7d 01 05 00                                 |.{}...|
-00000006
-```
-
-This index file has 6 bytes of information:
-* `0x02` - Length of the format string
-* `0x7b 0x7d` - This is the format string `"{}"`
-* `0x01` - This is the number of arguments required
-* `0x05` - This is the type of the argument `uint64_t` (according to [this](https://github.com/p-ranav/binary_log/blob/master/include/binary_log/detail/args.hpp#L17) enum class)
-* `0x00` - To indicate that this value is not a "constant"
-
-Here is the log file
-
-```console
-foo@bar:~/dev/binary_log$ hexdump -C log.out
-00000000  00 01 13                                          |...|
-00000003
-```
-
-The log file has 3 bytes: 
-* `0x00` indicates that the first format string in the table (in the index file) is being used
-* `0x01` indicates that the integer argument takes up 1 byte
-* `0x13` is the value - the decimal `19`
-
 ## Constants
 
 One can specify a log format argument as a constant by wrapping the value with `binary_log::constant(...)`. When this is detected, the value is stored in the index file instead of the log file as it is now considered "static information" and does not change between calls. 
@@ -233,48 +194,37 @@ foo@bar:~/dev/binary_log$ hexdump -C log.out.index
 | C++ Compiler    | g++ (Ubuntu 10.3.0-1ubuntu1~20.04) 10.3.0                                                                 |
 
 ```console
-foo@bar:~/dev/binary_log$  ./build/benchmark/binary_log_benchmark --benchmark_counters_tabular=true
-2021-12-06T08:15:45-06:00
+foo@bar:~/dev/binary_log$ ./build/benchmark/binary_log_benchmark
+2022-09-20T12:59:39-05:00
 Running ./build/benchmark/binary_log_benchmark
 Run on (16 X 3504 MHz CPU s)
 Load Average: 0.52, 0.58, 0.59
-------------------------------------------------------------------------------------------------------------------------
-Benchmark                                                        Time             CPU   Iterations    Latency     Logs/s
-------------------------------------------------------------------------------------------------------------------------
-BM_binary_log_static_integer<uint8_t>/42                      1.56 ns         1.57 ns    448000000  1.56948ns 637.156M/s
-BM_binary_log_static_integer<uint16_t>/395                    2.25 ns         2.25 ns    298666667  2.24958ns 444.527M/s
-BM_binary_log_static_integer<uint32_t>/3123456789             3.58 ns         3.53 ns    194782609  3.52958ns  283.32M/s
-BM_binary_log_static_integer<uint64_t>/9876543123456789       6.37 ns         6.42 ns    112000000  6.41741ns 155.826M/s
-BM_binary_log_static_integer<int8_t>/-42                      1.58 ns         1.57 ns    448000000  1.56948ns 637.156M/s
-BM_binary_log_static_integer<int16_t>/-395                    2.29 ns         2.29 ns    320000000  2.29492ns 435.745M/s
-BM_binary_log_static_integer<int32_t>/-123456789              3.76 ns         3.75 ns    179200000   3.7493ns 266.716M/s
-BM_binary_log_static_integer<int64_t>/-9876543123456789       6.31 ns         6.28 ns    112000000   6.2779ns 159.289M/s
-BM_binary_log_static_float                                    3.02 ns         3.05 ns    235789474  3.04827ns 328.055M/s
-BM_binary_log_static_double                                   5.64 ns         5.62 ns    100000000    5.625ns 177.778M/s
-BM_binary_log_static_string                                   4.28 ns         4.33 ns    165925926  4.33175ns 230.853M/s
-BM_binary_log_random_integer<uint8_t>                         7.60 ns         7.50 ns     89600000   7.4986ns 133.358M/s
-BM_binary_log_random_integer<uint16_t>                        7.84 ns         7.85 ns     89600000  7.84738ns 127.431M/s
-BM_binary_log_random_integer<uint32_t>                        8.56 ns         8.58 ns     74666667   8.5798ns 116.553M/s
-BM_binary_log_random_integer<uint64_t>                        17.7 ns         17.6 ns     40727273  17.6479ns  56.664M/s
-BM_binary_log_random_integer<int8_t>                          8.00 ns         7.95 ns     74666667  7.95201ns 125.754M/s
-BM_binary_log_random_integer<int16_t>                         7.89 ns         7.85 ns     89600000  7.84738ns 127.431M/s
-BM_binary_log_random_integer<int32_t>                         8.77 ns         8.79 ns     74666667  8.78906ns 113.778M/s
-BM_binary_log_random_integer<int64_t>                         17.4 ns         17.6 ns     37333333  17.5781ns 56.8889M/s
-BM_binary_log_random_real<float>                              6.94 ns         6.84 ns    112000000  6.83594ns 146.286M/s
-BM_binary_log_random_real<double>                             12.7 ns         12.6 ns     49777778  12.5558ns 79.6444M/s
+------------------------------------------------------------------------------------------------------------------
+Benchmark                                                        Time             CPU   Iterations UserCounters...
+------------------------------------------------------------------------------------------------------------------
+BM_binary_log_static_integer<uint8_t>/42                      1.22 ns         1.20 ns    560000000 Latency=1.19978ns Logs/s=833.488M/s
+BM_binary_log_static_integer<uint16_t>/395                    1.43 ns         1.43 ns    448000000 Latency=1.42997ns Logs/s=699.317M/s
+BM_binary_log_static_integer<uint32_t>/3123456789             1.89 ns         1.84 ns    373333333 Latency=1.84152ns Logs/s=543.03M/s
+BM_binary_log_static_integer<uint64_t>/9876543123456789       5.45 ns         2.76 ns    248888889 Latency=2.76228ns Logs/s=362.02M/s
+BM_binary_log_static_integer<int8_t>/-42                      1.25 ns         1.26 ns    560000000 Latency=1.25558ns Logs/s=796.444M/s
+BM_binary_log_static_integer<int16_t>/-395                    1.54 ns         1.57 ns    448000000 Latency=1.56948ns Logs/s=637.156M/s
+BM_binary_log_static_integer<int32_t>/-123456789              1.94 ns         1.97 ns    373333333 Latency=1.96708ns Logs/s=508.369M/s
+BM_binary_log_static_integer<int64_t>/-9876543123456789       4.11 ns         2.92 ns    235789474 Latency=2.91574ns Logs/s=342.967M/s
+BM_binary_log_static_float                                    1.82 ns         1.84 ns    407272727 Latency=1.84152ns Logs/s=543.03M/s
+BM_binary_log_static_double                                   3.29 ns         2.73 ns    263529412 Latency=2.7274ns Logs/s=366.65M/s
+BM_binary_log_static_string                                   4.93 ns         2.92 ns    235789474 Latency=2.91574ns Logs/s=342.967M/s
+BM_binary_log_random_integer<uint8_t>                         5.75 ns         5.72 ns    112000000 Latency=5.71987ns Logs/s=174.829M/s
+BM_binary_log_random_integer<uint16_t>                        6.08 ns         6.14 ns    112000000 Latency=6.13839ns Logs/s=162.909M/s
+BM_binary_log_random_integer<uint32_t>                        7.51 ns         7.67 ns     89600000 Latency=7.67299ns Logs/s=130.327M/s
+BM_binary_log_random_integer<uint64_t>                        15.0 ns         15.0 ns     44800000 Latency=14.9972ns Logs/s=66.6791M/s
+BM_binary_log_random_integer<int8_t>                          5.70 ns         5.72 ns    112000000 Latency=5.71987ns Logs/s=174.829M/s
+BM_binary_log_random_integer<int16_t>                         5.84 ns         5.86 ns    112000000 Latency=5.85938ns Logs/s=170.667M/s
+BM_binary_log_random_integer<int32_t>                         7.89 ns         7.67 ns     89600000 Latency=7.67299ns Logs/s=130.327M/s
+BM_binary_log_random_integer<int64_t>                         14.9 ns         15.0 ns     44800000 Latency=14.9972ns Logs/s=66.6791M/s
+BM_binary_log_random_real<float>                              6.29 ns         6.25 ns    100000000 Latency=6.25ns Logs/s=160M/s
+BM_binary_log_random_real<double>                             11.6 ns         11.7 ns     64000000 Latency=11.7188ns Logs/s=85.3333M/s
+BM_binary_log_billion_integers                          2320246800 ns   1765625000 ns            1 Latency=1.76562ns Logs/s=566.372M/s
 ```
-
-# Implementation Notes
-
-## Assumptions in the code
-
-* The size of the format string is saved as a `uint8_t` - this means that the format string cannot be more than 256 characters, which I think is a reasonable assumption to make for a logging library. Often, in reality, the lines of a log file are around 80-120 characters in length. 
-* The size of any string argument is also stored as a `uint8_t` - this again means that any string argument must be no more than 256 bytes in size.
-  - In both the index file and the log file, strings are stored like this: `<string-length (1 byte)> <string-byte1> ... <string-byten>`
-* The index file contains a table of metadata - an index table. Each entry in the log file might use an index to refer to row in the index table (I say _might_ because if there is a runlength > 1, the index will be stored in the runlength file). The type of this index is `uint8_t`. This data type choice has one major implication: The max size of the index table is 256 (since the max index is 255) - this means that a user can call `BINARY_LOG(...)` in at most 256 unique lines of code with a specific `binary_log` object. This should be sufficient for small to medium size applications but may not be adequate for larger applications where one logger is used with `BINARY_LOG(...)` through out the application in more than 256 places.
-  - One could expose this data type as a template parameter but the unpacker will need to be updated to correctly parse, e.g., a `uint16_t` for the index instead of a `uint8_t`
-  - Note that switching to `uint16_t` here means that every log call will store an extra byte to be able to refer to an entry in the index table - an extra byte per call _could_ be an extra 1GB over billion log calls. 
-* The [unit tests](https://github.com/p-ranav/binary_log/blob/master/test/source/test_packer.cpp) assume little endian representation for multi-byte data, e.g., int, float etc.
 
 ## Supported Format Argument Types
 

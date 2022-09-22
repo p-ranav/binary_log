@@ -44,6 +44,22 @@ class log_file_parser
     return *reinterpret_cast<const uint8_t*>(
         &m_logfile_buffer[m_logfile_index]);
   }
+  
+  template <typename T>
+  T reinterpret_bytes_as(const char* buffer, std::size_t& index, bool update_index)
+  {
+    const T* x = reinterpret_cast<const T*>(&buffer[index]);
+    if (update_index) {
+      index += sizeof(T);
+    }
+    return *x;
+  }
+
+  template <typename T>
+  T reinterpret_log_bytes_as(bool update_index)
+  {
+    return reinterpret_bytes_as<T>(m_logfile_buffer, m_logfile_index, update_index);
+  }
 
   uint8_t next_byte_in_runlength_file()
   {
@@ -57,6 +73,12 @@ class log_file_parser
         &m_runlengthfile_buffer[m_runlengthfile_index]);
   }
 
+  template <typename T>
+  T reinterpret_runlength_bytes_as(bool update_index)
+  {
+    return reinterpret_bytes_as<T>(m_runlengthfile_buffer, m_runlengthfile_index, update_index);
+  }
+
   void parse_and_print_log_entry(
       const std::vector<index_file_parser::index_entry>& index_table)
   {
@@ -68,39 +90,31 @@ class log_file_parser
     std::size_t index;
     std::size_t runlength = 1;
 
-    index = current_byte_in_log_file();
+    index = reinterpret_log_bytes_as<uint16_t>(false);
 
     if (m_runlengthfile_buffer_size == 0 /* empty runlength file */
         || m_runlengthfile_index >= m_runlengthfile_buffer_size)
     {
       // No more runlengths in the runlength file
-      index = next_byte_in_log_file();
+      index = reinterpret_log_bytes_as<uint16_t>(true);
     } else {
       const std::size_t index_in_runlength_file =
-          current_byte_in_runlength_file();
+          reinterpret_runlength_bytes_as<uint16_t>(false);
 
       if (index_in_runlength_file == index) {
         // The current index has a runlength of some amount
         // parse `runlength` number of args in the log file
 
         // get past the index in the run length file
-        index = next_byte_in_runlength_file();
+        index = reinterpret_runlength_bytes_as<uint16_t>(true);
         next_byte_in_log_file();
 
         // the runlength is stored as an integer
-        // Find out how many bytes the runlength is
-        std::size_t integer_width = next_byte_in_runlength_file();
-
-        std::vector<uint8_t> runlength_bytes;
-        for (std::size_t i = 0; i < integer_width; ++i) {
-          runlength_bytes.push_back(next_byte_in_runlength_file());
-        }
-        memcpy(&runlength, runlength_bytes.data(), integer_width);
-        m_runlengthfile_index += integer_width - 1;
+        runlength = reinterpret_runlength_bytes_as<std::size_t>(true);
       } else {
         // The current index in the log file
         // has a runlength of one
-        index = next_byte_in_log_file();
+        index = reinterpret_log_bytes_as<uint16_t>(true);
       }
     }
 
@@ -136,22 +150,10 @@ class log_file_parser
           // then parse the argument
 
           std::size_t size = 0;
-          if (arg_info.type == fmt_arg_type::type_string
-              || arg_info.type == fmt_arg_type::type_uint8
-              || arg_info.type == fmt_arg_type::type_uint16
-              || arg_info.type == fmt_arg_type::type_uint32
-              || arg_info.type == fmt_arg_type::type_uint64
-              || arg_info.type == fmt_arg_type::type_int8
-              || arg_info.type == fmt_arg_type::type_int16
-              || arg_info.type == fmt_arg_type::type_int32
-              || arg_info.type == fmt_arg_type::type_int64)
-          {
+          if (arg_info.type == fmt_arg_type::type_string) {
             // Next byte is the size
             // For strings, this is the string length
-            // For integers, this is the real size of the integer
-            // - binary_log likes to shrink integers to smaller sizes when
-            // possible
-            size = next_byte_in_log_file();
+            size = reinterpret_log_bytes_as<uint16_t>(true);
           } else {
             // size if the size of the type
             size = sizeof_arg_type(arg_info.type);
@@ -182,86 +184,26 @@ class log_file_parser
       uint8_t value = *(uint8_t*)&arg.value.data()[0];
       store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_uint16) {
-      if (arg.size == 1) {
-        // actually a uint8_t
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      uint16_t value = *(uint16_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_uint32) {
-      if (arg.size == 1) {
-        // actually a uint8_t
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a uint16_t
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        uint32_t value = *(uint32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      uint32_t value = *(uint32_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
-      if (arg.size == 1) {
-        // actually a uint8_t
-        uint8_t value = *(uint8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a uint16_t
-        uint16_t value = *(uint16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 4) {
-        // actually a uint32_t
-        uint32_t value = *(uint32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        uint64_t value = *(uint64_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      uint64_t value = *(uint64_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
       int8_t value = *(int8_t*)&arg.value.data()[0];
       store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int16) {
-      if (arg.size == 1) {
-        // actually a int8_t
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      int16_t value = *(int16_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int32) {
-      if (arg.size == 1) {
-        // actually a int8_t
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a int16_t
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        int32_t value = *(int32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      int32_t value = *(int32_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
-      if (arg.size == 1) {
-        // actually a int8_t
-        int8_t value = *(int8_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 2) {
-        // actually a int16_t
-        int16_t value = *(int16_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else if (arg.size == 4) {
-        // actually a int32_t
-        int32_t value = *(int32_t*)&arg.value.data()[0];
-        store.push_back(value);
-      } else {
-        int64_t value = *(int64_t*)&arg.value.data()[0];
-        store.push_back(value);
-      }
+      int64_t value = *(int64_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_float) {
       float value = *(float*)&arg.value.data()[0];
       store.push_back(value);

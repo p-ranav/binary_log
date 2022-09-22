@@ -19,13 +19,18 @@ public:
   {
   }
 
+  ~binary_log()
+  {
+    m_packer.flush();
+  }
+
   void flush()
   {
     m_packer.flush();
   }
 
-  template<class... Args>
-  inline uint8_t log_index(std::string_view f, Args&&... args)
+  template<const char* format_string, class... Args>
+  constexpr inline uint8_t log_index(Args&&... args)
   {
     // SPEC:
     // <format-string-length> <format-string>
@@ -35,18 +40,18 @@ public:
     //
     // If the arg is not an lvalue, it is stored in the index file
     // and the value is not stored in the log file
-    const uint8_t num_args = sizeof...(Args);
+    constexpr uint8_t num_args = sizeof...(Args);
 
     m_format_string_index++;
 
     // Write the length of the format string
-    m_packer.write_format_string_to_index_file(f);
+    m_packer.write_format_string_to_index_file<format_string>();
 
     // Write the number of args taken by the format string
     m_packer.write_num_args_to_index_file(num_args);
 
     // Write the type of each argument
-    if (num_args > 0) {
+    if constexpr (num_args > 0) {
       m_packer.update_index_file(std::forward<Args>(args)...);
     }
 
@@ -56,7 +61,7 @@ public:
   template<class... Args>
   inline void log(std::size_t pos, Args&&... args)
   {
-    const uint8_t num_args = sizeof...(Args);
+    constexpr auto num_args = sizeof...(Args);
 
     // Write to the main log file
     // SPEC:
@@ -65,12 +70,14 @@ public:
     //   <format-string-index> is the index of the format string in the index
     //   file <arg1> <arg2> ... <argN> are the arguments to the format string
     //     Each <arg> is a pair: <type, value>
-    uint8_t current_index = static_cast<uint8_t>(pos);
+    uint16_t current_index = static_cast<uint16_t>(pos);
     m_packer.pack_format_string_index(current_index);
 
     // Write the args
-    if (num_args > 0 && !all_args_are_constants(std::forward<Args>(args)...)) {
-      m_packer.update_log_file(std::forward<Args>(args)...);
+    if constexpr (num_args > 0) {
+      if constexpr (!all_args_are_constants<Args...>()) {
+        m_packer.update_log_file(std::forward<Args>(args)...);
+      }
     }
   }
 };
@@ -82,9 +89,12 @@ public:
 
 #define BINARY_LOG(logger, format_string, ...) \
   { \
+    constexpr static char BINARY_LOG_CONCAT(__binary_log_format_string, \
+                                            __LINE__)[] = format_string; \
     static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, \
                                          __LINE__) = \
-        logger.log_index(format_string, ##__VA_ARGS__); \
+        logger.log_index<BINARY_LOG_CONCAT(__binary_log_format_string, \
+                                           __LINE__)>(__VA_ARGS__); \
     logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
                ##__VA_ARGS__); \
   }

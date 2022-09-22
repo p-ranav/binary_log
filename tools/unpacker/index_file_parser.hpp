@@ -38,6 +38,13 @@ private:
     return *reinterpret_cast<const uint8_t*>(&m_buffer[m_index++]);
   }
 
+  uint16_t next_two_bytes()
+  {
+    const uint16_t* bytes = reinterpret_cast<const uint16_t*>(&m_buffer[m_index]);
+    m_index += 2;
+    return *bytes;
+  }
+
   void parse_entry()
   {
     index_entry entry;
@@ -45,7 +52,7 @@ private:
 
     // First, parse the size of the format string
     // This is assumed to be 1 byte.
-    const std::size_t format_string_size = next_byte();
+    const std::size_t format_string_size = next_two_bytes();
 
     // Next, parse the format string
     std::string_view format_string(m_buffer + m_index, format_string_size);
@@ -78,7 +85,7 @@ private:
           std::size_t size = 0;
           if (arg.type == fmt_arg_type::type_string) {
             // the next byte will be the size of the string
-            size = next_byte();
+            size = next_two_bytes();
           } else {
             // size is determined by the type of the arg
             size = sizeof_arg_type(arg.type);
