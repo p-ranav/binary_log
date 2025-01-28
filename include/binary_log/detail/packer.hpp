@@ -191,6 +191,12 @@ public:
     buffer_or_write<uint64_t, sizeof(uint64_t)>(&input);
   }
 
+  inline void write_arg_value_to_log_file(unsigned long input)
+  {
+    uint64_t value = static_cast<uint64_t>(input);
+    buffer_or_write<uint64_t, sizeof(uint64_t)>(&value);
+  }
+
   inline void write_arg_value_to_log_file(int8_t input)
   {
     buffer_or_write<int8_t, sizeof(int8_t)>(&input);
@@ -363,7 +369,7 @@ public:
   template<const char* format_string>
   constexpr inline void write_format_string_to_index_file()
   {
-    constexpr uint16_t length = strlen(format_string);
+    constexpr uint16_t length = sizeof(format_string) - 1;
     buffer_or_write_index_file(&length, sizeof(uint16_t));
     buffer_or_write_index_file(format_string, length);
   }
