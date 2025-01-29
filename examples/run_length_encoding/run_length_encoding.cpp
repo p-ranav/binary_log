@@ -4,7 +4,7 @@
 
 int main()
 {
-  binary_log::binary_log log("log.out");
+  binary_log::binary_log<> log("log.out");
 
   // This sample exercises the run-length encoding
   // part of binary_log.

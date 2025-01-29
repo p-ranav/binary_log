@@ -1,14 +1,14 @@
 #include <binary_log/binary_log.hpp>
 
-template<typename T>
-void save_data(binary_log::binary_log& log, T&& value)
+template<class log_type, typename T>
+void save_data(log_type& log, T&& value)
 {
   BINARY_LOG(log, "{}", std::forward<T>(value));
 }
 
 int main()
 {
-  binary_log::binary_log log("log.out");
+  binary_log::binary_log<> log("log.out");
 
   save_data(log, 5);
   save_data(log, 3.14);

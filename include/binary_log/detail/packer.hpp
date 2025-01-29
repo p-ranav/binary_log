@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -11,6 +12,7 @@
 
 namespace binary_log
 {
+template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32>
 class packer
 {
   std::FILE* m_log_file;
@@ -23,11 +25,9 @@ class packer
   // fwrite already has an internal buffer
   // but this buffer is used to avoid
   // multiple fwrite calls.
-  constexpr static inline std::size_t buffer_size = 1 * 1024 * 1024;
   std::array<uint8_t, buffer_size> m_buffer;
   std::size_t m_buffer_index = 0;
 
-  constexpr static inline std::size_t index_buffer_size = 32;
   std::array<uint8_t, index_buffer_size> m_index_buffer;
   std::size_t m_index_buffer_index = 0;
 
@@ -80,37 +80,55 @@ class packer
   }
 
 public:
-  packer(const char* path)
+  packer(const std::filesystem::path& path)
   {
     // Create the log file
     // All the log contents go here
-    m_log_file = fopen(path, "wb");
+    m_log_file = fopen(path.c_str(), "wb");
     if (m_log_file == nullptr) {
+#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
       throw std::invalid_argument("fopen failed");
+#else
+      abort();
+#endif
     }
 
     // No fwrite buffering
     setvbuf(m_log_file, nullptr, _IONBF, 0);
 
     // Create the index file
-    std::string index_file_path = std::string {path} + ".index";
-    m_index_file = fopen(index_file_path.data(), "wb");
+    std::filesystem::path index_file_path = path;
+    index_file_path.replace_extension(path.extension().string() + ".index");
+    m_index_file = fopen(index_file_path.c_str(), "wb");
     if (m_index_file == nullptr) {
+#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
       throw std::invalid_argument("fopen failed");
+#else
+      abort();
+#endif
     }
 
     // No fwrite buffering
     setvbuf(m_index_file, nullptr, _IONBF, 0);
 
     // Create the runlength file
-    std::string runlength_file_path = std::string {path} + ".runlength";
-    m_runlength_file = fopen(runlength_file_path.data(), "wb");
+    std::filesystem::path runlength_file_path = path;
+    runlength_file_path.replace_extension(path.extension().string() + ".runlength");
+    m_runlength_file = fopen(runlength_file_path.c_str(), "wb");
     if (m_runlength_file == nullptr) {
+#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
       throw std::invalid_argument("fopen failed");
+#else
+      abort();
+#endif
     }
 
     m_runlength_index = 0;
     m_current_runlength = 0;
+  }
+
+  packer(const char* path) : packer(std::filesystem::path {path})
+  {
   }
 
   ~packer()
