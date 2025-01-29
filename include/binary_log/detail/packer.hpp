@@ -212,8 +212,8 @@ public:
   template<typename U>
   inline void write_arg_value_to_log_file(U &input) requires (std::is_same_v<U, unsigned long> && !std::is_same_v<unsigned long, uint64_t>)
   {
-    uint64_t value = static_cast<uint64_t>(input);
-    buffer_or_write<uint64_t, sizeof(uint64_t)>(&value);
+    uint32_t value = static_cast<uint32_t>(input);
+    buffer_or_write<uint32_t, sizeof(uint32_t)>(&value);
   }
 
   inline void write_arg_value_to_log_file(int8_t input)

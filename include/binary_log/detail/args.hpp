@@ -101,7 +101,7 @@ constexpr inline fmt_arg_type get_arg_type<uint64_t>()
 template<typename U>
 constexpr inline fmt_arg_type get_arg_type() requires (std::is_same_v<U, unsigned long> && !std::is_same_v<unsigned long, uint64_t>)
 {
-  return fmt_arg_type::type_uint64;
+  return fmt_arg_type::type_uint32;
 }
 
 template<>
