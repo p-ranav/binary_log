@@ -385,9 +385,9 @@ public:
   }
 
   template<const char* format_string>
-  constexpr inline void write_format_string_to_index_file()
+  void write_format_string_to_index_file()
   {
-    constexpr uint16_t length = sizeof(format_string) - 1;
+    const uint16_t length = strlen(format_string);
     buffer_or_write_index_file(&length, sizeof(uint16_t));
     buffer_or_write_index_file(format_string, length);
   }
