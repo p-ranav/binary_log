@@ -209,7 +209,8 @@ public:
     buffer_or_write<uint64_t, sizeof(uint64_t)>(&input);
   }
 
-  inline void write_arg_value_to_log_file(unsigned long input)
+  template<typename U>
+  inline void write_arg_value_to_log_file(U &input) requires (std::is_same_v<U, unsigned long> && !std::is_same_v<unsigned long, uint64_t>)
   {
     uint64_t value = static_cast<uint64_t>(input);
     buffer_or_write<uint64_t, sizeof(uint64_t)>(&value);
@@ -387,7 +388,7 @@ public:
   template<const char* format_string>
   void write_format_string_to_index_file()
   {
-    const uint16_t length = strlen(format_string);
+    const uint16_t length = static_cast<uint16_t>(std::strlen(format_string));
     buffer_or_write_index_file(&length, sizeof(uint16_t));
     buffer_or_write_index_file(format_string, length);
   }
