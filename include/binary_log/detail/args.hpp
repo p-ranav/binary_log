@@ -15,7 +15,6 @@ enum class fmt_arg_type
   type_uint16,
   type_uint32,
   type_uint64,
-  type_unsigned_long,
   type_int8,
   type_int16,
   type_int32,
@@ -39,7 +38,6 @@ static inline std::size_t sizeof_arg_type(fmt_arg_type type)
     case fmt_arg_type::type_uint32:
       return sizeof(uint32_t);
     case fmt_arg_type::type_uint64:
-    case fmt_arg_type::type_unsigned_long:
       return sizeof(uint64_t);
     case fmt_arg_type::type_int8:
       return sizeof(int8_t);
