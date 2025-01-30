@@ -26,6 +26,11 @@ public:
   {
   }
 
+  const packer<buffer_size, index_buffer_size>& get_packer() const
+  {
+    return m_packer;
+  }
+
   ~binary_log()
   {
     m_packer.flush();

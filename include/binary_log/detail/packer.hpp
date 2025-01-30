@@ -12,9 +12,10 @@
 
 namespace binary_log
 {
-template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32>
+template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32, size_t runlength_buffer_size = 32>
 class packer
 {
+  std::filesystem::path m_path;
   std::FILE* m_log_file;
   std::FILE* m_index_file;
   std::FILE* m_runlength_file;
@@ -34,6 +35,8 @@ class packer
   // Members for run-length encoding
   // of the log file.
   bool m_first_call = true;
+  std::array<uint8_t, runlength_buffer_size> m_runlength_buffer;
+  std::size_t m_runlength_buffer_index = 0;
   std::size_t m_runlength_index = 0;
   uint64_t m_current_runlength = 0;
 
@@ -98,11 +101,11 @@ class packer
   }
 
 public:
-  packer(const std::filesystem::path& path)
+  packer(const std::filesystem::path& path) : m_path(path)
   {
     // Create the log file
     // All the log contents go here
-    m_log_file = fopen(path.c_str(), "wb");
+    m_log_file = fopen(get_path().c_str(), "wb");
     if (m_log_file == nullptr) {
 #if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
       throw std::invalid_argument("fopen failed");
@@ -115,9 +118,7 @@ public:
     setvbuf(m_log_file, nullptr, _IONBF, 0);
 
     // Create the index file
-    std::filesystem::path index_file_path = path;
-    index_file_path.replace_extension(path.extension().string() + ".index");
-    m_index_file = fopen(index_file_path.c_str(), "wb");
+    m_index_file = fopen(get_index_path().c_str(), "wb");
     if (m_index_file == nullptr) {
 #if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
       throw std::invalid_argument("fopen failed");
@@ -130,9 +131,7 @@ public:
     setvbuf(m_index_file, nullptr, _IONBF, 0);
 
     // Create the runlength file
-    std::filesystem::path runlength_file_path = path;
-    runlength_file_path.replace_extension(path.extension().string() + ".runlength");
-    m_runlength_file = fopen(runlength_file_path.c_str(), "wb");
+    m_runlength_file = fopen(get_runlength_path().c_str(), "wb");
     if (m_runlength_file == nullptr) {
 #if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
       throw std::invalid_argument("fopen failed");
@@ -157,8 +156,30 @@ public:
     fclose(m_runlength_file);
   }
 
+  std::filesystem::path get_path() const
+  {
+    return m_path;
+  }
+
+  std::filesystem::path get_index_path() const
+  {
+    std::filesystem::path index_file_path = m_path;
+    index_file_path.replace_extension(m_path.extension().string() + ".index");
+    return index_file_path;
+  }
+
+  std::filesystem::path get_runlength_path() const
+  {
+    std::filesystem::path runlength_file_path = m_path;
+    runlength_file_path.replace_extension(m_path.extension().string() + ".runlength");
+    return runlength_file_path;
+  }
+
   void flush_log_file()
   {
+    if (m_log_file == nullptr) {
+      return;
+    }
     fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
     m_buffer_index = 0;
     fflush(m_log_file);
@@ -166,6 +187,9 @@ public:
 
   void flush_index_file()
   {
+    if (m_index_file == nullptr) {
+      return;
+    }
     fwrite(m_index_buffer.data(),
            sizeof(uint8_t),
            m_index_buffer_index,
@@ -176,7 +200,14 @@ public:
 
   void flush_runlength_file()
   {
-    write_current_runlength_to_runlength_file();
+    if (m_runlength_file == nullptr) {
+      return;
+    }
+    fwrite(m_runlength_buffer.data(),
+           sizeof(uint8_t),
+           m_runlength_buffer_index,
+           m_runlength_file);
+    m_runlength_buffer_index = 0;
     fflush(m_runlength_file);
   }
 
@@ -186,6 +217,8 @@ public:
     flush_log_file();
     flush_runlength_file();
   }
+
+
 
   template<typename T>
   inline void write_arg_value_to_log_file(T&& input) = delete;
@@ -282,10 +315,27 @@ public:
   inline void write_current_runlength_to_runlength_file()
   {
     if (m_current_runlength > 1) {
-      const uint16_t index = static_cast<uint16_t>(m_runlength_index);
-      fwrite(&index, sizeof(uint16_t), 1, m_runlength_file);
-      fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
-      m_current_runlength = 0;
+      size_t bytes_left = sizeof(uint16_t) + sizeof(uint64_t);
+      // make the bytes we'll write to the runlength file
+      uint8_t bytes[sizeof(uint16_t) + sizeof(uint64_t)];
+      // fill the bytes
+      std::memcpy(&bytes[0], &m_runlength_index, sizeof(uint16_t));
+      std::memcpy(&bytes[sizeof(uint16_t)], &m_current_runlength, sizeof(uint64_t));
+      // write the bytes
+      while (bytes_left) {
+        if (m_runlength_buffer_index + bytes_left >= runlength_buffer_size) {
+          fwrite(m_runlength_buffer.data(),
+                 sizeof(uint8_t),
+                 m_runlength_buffer_index,
+                 m_runlength_file);
+          m_runlength_buffer_index = 0;
+        }
+
+        std::size_t bytes_to_copy = std::min(bytes_left, runlength_buffer_size);
+        std::copy_n(bytes, bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
+        m_runlength_buffer_index += bytes_to_copy;
+        bytes_left -= bytes_to_copy;
+      }
     }
   }
 
