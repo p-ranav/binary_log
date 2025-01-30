@@ -111,6 +111,7 @@ class log_file_parser
 
         // the runlength is stored as an integer
         runlength = reinterpret_runlength_bytes_as<std::size_t>(true);
+        next_byte_in_log_file();
       } else {
         // The current index in the log file
         // has a runlength of one
