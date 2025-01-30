@@ -10,7 +10,13 @@ void save_data(log_type& log, T&& value)
 
 int main()
 {
-  binary_log::binary_log<binary_log::ringbuffer_packer<>> log("log.out");
+  static constexpr size_t log_buffer_size = 100;
+  static constexpr size_t index_buffer_size = 1024;
+  static constexpr size_t runlength_buffer_size = 1024;
+  using Packer = binary_log::ringbuffer_packer<log_buffer_size,
+                                                index_buffer_size,
+                                                runlength_buffer_size>;
+  binary_log::binary_log<Packer> log("log.out");
 
   save_data(log, 5);
   save_data(log, 3.14);
@@ -24,22 +30,34 @@ int main()
   save_data(log, 2.7182818284590452353602874713527f);
   save_data(log, 'a');
 
-  for (int i = 0; i < 1E1; ++i) {
-    save_data(log, i);
+  // ensure run length works
+  for (int i = 0; i < 2E1; ++i) {
     BINARY_LOG(log, "Hello logger, msg number: {}", i);
   }
+  // for (int i = 0; i < 1E1; ++i) {
+  //   save_data(log, i);
+  // }
+
+  // now flush the log
+  log.flush();
 
   // Since the ringbuffer only writes to memory, we need to get the string_views
   // into the log/index/runlength buffers and write those to the appropriate
   // file paths
-  const auto &log_packer = log.get_packer();
-  auto log_buffer = log_packer.get_log_buffer();
-  auto index_buffer = log_packer.get_index_buffer();
-  auto runlength_buffer = log_packer.get_runlength_buffer();
+  const Packer &packer = log.get_packer();
+  auto log_buffer = packer.get_log_buffer();
+  auto index_buffer = packer.get_index_buffer();
+  auto runlength_buffer = packer.get_runlength_buffer();
 
-  auto log_filepath = log_packer.get_log_path();
-  auto index_filepath = log_packer.get_index_path();
-  auto runlength_filepath = log_packer.get_runlength_path();
+  std::cout << std::format("Log file size: {} bytes\n", log_buffer.size());
+  std::cout << std::format("Index file size: {} bytes\n", index_buffer.size());
+  std::cout << std::format("Runlength file size: {} bytes\n", runlength_buffer.size());
+  std::cout << "--------------------------------\n";
+  std::cout << std::format("Total file size: {} bytes\n", log_buffer.size() + index_buffer.size() + runlength_buffer.size());
+
+  auto log_filepath = packer.get_log_path();
+  auto index_filepath = packer.get_index_path();
+  auto runlength_filepath = packer.get_runlength_path();
 
   std::ofstream log_file(log_filepath.string(),
                           std::ios::out | std::ios::binary);
@@ -53,5 +71,5 @@ int main()
 
   std::ofstream runlength_file(runlength_filepath.string(),
                                std::ios::out | std::ios::binary);
-  runlength_file.write(runlength_buffer.data(), runlength_buffer.size());
+  runlength_file.write((const char*)runlength_buffer.data(), runlength_buffer.size());
 }

@@ -152,6 +152,9 @@ public:
 
   void flush()
   {
+    flush_log_file();
+    flush_index_file();
+    flush_runlength_file();
   }
 
   template<typename T>
