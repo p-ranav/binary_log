@@ -6,6 +6,7 @@
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/args.hpp>
 #include <binary_log/detail/packer.hpp>
+#include <binary_log/detail/ringbuffer_packer.hpp>
 
 namespace binary_log
 {
@@ -57,7 +58,7 @@ public:
     m_format_string_index++;
 
     // Write the length of the format string
-    m_packer.template write_format_string_to_index_file<format_string>();
+    m_packer. template write_format_string_to_index_file<format_string>();
 
     // Write the number of args taken by the format string
     m_packer.write_num_args_to_index_file(num_args);

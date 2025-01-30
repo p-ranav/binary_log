@@ -1,8 +1,10 @@
 #pragma once
 #include <array>
+#include <deque>
 #include <cstring>
 #include <filesystem>
 #include <limits>
+#include <queue>
 #include <string>
 #include <string_view>
 
@@ -11,21 +13,20 @@
 
 namespace binary_log
 {
-template<size_t log_buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32, size_t runlength_buffer_size = 32>
-class packer
+/// This Packer implementation uses a std::deque<uint8_t> to implement a ring
+/// buffer for the log file data, and std::array<uint8_t> to store the index and
+/// runfile data.
+template<size_t log_buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 1024, size_t runlength_buffer_size = 128>
+class ringbuffer_packer
 {
   std::filesystem::path m_path;
-  std::FILE* m_log_file;
-  std::FILE* m_index_file;
-  std::FILE* m_runlength_file;
 
-  // This buffer is buffering fwrite calls
-  // to the log file.
-  //
-  // fwrite already has an internal buffer
-  // but this buffer is used to avoid
-  // multiple fwrite calls.
-  std::array<uint8_t, log_buffer_size> m_buffer;
+  // to be able to discard old data in the buffer, we need to keep a list of
+  // indices of the start of each log entry in the buffer, so that we can
+  // discard bytes from the buffer up to the start of the next log entry
+  std::queue<size_t> log_buffer_indices;
+
+  std::deque<uint8_t> m_buffer;
   std::size_t m_buffer_index = 0;
 
   std::array<uint8_t, index_buffer_size> m_index_buffer;
@@ -42,117 +43,64 @@ class packer
   template<typename T, std::size_t size>
   void buffer_or_write(T* input)
   {
-    std::size_t bytes_left = size;
-    auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    while (bytes_left) {
-      if (m_buffer_index + bytes_left >= log_buffer_size) {
-        fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-        m_buffer_index = 0;
-      }
-
-      std::size_t bytes_to_copy = std::min(bytes_left, log_buffer_size);
-      std::copy_n(byte_array, bytes_to_copy, &m_buffer[m_buffer_index]);
-      byte_array += bytes_to_copy;
-      m_buffer_index += bytes_to_copy;
-      bytes_left -= bytes_to_copy;
-    }
+    buffer_or_write(input, size);
   }
 
   template<typename T>
   void buffer_or_write(T* input, std::size_t size)
   {
-    std::size_t bytes_left = size;
     auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    while (bytes_left) {
-      if (m_buffer_index + bytes_left >= log_buffer_size) {
-        fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-        m_buffer_index = 0;
+    // if the amount of space in the queue is less than the amount of bytes
+    // use the distance between oldest buffer index and the next index to
+    // determine how many bytes remove
+    while ((m_buffer.size() + size) >= log_buffer_size) {
+      // get the first and second elements in the buffer indices queue (and
+      // pop the first off)
+      size_t first = log_buffer_indices.front();
+      log_buffer_indices.pop();
+      size_t second = log_buffer_indices.front();
+      // compute the distance (size of this log), that will be the number of bytes to remove
+      size_t distance = second - first;
+      // remove the bytes from the buffer
+      for (size_t i = 0; i < distance; i++) {
+        m_buffer.pop_front();
       }
-
-      std::size_t bytes_to_copy = std::min(bytes_left, log_buffer_size);
-      std::copy_n(byte_array, bytes_to_copy, &m_buffer[m_buffer_index]);
-      byte_array += bytes_to_copy;
-      m_buffer_index += bytes_to_copy;
-      bytes_left -= bytes_to_copy;
     }
+    // now we have enough space in the buffer to write the bytes
+    std::size_t bytes_to_copy = std::min(size, log_buffer_size);
+    for (std::size_t i = 0; i < bytes_to_copy; i++) {
+      m_buffer.push_back(byte_array[i]);
+    }
+    m_buffer_index += bytes_to_copy;
   }
 
   template<typename T>
   constexpr void buffer_or_write_index_file(T* input, std::size_t size)
   {
-    std::size_t bytes_left = size;
     const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    while (bytes_left) {
-      if (m_index_buffer_index + bytes_left >= index_buffer_size) {
-        fwrite(m_index_buffer.data(),
-               sizeof(uint8_t),
-               m_index_buffer_index,
-               m_index_file);
-        m_index_buffer_index = 0;
-      }
-
-      std::size_t bytes_to_copy = std::min(bytes_left, index_buffer_size-1);
-      std::copy_n(byte_array, bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
-      byte_array += bytes_to_copy;
-      m_index_buffer_index += bytes_to_copy;
-      bytes_left -= bytes_to_copy;
+    if (m_index_buffer_index + size >= index_buffer_size) {
+      // TODO: abort since we're out of space
+      return;
     }
+
+    std::size_t bytes_to_copy = std::min(size, index_buffer_size-1);
+    std::copy_n(byte_array, bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
+    m_index_buffer_index += bytes_to_copy;
   }
 
 public:
-  packer(const std::filesystem::path& path) : m_path(path)
+  ringbuffer_packer(const std::filesystem::path& path) : m_path(path)
   {
-    // Create the log file
-    // All the log contents go here
-    m_log_file = fopen(get_log_path().c_str(), "wb");
-    if (m_log_file == nullptr) {
-#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
-      throw std::invalid_argument("fopen failed");
-#else
-      abort();
-#endif
-    }
-
-    // No fwrite buffering
-    setvbuf(m_log_file, nullptr, _IONBF, 0);
-
-    // Create the index file
-    m_index_file = fopen(get_index_path().c_str(), "wb");
-    if (m_index_file == nullptr) {
-#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
-      throw std::invalid_argument("fopen failed");
-#else
-      abort();
-#endif
-    }
-
-    // No fwrite buffering
-    setvbuf(m_index_file, nullptr, _IONBF, 0);
-
-    // Create the runlength file
-    m_runlength_file = fopen(get_runlength_path().c_str(), "wb");
-    if (m_runlength_file == nullptr) {
-#if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
-      throw std::invalid_argument("fopen failed");
-#else
-      abort();
-#endif
-    }
-
     m_runlength_index = 0;
     m_current_runlength = 0;
   }
 
-  packer(const char* path) : packer(std::filesystem::path {path})
+  ringbuffer_packer(const char* path) : ringbuffer_packer(std::filesystem::path {path})
   {
   }
 
-  ~packer()
+  ~ringbuffer_packer()
   {
-    flush();
-    fclose(m_log_file);
-    fclose(m_index_file);
-    fclose(m_runlength_file);
   }
 
   std::filesystem::path get_log_path() const
@@ -174,50 +122,36 @@ public:
     return runlength_file_path;
   }
 
+  std::vector<uint8_t> get_log_buffer() const
+  {
+    return std::vector(m_buffer.begin(), m_buffer.end());
+  }
+
+  std::string_view get_index_buffer() const
+  {
+    return std::string_view(reinterpret_cast<const char*>(m_index_buffer.data()), m_index_buffer_index);
+  }
+
+  std::string_view get_runlength_buffer() const
+  {
+    return std::string_view(reinterpret_cast<const char*>(m_runlength_buffer.data()), m_runlength_buffer_index);
+  }
+
   void flush_log_file()
   {
-    if (m_log_file == nullptr) {
-      return;
-    }
-    fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-    m_buffer_index = 0;
-    fflush(m_log_file);
   }
 
   void flush_index_file()
   {
-    if (m_index_file == nullptr) {
-      return;
-    }
-    fwrite(m_index_buffer.data(),
-           sizeof(uint8_t),
-           m_index_buffer_index,
-           m_index_file);
-    m_index_buffer_index = 0;
-    fflush(m_index_file);
   }
 
   void flush_runlength_file()
   {
-    if (m_runlength_file == nullptr) {
-      return;
-    }
-    fwrite(m_runlength_buffer.data(),
-           sizeof(uint8_t),
-           m_runlength_buffer_index,
-           m_runlength_file);
-    m_runlength_buffer_index = 0;
-    fflush(m_runlength_file);
   }
 
   void flush()
   {
-    flush_index_file();
-    flush_log_file();
-    flush_runlength_file();
   }
-
-
 
   template<typename T>
   inline void write_arg_value_to_log_file(T&& input) = delete;
@@ -314,27 +248,20 @@ public:
   inline void write_current_runlength_to_runlength_file()
   {
     if (m_current_runlength > 1) {
-      size_t bytes_left = sizeof(uint16_t) + sizeof(uint64_t);
+      size_t size = sizeof(uint16_t) + sizeof(uint64_t);
+      if (m_runlength_buffer_index + size >= runlength_buffer_size) {
+        // TODO: abort since we're out of space
+        return;
+      }
       // make the bytes we'll write to the runlength file
       uint8_t bytes[sizeof(uint16_t) + sizeof(uint64_t)];
       // fill the bytes
       std::memcpy(&bytes[0], &m_runlength_index, sizeof(uint16_t));
       std::memcpy(&bytes[sizeof(uint16_t)], &m_current_runlength, sizeof(uint64_t));
       // write the bytes
-      while (bytes_left) {
-        if (m_runlength_buffer_index + bytes_left >= runlength_buffer_size) {
-          fwrite(m_runlength_buffer.data(),
-                 sizeof(uint8_t),
-                 m_runlength_buffer_index,
-                 m_runlength_file);
-          m_runlength_buffer_index = 0;
-        }
-
-        std::size_t bytes_to_copy = std::min(bytes_left, runlength_buffer_size);
-        std::copy_n(bytes, bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
-        m_runlength_buffer_index += bytes_to_copy;
-        bytes_left -= bytes_to_copy;
-      }
+      std::size_t bytes_to_copy = std::min(size, runlength_buffer_size);
+      std::copy_n(bytes, bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
+      m_runlength_buffer_index += bytes_to_copy;
     }
   }
 
@@ -350,6 +277,11 @@ public:
     // then, write (m_runlength_index + m_current_runlength)
     // to the m_runlength_file and write the new index
     // to the logfile
+
+    // NOTE: this is the first function called on the packer within the
+    // `binary_log::log` function, so this is where we'll write that we're
+    // writing a new log entry
+    log_buffer_indices.push(m_buffer_index);
 
     if (m_runlength_index == 0 && index == 0) {
       // First index
