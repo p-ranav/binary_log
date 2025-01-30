@@ -12,7 +12,7 @@
 
 namespace binary_log
 {
-template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32, bool RUNLENGTH_ENABLED=true>
+template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32>
 class packer
 {
   std::FILE* m_log_file;
@@ -129,18 +129,16 @@ public:
     // No fwrite buffering
     setvbuf(m_index_file, nullptr, _IONBF, 0);
 
-    if constexpr (RUNLENGTH_ENABLED) {
-      // Create the runlength file
-      std::filesystem::path runlength_file_path = path;
-      runlength_file_path.replace_extension(path.extension().string() + ".runlength");
-      m_runlength_file = fopen(runlength_file_path.c_str(), "wb");
-      if (m_runlength_file == nullptr) {
+    // Create the runlength file
+    std::filesystem::path runlength_file_path = path;
+    runlength_file_path.replace_extension(path.extension().string() + ".runlength");
+    m_runlength_file = fopen(runlength_file_path.c_str(), "wb");
+    if (m_runlength_file == nullptr) {
 #if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
-        throw std::invalid_argument("fopen failed");
+      throw std::invalid_argument("fopen failed");
 #else
-        abort();
+      abort();
 #endif
-      }
     }
 
     m_runlength_index = 0;
@@ -156,9 +154,7 @@ public:
     flush();
     fclose(m_log_file);
     fclose(m_index_file);
-    if constexpr (RUNLENGTH_ENABLED) {
-      fclose(m_runlength_file);
-    }
+    fclose(m_runlength_file);
   }
 
   void flush_log_file()
@@ -180,10 +176,8 @@ public:
 
   void flush_runlength_file()
   {
-    if constexpr (RUNLENGTH_ENABLED) {
-      write_current_runlength_to_runlength_file();
-      fflush(m_runlength_file);
-    }
+    write_current_runlength_to_runlength_file();
+    fflush(m_runlength_file);
   }
 
   void flush()
@@ -287,13 +281,11 @@ public:
 
   inline void write_current_runlength_to_runlength_file()
   {
-    if constexpr (RUNLENGTH_ENABLED) {
-      if (m_current_runlength > 1) {
-        const uint16_t index = static_cast<uint16_t>(m_runlength_index);
-        fwrite(&index, sizeof(uint16_t), 1, m_runlength_file);
-        fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
-        m_current_runlength = 0;
-      }
+    if (m_current_runlength > 1) {
+      const uint16_t index = static_cast<uint16_t>(m_runlength_index);
+      fwrite(&index, sizeof(uint16_t), 1, m_runlength_file);
+      fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
+      m_current_runlength = 0;
     }
   }
 
