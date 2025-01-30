@@ -67,11 +67,11 @@ class ringbuffer_packer
       }
     }
     // now we have enough space in the buffer to write the bytes
-    std::size_t bytes_to_copy = std::min(size, log_buffer_size);
-    for (std::size_t i = 0; i < bytes_to_copy; i++) {
+    std::size_t num_bytes_to_copy = std::min(size, log_buffer_size);
+    for (std::size_t i = 0; i < num_bytes_to_copy; i++) {
       m_buffer.push_back(byte_array[i]);
     }
-    m_buffer_index += bytes_to_copy;
+    m_buffer_index += num_bytes_to_copy;
   }
 
   template<typename T>
@@ -83,9 +83,9 @@ class ringbuffer_packer
       return;
     }
 
-    std::size_t bytes_to_copy = std::min(size, index_buffer_size-1);
-    std::copy_n(byte_array, bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
-    m_index_buffer_index += bytes_to_copy;
+    std::size_t num_bytes_to_copy = std::min(size, index_buffer_size-1);
+    std::copy_n(byte_array, num_bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
+    m_index_buffer_index += num_bytes_to_copy;
   }
 
 public:
@@ -124,7 +124,7 @@ public:
 
   std::vector<uint8_t> get_log_buffer() const
   {
-    return std::vector(m_buffer.begin(), m_buffer.end());
+    return std::vector<uint8_t>(m_buffer.begin(), m_buffer.end());
   }
 
   std::string_view get_index_buffer() const
@@ -254,14 +254,14 @@ public:
         return;
       }
       // make the bytes we'll write to the runlength file
-      uint8_t bytes[sizeof(uint16_t) + sizeof(uint64_t)];
+      uint8_t bytes[size];
       // fill the bytes
       std::memcpy(&bytes[0], &m_runlength_index, sizeof(uint16_t));
       std::memcpy(&bytes[sizeof(uint16_t)], &m_current_runlength, sizeof(uint64_t));
       // write the bytes
-      std::size_t bytes_to_copy = std::min(size, runlength_buffer_size);
-      std::copy_n(bytes, bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
-      m_runlength_buffer_index += bytes_to_copy;
+      std::size_t num_bytes_to_copy = std::min(size, runlength_buffer_size);
+      std::copy_n(bytes, num_bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
+      m_runlength_buffer_index += num_bytes_to_copy;
     }
   }
 

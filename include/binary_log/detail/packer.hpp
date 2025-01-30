@@ -42,20 +42,7 @@ class packer
   template<typename T, std::size_t size>
   void buffer_or_write(T* input)
   {
-    std::size_t bytes_left = size;
-    auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    while (bytes_left) {
-      if (m_buffer_index + bytes_left >= log_buffer_size) {
-        fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-        m_buffer_index = 0;
-      }
-
-      std::size_t bytes_to_copy = std::min(bytes_left, log_buffer_size);
-      std::copy_n(byte_array, bytes_to_copy, &m_buffer[m_buffer_index]);
-      byte_array += bytes_to_copy;
-      m_buffer_index += bytes_to_copy;
-      bytes_left -= bytes_to_copy;
-    }
+    buffer_or_write(input, size);
   }
 
   template<typename T>
@@ -69,11 +56,11 @@ class packer
         m_buffer_index = 0;
       }
 
-      std::size_t bytes_to_copy = std::min(bytes_left, log_buffer_size);
-      std::copy_n(byte_array, bytes_to_copy, &m_buffer[m_buffer_index]);
-      byte_array += bytes_to_copy;
-      m_buffer_index += bytes_to_copy;
-      bytes_left -= bytes_to_copy;
+      std::size_t num_bytes_to_copy = std::min(bytes_left, log_buffer_size);
+      std::copy_n(byte_array, num_bytes_to_copy, &m_buffer[m_buffer_index]);
+      byte_array += num_bytes_to_copy;
+      m_buffer_index += num_bytes_to_copy;
+      bytes_left -= num_bytes_to_copy;
     }
   }
 
@@ -91,11 +78,11 @@ class packer
         m_index_buffer_index = 0;
       }
 
-      std::size_t bytes_to_copy = std::min(bytes_left, index_buffer_size-1);
-      std::copy_n(byte_array, bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
-      byte_array += bytes_to_copy;
-      m_index_buffer_index += bytes_to_copy;
-      bytes_left -= bytes_to_copy;
+      std::size_t num_bytes_to_copy = std::min(bytes_left, index_buffer_size-1);
+      std::copy_n(byte_array, num_bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
+      byte_array += num_bytes_to_copy;
+      m_index_buffer_index += num_bytes_to_copy;
+      bytes_left -= num_bytes_to_copy;
     }
   }
 
@@ -217,8 +204,6 @@ public:
     flush_runlength_file();
   }
 
-
-
   template<typename T>
   inline void write_arg_value_to_log_file(T&& input) = delete;
 
@@ -314,9 +299,10 @@ public:
   inline void write_current_runlength_to_runlength_file()
   {
     if (m_current_runlength > 1) {
-      size_t bytes_left = sizeof(uint16_t) + sizeof(uint64_t);
+      size_t size = sizeof(uint16_t) + sizeof(uint64_t);
+      size_t bytes_left = size;
       // make the bytes we'll write to the runlength file
-      uint8_t bytes[sizeof(uint16_t) + sizeof(uint64_t)];
+      uint8_t bytes[size];
       // fill the bytes
       std::memcpy(&bytes[0], &m_runlength_index, sizeof(uint16_t));
       std::memcpy(&bytes[sizeof(uint16_t)], &m_current_runlength, sizeof(uint64_t));
@@ -330,10 +316,10 @@ public:
           m_runlength_buffer_index = 0;
         }
 
-        std::size_t bytes_to_copy = std::min(bytes_left, runlength_buffer_size);
-        std::copy_n(bytes, bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
-        m_runlength_buffer_index += bytes_to_copy;
-        bytes_left -= bytes_to_copy;
+        std::size_t num_bytes_to_copy = std::min(bytes_left, runlength_buffer_size);
+        std::copy_n(bytes, num_bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
+        m_runlength_buffer_index += num_bytes_to_copy;
+        bytes_left -= num_bytes_to_copy;
       }
     }
   }
