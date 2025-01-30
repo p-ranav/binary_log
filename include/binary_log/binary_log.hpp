@@ -9,10 +9,11 @@
 
 namespace binary_log
 {
-template<size_t buffer_size = 1 * 1024 * 1024, size_t index_buffer_size = 32>
+template<size_t buffer_size = 1 * 1024 * 1024, size_t index_buffer_size = 32, size_t runlength_buffer_size = 32>
 class binary_log
 {
-  packer<buffer_size, index_buffer_size> m_packer;
+  using packer_t = packer<buffer_size, index_buffer_size, runlength_buffer_size>;
+  packer_t m_packer;
   uint8_t m_format_string_index {0};
 
 public:
@@ -26,7 +27,7 @@ public:
   {
   }
 
-  const packer<buffer_size, index_buffer_size>& get_packer() const
+  const packer_t& get_packer() const
   {
     return m_packer;
   }
