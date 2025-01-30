@@ -147,6 +147,7 @@ public:
 
   void flush_runlength_file()
   {
+    write_current_runlength_to_runlength_file();
   }
 
   void flush()
@@ -262,6 +263,8 @@ public:
       std::size_t num_bytes_to_copy = std::min(size, runlength_buffer_size);
       std::copy_n(bytes, num_bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
       m_runlength_buffer_index += num_bytes_to_copy;
+      // reset the runlength
+      m_current_runlength = 0;
     }
   }
 

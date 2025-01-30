@@ -189,6 +189,7 @@ public:
     if (m_runlength_file == nullptr) {
       return;
     }
+    write_current_runlength_to_runlength_file();
     fwrite(m_runlength_buffer.data(),
            sizeof(uint8_t),
            m_runlength_buffer_index,
@@ -321,6 +322,8 @@ public:
         m_runlength_buffer_index += num_bytes_to_copy;
         bytes_left -= num_bytes_to_copy;
       }
+      // reset the runlength
+      m_current_runlength = 0;
     }
   }
 
