@@ -12,7 +12,7 @@
 
 namespace binary_log
 {
-template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32>
+template<size_t buffer_size= 1 * 1024 * 1024, size_t index_buffer_size = 32, bool RUNLENGTH_ENABLED=true>
 class packer
 {
   std::FILE* m_log_file;
@@ -40,43 +40,61 @@ class packer
   template<typename T, std::size_t size>
   void buffer_or_write(T* input)
   {
-    if (m_buffer_index + size >= buffer_size) {
-      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-      m_buffer_index = 0;
-    }
+    std::size_t bytes_left = size;
+    auto* byte_array = reinterpret_cast<const uint8_t*>(input);
+    while (bytes_left) {
+      if (m_buffer_index + bytes_left >= buffer_size) {
+        fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+        m_buffer_index = 0;
+      }
 
-    const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    std::copy_n(byte_array, size, &m_buffer[m_buffer_index]);
-    m_buffer_index += size;
+      std::size_t bytes_to_copy = std::min(bytes_left, buffer_size);
+      std::copy_n(byte_array, bytes_to_copy, &m_buffer[m_buffer_index]);
+      byte_array += bytes_to_copy;
+      m_buffer_index += bytes_to_copy;
+      bytes_left -= bytes_to_copy;
+    }
   }
 
   template<typename T>
   void buffer_or_write(T* input, std::size_t size)
   {
-    if (m_buffer_index + size >= buffer_size) {
-      fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
-      m_buffer_index = 0;
-    }
+    std::size_t bytes_left = size;
+    auto* byte_array = reinterpret_cast<const uint8_t*>(input);
+    while (bytes_left) {
+      if (m_buffer_index + bytes_left >= buffer_size) {
+        fwrite(m_buffer.data(), sizeof(uint8_t), m_buffer_index, m_log_file);
+        m_buffer_index = 0;
+      }
 
-    const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    std::copy_n(byte_array, size, &m_buffer[m_buffer_index]);
-    m_buffer_index += size;
+      std::size_t bytes_to_copy = std::min(bytes_left, buffer_size);
+      std::copy_n(byte_array, bytes_to_copy, &m_buffer[m_buffer_index]);
+      byte_array += bytes_to_copy;
+      m_buffer_index += bytes_to_copy;
+      bytes_left -= bytes_to_copy;
+    }
   }
 
   template<typename T>
   constexpr void buffer_or_write_index_file(T* input, std::size_t size)
   {
-    if (m_index_buffer_index + size >= index_buffer_size) {
-      fwrite(m_index_buffer.data(),
-             sizeof(uint8_t),
-             m_index_buffer_index,
-             m_index_file);
-      m_index_buffer_index = 0;
-    }
-
+    std::size_t bytes_left = size;
     const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
-    std::copy_n(byte_array, size, &m_index_buffer[m_index_buffer_index]);
-    m_index_buffer_index += size;
+    while (bytes_left) {
+      if (m_index_buffer_index + bytes_left >= index_buffer_size) {
+        fwrite(m_index_buffer.data(),
+               sizeof(uint8_t),
+               m_index_buffer_index,
+               m_index_file);
+        m_index_buffer_index = 0;
+      }
+
+      std::size_t bytes_to_copy = std::min(bytes_left, index_buffer_size-1);
+      std::copy_n(byte_array, bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
+      byte_array += bytes_to_copy;
+      m_index_buffer_index += bytes_to_copy;
+      bytes_left -= bytes_to_copy;
+    }
   }
 
 public:
@@ -111,16 +129,18 @@ public:
     // No fwrite buffering
     setvbuf(m_index_file, nullptr, _IONBF, 0);
 
-    // Create the runlength file
-    std::filesystem::path runlength_file_path = path;
-    runlength_file_path.replace_extension(path.extension().string() + ".runlength");
-    m_runlength_file = fopen(runlength_file_path.c_str(), "wb");
-    if (m_runlength_file == nullptr) {
+    if constexpr (RUNLENGTH_ENABLED) {
+      // Create the runlength file
+      std::filesystem::path runlength_file_path = path;
+      runlength_file_path.replace_extension(path.extension().string() + ".runlength");
+      m_runlength_file = fopen(runlength_file_path.c_str(), "wb");
+      if (m_runlength_file == nullptr) {
 #if defined(__cpp_exceptions) && __cpp_exceptions >= 199711L
-      throw std::invalid_argument("fopen failed");
+        throw std::invalid_argument("fopen failed");
 #else
-      abort();
+        abort();
 #endif
+      }
     }
 
     m_runlength_index = 0;
@@ -136,7 +156,9 @@ public:
     flush();
     fclose(m_log_file);
     fclose(m_index_file);
-    fclose(m_runlength_file);
+    if constexpr (RUNLENGTH_ENABLED) {
+      fclose(m_runlength_file);
+    }
   }
 
   void flush_log_file()
@@ -158,8 +180,10 @@ public:
 
   void flush_runlength_file()
   {
-    write_current_runlength_to_runlength_file();
-    fflush(m_runlength_file);
+    if constexpr (RUNLENGTH_ENABLED) {
+      write_current_runlength_to_runlength_file();
+      fflush(m_runlength_file);
+    }
   }
 
   void flush()
@@ -210,10 +234,9 @@ public:
   }
 
   template<typename U>
-  inline void write_arg_value_to_log_file(U &input) requires (std::is_same_v<U, unsigned long> && !std::is_same_v<unsigned long, uint64_t>)
+  inline void write_arg_value_to_log_file(U &input) requires (std::is_same_v<U, std::size_t>) // && !std::is_same_v<U, uint64_t> && !std::is_same_v<U, uint32_t>)
   {
-    uint32_t value = static_cast<uint32_t>(input);
-    buffer_or_write<uint32_t, sizeof(uint32_t)>(&value);
+    buffer_or_write<U, sizeof(U)>(&input);
   }
 
   inline void write_arg_value_to_log_file(int8_t input)
@@ -264,11 +287,13 @@ public:
 
   inline void write_current_runlength_to_runlength_file()
   {
-    if (m_current_runlength > 1) {
-      const uint16_t index = static_cast<uint16_t>(m_runlength_index);
-      fwrite(&index, sizeof(uint16_t), 1, m_runlength_file);
-      fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
-      m_current_runlength = 0;
+    if constexpr (RUNLENGTH_ENABLED) {
+      if (m_current_runlength > 1) {
+        const uint16_t index = static_cast<uint16_t>(m_runlength_index);
+        fwrite(&index, sizeof(uint16_t), 1, m_runlength_file);
+        fwrite(&m_current_runlength, sizeof(uint64_t), 1, m_runlength_file);
+        m_current_runlength = 0;
+      }
     }
   }
 

@@ -16,10 +16,12 @@ enum class fmt_arg_type
   type_uint16,
   type_uint32,
   type_uint64,
+  type_uint128,
   type_int8,
   type_int16,
   type_int32,
   type_int64,
+  type_int128,
   type_float,
   type_double,
   type_string,
@@ -40,6 +42,8 @@ static inline std::size_t sizeof_arg_type(fmt_arg_type type)
       return sizeof(uint32_t);
     case fmt_arg_type::type_uint64:
       return sizeof(uint64_t);
+    case fmt_arg_type::type_uint128:
+      return 16;
     case fmt_arg_type::type_int8:
       return sizeof(int8_t);
     case fmt_arg_type::type_int16:
@@ -48,6 +52,8 @@ static inline std::size_t sizeof_arg_type(fmt_arg_type type)
       return sizeof(int32_t);
     case fmt_arg_type::type_int64:
       return sizeof(int64_t);
+    case fmt_arg_type::type_int128:
+      return 16;
     case fmt_arg_type::type_float:
       return sizeof(float);
     case fmt_arg_type::type_double:
@@ -99,9 +105,14 @@ constexpr inline fmt_arg_type get_arg_type<uint64_t>()
 }
 
 template<typename U>
-constexpr inline fmt_arg_type get_arg_type() requires (std::is_same_v<U, unsigned long> && !std::is_same_v<unsigned long, uint64_t>)
+constexpr inline fmt_arg_type get_arg_type() requires (std::is_same_v<U, std::size_t>) // && !std::is_same_v<U, uint64_t> && !std::is_same_v<U, uint32_t>)
 {
-  return fmt_arg_type::type_uint32;
+  if constexpr (sizeof(std::size_t) == sizeof(uint64_t))
+    return fmt_arg_type::type_uint64;
+  else if constexpr (sizeof(std::size_t) == sizeof(uint32_t))
+    return fmt_arg_type::type_uint32;
+  else
+    return fmt_arg_type::type_uint64;
 }
 
 template<>
