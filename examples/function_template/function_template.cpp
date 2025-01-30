@@ -21,4 +21,10 @@ int main()
   save_data(log, true);
   save_data(log, 2.7182818284590452353602874713527f);
   save_data(log, 'a');
+
+  for (int i = 0; i < 1E1; ++i) {
+    save_data(log, i);
+    BINARY_LOG(log, "Hello logger, msg number: {}", i);
+  }
+
 }
