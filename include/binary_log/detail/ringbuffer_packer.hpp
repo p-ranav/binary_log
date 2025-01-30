@@ -198,7 +198,7 @@ public:
   }
 
   template<typename U>
-  inline void write_arg_value_to_log_file(U &input) requires (std::is_same_v<U, std::size_t>) // && !std::is_same_v<U, uint64_t> && !std::is_same_v<U, uint32_t>)
+  inline void write_arg_value_to_log_file(U &input) requires (std::is_same_v<U, std::size_t>)
   {
     buffer_or_write<U, sizeof(U)>(&input);
   }
