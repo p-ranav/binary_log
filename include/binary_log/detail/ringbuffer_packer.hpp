@@ -83,7 +83,7 @@ class ringbuffer_packer
     }
 
     std::size_t num_bytes_to_copy = std::min(size, index_buffer_size-1);
-    std::copy_n(byte_array, num_bytes_to_copy, &m_index_buffer[m_index_buffer_index]);
+    std::memcpy(&m_index_buffer[m_index_buffer_index], byte_array, num_bytes_to_copy);
     m_index_buffer_index += num_bytes_to_copy;
   }
 
@@ -262,7 +262,7 @@ public:
       std::memcpy(&bytes[sizeof(uint16_t)], &m_current_runlength, sizeof(uint64_t));
       // write the bytes
       std::size_t num_bytes_to_copy = std::min(size, runlength_buffer_size);
-      std::copy_n(bytes, num_bytes_to_copy, &m_runlength_buffer[m_runlength_buffer_index]);
+      std::memcpy(&m_runlength_buffer[m_runlength_buffer_index], bytes, num_bytes_to_copy);
       m_runlength_buffer_index += num_bytes_to_copy;
       // reset the runlength
       m_current_runlength = 0;
