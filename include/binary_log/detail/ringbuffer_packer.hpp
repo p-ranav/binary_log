@@ -79,8 +79,7 @@ class ringbuffer_packer
   {
     const auto* byte_array = reinterpret_cast<const uint8_t*>(input);
     if (m_index_buffer_index + size >= index_buffer_size) {
-      // TODO: abort since we're out of space
-      return;
+      abort();
     }
 
     std::size_t num_bytes_to_copy = std::min(size, index_buffer_size-1);
@@ -254,8 +253,7 @@ public:
     if (m_current_runlength > 1) {
       size_t size = sizeof(uint16_t) + sizeof(uint64_t);
       if (m_runlength_buffer_index + size >= runlength_buffer_size) {
-        // TODO: abort since we're out of space
-        return;
+        abort();
       }
       // make the bytes we'll write to the runlength file
       uint8_t bytes[size];
