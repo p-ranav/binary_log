@@ -105,9 +105,11 @@ class log_file_parser
         // The current index has a runlength of some amount
         // parse `runlength` number of args in the log file
 
+        // get past the runlength in the log file
+        reinterpret_log_bytes_as<uint16_t>(true);
+
         // get past the index in the run length file
         index = reinterpret_runlength_bytes_as<uint16_t>(true);
-        next_byte_in_log_file();
 
         // the runlength is stored as an integer
         runlength = reinterpret_runlength_bytes_as<std::size_t>(true);
@@ -192,6 +194,9 @@ class log_file_parser
     } else if (arg.type == binary_log::fmt_arg_type::type_uint64) {
       uint64_t value = *(uint64_t*)&arg.value.data()[0];
       store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_uint128) {
+      __uint128_t value = *(__uint128_t*)&arg.value.data()[0];
+      store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int8) {
       int8_t value = *(int8_t*)&arg.value.data()[0];
       store.push_back(value);
@@ -203,6 +208,9 @@ class log_file_parser
       store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_int64) {
       int64_t value = *(int64_t*)&arg.value.data()[0];
+      store.push_back(value);
+    } else if (arg.type == binary_log::fmt_arg_type::type_int128) {
+      __int128_t value = *(__int128_t*)&arg.value.data()[0];
       store.push_back(value);
     } else if (arg.type == binary_log::fmt_arg_type::type_float) {
       float value = *(float*)&arg.value.data()[0];

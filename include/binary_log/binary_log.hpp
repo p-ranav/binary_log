@@ -1,22 +1,35 @@
 #pragma once
+#include <filesystem>
 #include <iostream>
 #include <string>
 
 #include <binary_log/constant.hpp>
 #include <binary_log/detail/args.hpp>
 #include <binary_log/detail/packer.hpp>
+#include <binary_log/detail/ringbuffer_packer.hpp>
 
 namespace binary_log
 {
+template<class Packer = packer<1 * 1024 * 1024, 32, 32>>
 class binary_log
 {
-  packer m_packer;
+  Packer m_packer;
   uint8_t m_format_string_index {0};
 
 public:
   binary_log(const char* path)
       : m_packer(path)
   {
+  }
+
+  binary_log(const std::filesystem::path& path)
+      : m_packer(path)
+  {
+  }
+
+  const Packer& get_packer() const
+  {
+    return m_packer;
   }
 
   ~binary_log()
@@ -45,7 +58,7 @@ public:
     m_format_string_index++;
 
     // Write the length of the format string
-    m_packer.write_format_string_to_index_file<format_string>();
+    m_packer. template write_format_string_to_index_file<format_string>();
 
     // Write the number of args taken by the format string
     m_packer.write_num_args_to_index_file(num_args);
@@ -93,8 +106,8 @@ public:
                                             __LINE__)[] = format_string; \
     static std::size_t BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, \
                                          __LINE__) = \
-        logger.log_index<BINARY_LOG_CONCAT(__binary_log_format_string, \
+        logger.template log_index<BINARY_LOG_CONCAT(__binary_log_format_string, \
                                            __LINE__)>(__VA_ARGS__); \
-    logger.log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
+    logger.template log(BINARY_LOG_CONCAT(__binary_log_format_string_id_pos, __LINE__), \
                ##__VA_ARGS__); \
   }
