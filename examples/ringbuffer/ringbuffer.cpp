@@ -10,7 +10,7 @@ void save_data(log_type& log, T&& value)
 
 int main()
 {
-  static constexpr size_t log_buffer_size = 100;
+  static constexpr size_t log_buffer_size = 1024;
   static constexpr size_t index_buffer_size = 1024;
   static constexpr size_t runlength_buffer_size = 1024;
   using Packer = binary_log::ringbuffer_packer<log_buffer_size,
@@ -18,25 +18,28 @@ int main()
                                                 runlength_buffer_size>;
   binary_log::binary_log<Packer> log("log.out");
 
-  save_data(log, 5);
-  save_data(log, 3.14);
-  save_data(log, binary_log::constant(2*3.14159265358));
-  save_data(log, "Hello, world!");
-  save_data(log, std::string("This is a string"));
-  auto complex_string = std::format("This is a complex string with a number: {}", 42);
-  save_data(log, complex_string);
-  BINARY_LOG(log, "This is a string with a different number: {}", (uint8_t)43);
-  save_data(log, true);
-  save_data(log, 2.7182818284590452353602874713527f);
-  save_data(log, 'a');
+  for (int loop_count = 0; loop_count < 10; ++loop_count) {
+    BINARY_LOG(log, "Starting loop: {}", loop_count);
 
-  // ensure run length works
-  for (int i = 0; i < 2E1; ++i) {
-    BINARY_LOG(log, "Hello logger, msg number: {}", i);
+    save_data(log, 5);
+    save_data(log, 3.14);
+    save_data(log, binary_log::constant(2*3.14159265358));
+    save_data(log, "Hello, world!");
+    save_data(log, std::string("This is a string"));
+    auto complex_string = std::format("This is a complex string with a number: {}", 42);
+    save_data(log, complex_string);
+    BINARY_LOG(log, "This is a string with a different number: {}", (uint8_t)43);
+    save_data(log, true);
+    save_data(log, 2.7182818284590452353602874713527f);
+    save_data(log, 'a');
+
+    // ensure run length works
+    for (int i = 0; i < 2E1; ++i) {
+      BINARY_LOG(log, "Hello logger, msg number: {}", i);
+    }
+
+    BINARY_LOG(log, "End of loop: {}", loop_count);
   }
-  // for (int i = 0; i < 1E1; ++i) {
-  //   save_data(log, i);
-  // }
 
   // now flush the log
   log.flush();
